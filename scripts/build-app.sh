@@ -74,7 +74,8 @@ if [ "$VARIANT" = dev ]; then
   /usr/libexec/PlistBuddy -c "Delete :SUFeedURL" -c "Set :CFBundleIdentifier $ID" \
     -c "Set :CFBundleName $NAME" -c "Set :CFBundleDisplayName $NAME" "$PLIST"
 else
-  SPARKLE_PUBLIC_KEY="${SPARKLE_PUBLIC_KEY:-$(cat Resources/SparklePublicKey.txt 2>/dev/null | tr -d '[:space:]')}"
+  # No key file yet is a warning below, not a failure (set -e would stop at a failed read).
+  SPARKLE_PUBLIC_KEY="${SPARKLE_PUBLIC_KEY:-$({ tr -d '[:space:]' < Resources/SparklePublicKey.txt; } 2>/dev/null || true)}"
   if [ -n "$SPARKLE_PUBLIC_KEY" ]; then
     /usr/libexec/PlistBuddy -c "Add :SUPublicEDKey string $SPARKLE_PUBLIC_KEY" "$PLIST"
   else

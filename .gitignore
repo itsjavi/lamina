@@ -1,16 +1,7 @@
-# Build output
-dist/
+.build/
 build/
-DerivedData/
-*.xcarchive
-*.dmg
-
-# Xcode per-user state
-xcuserdata/
-*.xcuserstate
-
-# macOS
 .DS_Store
+.swiftpm/
 
 # Signing material and secrets — never commit
 *.p12
@@ -21,4 +12,3 @@ xcuserdata/
 
 # Claude Code settings personal to this machine
 .claude/settings.local.json
-BUILD_PLAN.md

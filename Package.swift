@@ -24,9 +24,12 @@ let package = Package(
         // Pixel loops (brushes, healing, levels, noise, lens, content fill, adjustments, dither), always
         // optimized: debug builds and tests paint at release speed.
         .target(name: "CPixels", path: "Sources/CPixels", cSettings: [.unsafeFlags(["-O3"])]),
+        // The commands the running app answers (names, parameters, results), shared by the app, `lamina` and its MCP
+        // server. Foundation only, nonisolated.
+        .target(name: "LaminaAutomation", path: "Sources/LaminaAutomation", swiftSettings: [.swiftLanguageMode(.v6)]),
         .executableTarget(
             name: "Compositor",
-            dependencies: ["CPixels", .product(name: "Sparkle", package: "Sparkle")],
+            dependencies: ["CPixels", "LaminaAutomation", .product(name: "Sparkle", package: "Sparkle")],
             path: "Sources/Compositor",
             swiftSettings: swiftSettings + [.defaultIsolation(MainActor.self)],
             // The app bundle keeps Sparkle.framework in Contents/Frameworks.
@@ -34,7 +37,10 @@ let package = Package(
         ),
         // Runs AppKit's event loop with a document window in the test process, as the app did when it hosted the tests.
         .target(name: "CompositorTestHost", path: "Tests/CompositorTestHost", linkerSettings: [.linkedFramework("AppKit")]),
-        .testTarget(name: "CompositorTests", dependencies: ["Compositor", "CompositorTestHost"], path: "Tests/CompositorTests",
-                    swiftSettings: swiftSettings),
+        .testTarget(name: "CompositorTests", dependencies: ["Compositor", "CompositorTestHost", "LaminaAutomation"],
+                    path: "Tests/CompositorTests", swiftSettings: swiftSettings),
+        // The command catalog, without the app: fast, no windows.
+        .testTarget(name: "LaminaTests", dependencies: ["LaminaAutomation"], path: "Tests/LaminaTests",
+                    swiftSettings: [.swiftLanguageMode(.v6)]),
     ]
 )

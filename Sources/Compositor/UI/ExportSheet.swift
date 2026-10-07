@@ -1,48 +1,68 @@
 import SwiftUI
 
-struct JPEGExportSheet: View {
+/// File › Export JPEG… and Export As…: the flattened canvas as it will be saved, with the format's settings.
+struct ExportSheet: View {
     let raster: ExportRaster
     let session: EditorSession
-    let finish: (Data?) -> Void
-    @State private var options: JPEGOptions
-    /// The quality of the last export, which the next one starts from.
-    private static let qualityKey = "jpegExportQuality"
+    /// The formats to choose from: just JPEG for Export JPEG…, every one this Mac can write for Export As….
+    let formats: [ExportFormat]
+    let finish: ((format: ExportFormat, data: Data)?) -> Void
+    @State private var options: ExportOptions
+    /// The format Export As… last exported, which it starts from next time.
+    private static let formatKey = "exportAsFormat"
 
-    init(raster: ExportRaster, session: EditorSession, finish: @escaping (Data?) -> Void) {
+    init(raster: ExportRaster, session: EditorSession, formats: [ExportFormat],
+         finish: @escaping ((format: ExportFormat, data: Data)?) -> Void) {
         self.raster = raster
         self.session = session
+        self.formats = formats
         self.finish = finish
-        var start = JPEGOptions()
-        if let saved = UserDefaults.standard.object(forKey: Self.qualityKey) as? Double, saved.isFinite {
-            start.quality = min(1, max(0, saved))
+        var start = ExportOptions(format: formats.first ?? .jpeg)
+        if formats.count > 1, let saved = UserDefaults.standard.string(forKey: Self.formatKey),
+           let format = ExportFormat(rawValue: saved), formats.contains(format) {
+            start.format = format
         }
+        start.quality = Self.savedQuality(start.format)
         _options = State(initialValue: start)
     }
-    @State private var result: JPEGResult?
+
+    /// The quality of the last export in a format, which the next one in it starts from.
+    private static func qualityKey(_ format: ExportFormat) -> String {
+        format == .jpeg ? "jpegExportQuality" : "\(format.rawValue)ExportQuality"
+    }
+    private static func savedQuality(_ format: ExportFormat) -> Double {
+        guard let saved = UserDefaults.standard.object(forKey: qualityKey(format)) as? Double, saved.isFinite else {
+            return ExportOptions.defaultQuality
+        }
+        return min(1, max(0, saved))
+    }
+    /// Qualities set in this sheet for formats it has left, so switching back keeps them.
+    @State private var qualities: [ExportFormat: Double] = [:]
+    @State private var result: ExportResult?
     /// The preview's zoom, 1 being 100%; nil fits the whole image.
     @State private var zoom: Double?
     @Environment(\.displayScale) private var displayScale
     /// The zoom shown now, Fit's included.
     private var shownZoom: Double {
-        zoom ?? JPEGPreview.fitZoom(width: raster.image.width, height: raster.image.height,
-                                    in: JPEGPreview.frame, displayScale: displayScale)
+        zoom ?? ExportPreview.fitZoom(width: raster.image.width, height: raster.image.height,
+                                      in: ExportPreview.frame, displayScale: displayScale)
     }
-    @State private var readyOptions: JPEGOptions?
+    @State private var readyOptions: ExportOptions?
     @State private var error: String?
 
     var body: some View { sheet.roundedControls() }
     @ViewBuilder private var sheet: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 8) {
-                Text("Export JPEG").font(.title2.bold())
+                Text("Export \(options.format.title)").font(.title2.bold())
                 Spacer()
                 Button("Fit") { zoom = nil }.disabled(zoom == nil)
                     .help("Show the whole image (⌘0)")
                 Button { zoomBy(1) } label: { Image(systemName: "plus.magnifyingglass") }
-                    .disabled(JPEGPreview.step(from: shownZoom, in: 1) == nil)
-                    .help("Zoom in (⌘+), now \(percent). At 100% each pixel of the JPEG is one pixel of the screen, as on the canvas")
+                    .disabled(ExportPreview.step(from: shownZoom, in: 1) == nil)
+                    .help("Zoom in (⌘+), now \(percent). At 100% each pixel of the \(options.format.title) is one pixel of the screen, as on the canvas")
                 Button { zoomBy(-1) } label: { Image(systemName: "minus.magnifyingglass") }
-                    .disabled(JPEGPreview.step(from: shownZoom, in: -1) == nil)
+                    .disabled(ExportPreview.step(from: shownZoom, in: -1) == nil)
                     .help("Zoom out (⌘−), now \(percent)")
             }
             // Closer to the title row than the rest of the dialog's spacing.
@@ -50,24 +70,34 @@ struct JPEGExportSheet: View {
             ZStack {
                 Color(white: 0.12)
                 if let result {
-                    JPEGPreview(image: result.preview, pixelWidth: raster.image.width, pixelHeight: raster.image.height, zoom: $zoom)
+                    ExportPreview(image: result.preview, pixelWidth: raster.image.width, pixelHeight: raster.image.height, zoom: $zoom)
                 }
                 if readyOptions != options && error == nil {
                     ProgressView().padding().background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
                 }
-            }.frame(width: JPEGPreview.frame.width, height: JPEGPreview.frame.height).clipped()
+            }.frame(width: ExportPreview.frame.width, height: ExportPreview.frame.height).clipped()
                 .help("Drag or scroll to move around; double-click switches between Fit and 100%")
+            if formats.count > 1 {
+                Picker("Format", selection: $options.format) {
+                    ForEach(formats) { Text($0.title).tag($0) }
+                }.fixedSize()
+            }
+            // The same rows for every format, disabled or reworded where they don't apply, so the sheet keeps its size.
             HStack {
-                Text("Quality")
-                Slider(value: $options.quality, in: 0...1, step: 0.01)
-                Text("\(Int((options.quality * 100).rounded()))%")
-                    .monospacedDigit().frame(width: 45, alignment: .trailing)
-            }
+                Text("Quality").foregroundStyle(options.format.hasQuality ? .primary : .secondary)
+                Slider(value: options.format.hasQuality ? $options.quality : .constant(1), in: 0...1, step: 0.01)
+                Text(options.format.hasQuality ? "\(Int((options.quality * 100).rounded()))%" : "Lossless")
+                    .monospacedDigit().frame(width: 60, alignment: .trailing)
+            }.disabled(!options.format.hasQuality)
             HStack(spacing: 8) {
-                Text("Background for transparency")
-                DialogColorSwatch(title: "JPEG Background", color: matte, session: session)
-                    .help("Color that fills transparent areas")
-            }
+                if options.format.keepsTransparency {
+                    Text("Transparent areas stay transparent").foregroundStyle(.secondary)
+                } else {
+                    Text("Background for transparency")
+                    DialogColorSwatch(title: "\(options.format.title) Background", color: matte, session: session)
+                        .help("Color that fills transparent areas")
+                }
+            }.frame(minHeight: 18)
             HStack(spacing: 12) {
                 Text("\(raster.image.width.formatted()) × \(raster.image.height.formatted()) px · sRGB")
                     .foregroundStyle(.secondary)
@@ -79,8 +109,9 @@ struct JPEGExportSheet: View {
                 Button("Cancel") { DialogColorSwatch.closePicker(session); finish(nil) }.configuredNativeShortcut(.escape)
                 Button("Export…") {
                     DialogColorSwatch.closePicker(session)
-                    UserDefaults.standard.set(options.quality, forKey: Self.qualityKey)
-                    finish(result?.data)
+                    if options.format.hasQuality { UserDefaults.standard.set(options.quality, forKey: Self.qualityKey(options.format)) }
+                    if formats.count > 1 { UserDefaults.standard.set(options.format.rawValue, forKey: Self.formatKey) }
+                    finish(result.map { (options.format, $0.data) })
                 }
                     .configuredNativeShortcut(.return)
                     .disabled(result == nil || readyOptions != options || error != nil)
@@ -96,12 +127,16 @@ struct JPEGExportSheet: View {
             }
         } }
         .onDisappear { session.previewZoom = nil }
+        .onChange(of: options.format) { old, new in
+            qualities[old] = options.quality
+            options.quality = qualities[new] ?? Self.savedQuality(new)
+        }
         .task(id: options) {
             let requested = options
             error = nil
             do {
                 try await Task.sleep(for: .milliseconds(200))
-                let encoded = try await ImageExporter.shared.jpeg(raster, options: requested)
+                let encoded = try await ImageExporter.shared.encode(raster, options: requested)
                 try Task.checkCancellation()
                 result = encoded
                 readyOptions = requested
@@ -116,7 +151,7 @@ struct JPEGExportSheet: View {
 
     private var percent: String { "\(Int((shownZoom * 100).rounded()))%" }
     private func zoomBy(_ direction: Int) {
-        if let next = JPEGPreview.step(from: shownZoom, in: direction) { zoom = next }
+        if let next = ExportPreview.step(from: shownZoom, in: direction) { zoom = next }
     }
     private var matte: Binding<PaletteColor> {
         Binding(get: { PaletteColor(red: options.red, green: options.green, blue: options.blue) },
@@ -124,9 +159,9 @@ struct JPEGExportSheet: View {
     }
 }
 
-/// The encoded JPEG, fitted or zoomed (1 is 100%: one image pixel per screen pixel, as the canvas counts it), where it
+/// The encoded image, fitted or zoomed (1 is 100%: one image pixel per screen pixel, as the canvas counts it), where it
 /// can be dragged or scrolled around. Double-click switches between Fit and 100%.
-struct JPEGPreview: View {
+struct ExportPreview: View {
     static let frame = CGSize(width: 560, height: 330)
     static let steps: [Double] = [0.25, 0.5, 1, 2, 4, 8]
     let image: CGImage
@@ -154,7 +189,7 @@ struct JPEGPreview: View {
             if let zoom {
                 let size = shownSize(zoom)
                 ScrollView([.horizontal, .vertical]) {
-                    // Nearest-neighbor from 100% up, so each pixel of the JPEG and its artifacts shows as it is.
+                    // Nearest-neighbor from 100% up, so each pixel of the export and its artifacts shows as it is.
                     Image(decorative: image, scale: 1).resizable().interpolation(zoom >= 1 ? .none : .high)
                         .frame(width: size.width, height: size.height)
                         .frame(minWidth: geometry.size.width, minHeight: geometry.size.height)

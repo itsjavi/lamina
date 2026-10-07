@@ -72,7 +72,7 @@ brew install --cask robbietilton-compositor
 - Sharp high-quality downsampling when zoomed out, and a pixel grid when zoomed in
 - Import JPEG, PNG, HEIC, WebP, TIFF, SVG, camera RAW (with a develop step first) and Photoshop PSD and PSB (8-bit RGB; not CMYK). Photoshop folders, masks, blend modes, fill rectangles/ellipses, and simple horizontal text stay editable; other vectors and vertical text become pixels. A conversion report is shown before anything is applied.
 - Large documents: the memory budget scales with your Mac, and a Photoshop file too big to open has its layers cropped to the canvas instead
-- Export JPEG with a live preview (⇧⌥⌘S); Copy Merged
+- Export JPEG with a live preview (⇧⌥⌘S), or PNG, JPEG, HEIC, AVIF, TIFF or PDF with File > Export As… (quality for the lossy formats; only the formats your Mac can write are listed); Copy Merged
 - Keep working while a project saves
 - Photoshop-style keyboard shortcuts throughout, remappable in Edit > Keyboard Shortcuts
 - Drag a number's label to scrub its value, as in Photoshop

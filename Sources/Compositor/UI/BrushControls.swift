@@ -59,6 +59,9 @@ struct BrushControls: View {
                     session.brushSettings.diameter = value.isFinite ? min(2000, max(1, value)) : 40
                 }
                 .unitSuffix("px")
+                // Fields keep their units whole: otherwise the bar squeezes a unit onto two lines, even with room to
+                // spare at its end.
+                .fixedSize()
             // A pen's pressure, as Photoshop's two buttons: one beside Size, one beside Opacity.
             if session.tool == .brush {
                 Toggle(isOn: $session.brushSettings.pressureSize) { Image(systemName: "scribble.variable") }
@@ -75,6 +78,7 @@ struct BrushControls: View {
                 .arrowSteps(value: { Double(session.brushSettings.hardness * 100) },
                             change: { session.brushSettings.hardness = CGFloat(min(1, max(0, $0 / 100))) })
                 .unitSuffix("%")
+                .fixedSize()
             Text(session.tool == .blur ? "Strength" : "Opacity")
                 .scrubbable(sensitivity: 0.01, value: $session.brushSettings.opacity, range: 0.01...1)
             if sliders { Slider(value: $session.brushSettings.opacity, in: 0.01...1).frame(width: 100) }
@@ -86,6 +90,7 @@ struct BrushControls: View {
                             change: { session.brushSettings.opacity = CGFloat(min(100, max(1, $0)) / 100) })
                 .help("Press 1–9 for 10–90%, 0 for 100%")
                 .unitSuffix("%")
+                .fixedSize()
             if session.tool == .brush {
                 Toggle(isOn: $session.brushSettings.pressureOpacity) { Image(systemName: "drop.halffull") }
                     .toggleStyle(.button)
@@ -102,6 +107,7 @@ struct BrushControls: View {
                                 change: { session.brushSettings.flow = CGFloat(min(100, max(1, $0)) / 100) })
                     .help("How much paint each dab lays down. Going over the same place in one stroke builds it up, up to the Opacity")
                     .unitSuffix("%")
+                    .fixedSize()
             }
             // Blur softens by a radius of its own, apart from how strongly it lays the softening down.
             if session.tool == .blur, session.blurMode == .blur {
@@ -119,6 +125,7 @@ struct BrushControls: View {
                                 change: { session.brushSettings.blurRadius = CGFloat(min(50, max(0.5, $0))) })
                     .help("How far the blur softens, in pixels")
                     .unitSuffix("px")
+                    .fixedSize()
             }
             // Dodge and Burn: which tones they reach, and how far they move them.
             if session.tool == .brush, session.brushMode.toneLightens != nil {
@@ -136,6 +143,7 @@ struct BrushControls: View {
                                 change: { session.toneExposure = CGFloat(min(100, max(0, $0)) / 100) })
                     .help("How far a full-strength stroke moves the pixels toward white or black")
                     .unitSuffix("%")
+                    .fixedSize()
             }
             // Paint and Erase only: healing, cloning and smearing have their own feel.
             if session.tool == .brush {

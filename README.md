@@ -47,6 +47,7 @@ brew install --cask robbietilton-compositor
 - Rectangle and Ellipse Marquee, Freehand and Polygonal Lasso, and the Magic tool — Wand selects by color, Object traces whatever you click (Tab switches)
 - Select Subject, and Expand, Contract and Feather on any selection
 - Add to and subtract from selections, move the outline, or move and duplicate the pixels inside
+- Edit › Stroke: a line along the selection's outline, inside, centered or outside, in the foreground or background color, on pixels or masks
 - Load a layer's pixels or a mask as a selection, or add it to, subtract it from or intersect it with the selection
 - Content-Aware Fill, which can also extend an image past its edges
 

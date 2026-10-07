@@ -65,10 +65,11 @@ extension EditorSession {
         history.reset()
     }
 
-    func createNewProject(width: Int, height: Int) {
-        guard !isProjectBusy, !isImporting, (1...DocumentLimits.maxSide).contains(width), (1...DocumentLimits.maxSide).contains(height) else { return }
+    func createNewProject(width: Int, height: Int, resolution: Double = 72) {
+        guard !isProjectBusy, !isImporting, (1...DocumentLimits.maxSide).contains(width), (1...DocumentLimits.maxSide).contains(height),
+              resolution.isFinite, (1...9600).contains(resolution) else { return }
         clearProject()
-        createDocument(width: width, height: height, emptyLayer: true)
+        createDocument(width: width, height: height, emptyLayer: true, resolution: resolution)
     }
 }
 

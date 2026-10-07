@@ -1,0 +1,19 @@
+{
+  "fill": {
+    "solid": "srgb:0.10196,0.27451,0.88235,1.00000"
+  },
+  "groups": [
+    {
+      "layers": [
+        { "glass": false, "image-name": "gradient.png", "name": "gradient" }
+      ],
+      "lighting": "individual",
+      "shadow": { "kind": "neutral", "opacity": 0.5 },
+      "specular": true,
+      "translucency": { "enabled": false, "value": 0 }
+    }
+  ],
+  "supported-platforms": {
+    "squares": ["macOS"]
+  }
+}

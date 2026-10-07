@@ -446,8 +446,10 @@ nonisolated enum LayerEffectsRenderer {
     }
 
     /// `image` with `effects` around it. `mask` (the layer's own mask, in its pixel grid) hides part of the layer
-    /// before the effects are made, so they follow the shape that is actually shown, as in Photoshop.
-    static func render(_ image: CGImage, mask: CGImage?, effects: LayerEffects) throws -> (image: CGImage, inset: CGFloat) {
+    /// before the effects are made, so they follow the shape that is actually shown, as in Photoshop. `gpu` false
+    /// draws them on the CPU, as when Metal is unavailable, so tests can hold the two paths to the same result.
+    static func render(_ image: CGImage, mask: CGImage?, effects: LayerEffects,
+                       gpu: Bool = true) throws -> (image: CGImage, inset: CGFloat) {
         let effects = effects.visible
         guard effects.isValid else { throw ProjectError.invalid }
         let inset = margin(for: effects)
@@ -457,7 +459,7 @@ nonisolated enum LayerEffectsRenderer {
         let full = CGRect(x: 0, y: 0, width: CGFloat(width), height: CGFloat(height))
         // The layer as it is shown: its pixels through its mask.
         let shown = try masked(image, mask: mask)
-        if let metal = MetalLayerEffects.shared {
+        if gpu, let metal = MetalLayerEffects.shared {
             // The pixels with room around them, then the stroke and shadow drawn on the GPU.
             let padded = try BrushRaster.context(width: width, height: height, mask: false)
             BrushRaster.draw(shown, in: placed, mask: false, context: padded)
@@ -489,13 +491,10 @@ nonisolated enum LayerEffectsRenderer {
         context.translateBy(x: placed.minX, y: placed.maxY)
         context.scaleBy(x: 1, y: -1)
         context.setBlendMode(.normal)
-        context.draw(shown, in: CGRect(origin: .zero, size: placed.size))
+        let overlay = effects.colorOverlay.flatMap { $0.isEnabled && $0.opacity > 0 ? $0 : nil }
+        context.draw(try overlay.map { try overlaid(shown, with: $0) } ?? shown, in: CGRect(origin: .zero, size: placed.size))
         context.restoreGState()
-        // Over the pixels: a flat color, then a shadow inside the layer's own edges.
-        if let overlay = effects.colorOverlay, overlay.isEnabled, overlay.opacity > 0,
-           let shape = try? coverage(shown, in: placed, size: CGSize(width: width, height: height), blur: 0) {
-            fill(overlay.color, alpha: overlay.opacity, coverage: shape, in: full, context: context)
-        }
+        // Over the pixels: a glow and a shadow inside the layer's own edges.
         if let innerGlow = effects.innerGlow, innerGlow.isEnabled, innerGlow.opacity > 0,
            let insideGlow = try? innerGlowCoverage(shown, placed: placed, size: CGSize(width: width, height: height), glow: innerGlow) {
             fill(innerGlow.color, alpha: innerGlow.opacity, coverage: insideGlow, in: full, context: context)
@@ -530,6 +529,17 @@ nonisolated enum LayerEffectsRenderer {
         context.scaleBy(x: 1, y: -1)
         context.clip(to: bounds, mask: mask)
         context.draw(image, in: bounds)
+        guard let result = context.makeImage() else { throw ExportError.render }
+        return result
+    }
+
+    /// The layer's pixels recolored by a color overlay. Source-atop keeps each pixel's alpha and moves its color
+    /// toward the overlay's by the overlay's opacity, so a half-transparent pixel takes the full overlay color.
+    private static func overlaid(_ image: CGImage, with overlay: ColorOverlayEffect) throws -> CGImage {
+        let context = try BrushRaster.copy(image)
+        context.setBlendMode(.sourceAtop)
+        context.setFillColor(CGColor(srgbRed: overlay.red, green: overlay.green, blue: overlay.blue, alpha: CGFloat(overlay.opacity)))
+        context.fill(CGRect(x: 0, y: 0, width: image.width, height: image.height))
         guard let result = context.makeImage() else { throw ExportError.render }
         return result
     }

@@ -173,18 +173,23 @@ final class ShortcutSettings {
     private(set) var overrides: [String: ShortcutChord] = [:]
     @ObservationIgnored private let panel = FloatingPanelController(name: "keyboardShortcuts")
     private static let storageKey = "keyboardShortcuts.v1"
+    /// One saved entry, nil when it can't be decoded (a hand-edited or damaged value), so the others still load.
+    private struct SavedChord: Decodable {
+        let chord: ShortcutChord?
+        init(from decoder: Decoder) throws { chord = try? ShortcutChord(from: decoder) }
+    }
     private let defaults: UserDefaults
     /// `defaults` is the app's own everywhere but tests, which use a throwaway suite.
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         guard let data = defaults.data(forKey: Self.storageKey),
-              let saved = try? JSONDecoder().decode([String: ShortcutChord].self, from: data) else { return }
-        // Take the saved overrides one at a time, keeping each that still fits: one for a command that has since gone,
-        // or one a newer rule or a new default now refuses, drops alone rather than taking every other saved
-        // shortcut with it.
+              let saved = try? JSONDecoder().decode([String: SavedChord].self, from: data) else { return }
+        // Take the saved overrides one at a time, keeping each that still fits: one that can't be read, one for a
+        // command that has since gone, or one a newer rule or a new default now refuses, drops alone rather than
+        // taking every other saved shortcut with it.
         let known = Set(ShortcutDefinition.all.map(\.id))
         var accepted: [String: ShortcutChord] = [:]
-        for (id, chord) in saved.sorted(by: { $0.key < $1.key }) where known.contains(id) {
+        for (id, chord) in saved.compactMapValues(\.chord).sorted(by: { $0.key < $1.key }) where known.contains(id) {
             var trial = accepted
             trial[id] = chord
             if Self.problem(in: trial) == nil { accepted = trial }

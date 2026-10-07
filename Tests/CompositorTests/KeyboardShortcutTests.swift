@@ -53,6 +53,17 @@ struct KeyboardShortcutTests {
         #expect(settings.menu("z", modifiers: .command) == ShortcutChord("y", 1))
     }
 
+    /// A saved value that can't be decoded at all (damaged, or edited by hand) drops alone too.
+    @Test func anUndecodableOverrideDropsAloneOnLoad() {
+        let defaults = UserDefaults(suiteName: "KeyboardShortcutTests-\(UUID().uuidString)")!
+        let saved = #"{"Menus:Undo": {"key": "y", "modifiers": 1}, "Menus:Redo": {"key": 5}, "Menus:Save": "⌘S"}"#
+        defaults.set(Data(saved.utf8), forKey: "keyboardShortcuts.v1")
+        let settings = ShortcutSettings(defaults: defaults)
+        #expect(settings.menu("z", modifiers: .command) == ShortcutChord("y", 1), "the readable one is kept")
+        #expect(settings.menu("z", modifiers: [.command, .shift]) == ShortcutChord("z", 9))
+        #expect(settings.menu("s", modifiers: .command) == ShortcutChord("s", 1))
+    }
+
     @Test func everyFilterAdjustmentAndLayerMenuCommandIsAssignable() {
         let titles = Set(ShortcutDefinition.all.filter { $0.group == ShortcutDefinition.moreGroup }.map(\.title))
         for kind in FilterKind.allCases where kind != .contentAwareFill && !kind.isImageAdjustment {

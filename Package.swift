@@ -15,7 +15,11 @@ let swiftSettings: [SwiftSetting] = [
 let package = Package(
     name: "Compositor",
     platforms: [.macOS(.v26)],
-    products: [.executable(name: "Compositor", targets: ["Compositor"])],
+    products: [
+        .executable(name: "Compositor", targets: ["Compositor"]),
+        // The command-line tool that drives the running app; build-app.sh ships it in Contents/Helpers.
+        .executable(name: "lamina", targets: ["lamina"]),
+    ],
     dependencies: [
         // App updates. build-app.sh embeds Sparkle.framework in Contents/Frameworks.
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.10.0"),
@@ -27,6 +31,11 @@ let package = Package(
         // The commands the running app answers (names, parameters, results), shared by the app, `lamina` and its MCP
         // server. Foundation only, nonisolated.
         .target(name: "LaminaAutomation", path: "Sources/LaminaAutomation", swiftSettings: [.swiftLanguageMode(.v6)]),
+        // `lamina`: arguments, help, output and the Apple Event client, in a library so tests can drive it.
+        .target(name: "LaminaCLI", dependencies: ["LaminaAutomation"], path: "Sources/LaminaCLI",
+                swiftSettings: [.swiftLanguageMode(.v6)]),
+        .executableTarget(name: "lamina", dependencies: ["LaminaCLI"], path: "Sources/lamina",
+                          swiftSettings: [.swiftLanguageMode(.v6)]),
         .executableTarget(
             name: "Compositor",
             dependencies: ["CPixels", "LaminaAutomation", .product(name: "Sparkle", package: "Sparkle")],
@@ -39,8 +48,8 @@ let package = Package(
         .target(name: "CompositorTestHost", path: "Tests/CompositorTestHost", linkerSettings: [.linkedFramework("AppKit")]),
         .testTarget(name: "CompositorTests", dependencies: ["Compositor", "CompositorTestHost", "LaminaAutomation"],
                     path: "Tests/CompositorTests", swiftSettings: swiftSettings),
-        // The command catalog, without the app: fast, no windows.
-        .testTarget(name: "LaminaTests", dependencies: ["LaminaAutomation"], path: "Tests/LaminaTests",
+        // `lamina` and the command catalog, without the app: fast, no windows.
+        .testTarget(name: "LaminaTests", dependencies: ["LaminaAutomation", "LaminaCLI"], path: "Tests/LaminaTests",
                     swiftSettings: [.swiftLanguageMode(.v6)]),
     ]
 )

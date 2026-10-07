@@ -48,7 +48,9 @@ nonisolated enum AutomationEffects {
         case .blackWhite: blackWhite(&result.blackWhite, s)
         case .colorBalance: colorBalance(&result.colorBalance, s)
         case .gradientMap: gradientMap(&result.gradientMap, s)
-        case .dither, .cameraRaw, .contentAwareFill, .curves: break
+        // Kinds the catalog doesn't offer (Curves, Camera Raw…, and filters added to the app later) take no settings
+        // here; a kind joins commands by being added to EffectCatalog and mapped above.
+        default: break
         }
         return result
     }
@@ -75,7 +77,8 @@ nonisolated enum AutomationEffects {
         case .blackWhite: blackWhite(&result.blackWhite, s)
         case .colorBalance: colorBalance(&result.colorBalance, s)
         case .gradientMap: gradientMap(&result.gradientMap, s)
-        case .invert, .levels, .curves: break
+        // Invert has no settings; Levels, Curves and kinds added later aren't offered by the catalog yet.
+        default: break
         }
         return result
     }

@@ -9,8 +9,8 @@ struct JPEGExportTests {
         let snapshot = ProjectSnapshot(manifest: ProjectManifest(documentID: UUID(), width: 20,
             height: 12, activeLayerID: nil, layers: []), images: [:])
         let raster = try await ImageExporter.shared.render(snapshot)
-        for options in [JPEGOptions(), JPEGOptions(quality: 1, red: 0, green: 0, blue: 1)] {
-            let result = try await ImageExporter.shared.jpeg(raster, options: options)
+        for options in [ExportOptions(format: .jpeg), ExportOptions(format: .jpeg, quality: 1, red: 0, green: 0, blue: 1)] {
+            let result = try await ImageExporter.shared.encode(raster, options: options)
             let source = try #require(CGImageSourceCreateWithData(result.data as CFData, nil))
             #expect(CGImageSourceGetType(source) as String? == "public.jpeg")
             let image = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
@@ -41,8 +41,8 @@ struct JPEGExportTests {
             }
         }
         let raster = ExportRaster(image: try #require(context.makeImage()))
-        let low = try await ImageExporter.shared.jpeg(raster, options: JPEGOptions(quality: 0.1))
-        let high = try await ImageExporter.shared.jpeg(raster, options: JPEGOptions(quality: 1))
+        let low = try await ImageExporter.shared.encode(raster, options: ExportOptions(format: .jpeg, quality: 0.1))
+        let high = try await ImageExporter.shared.encode(raster, options: ExportOptions(format: .jpeg, quality: 1))
         #expect(low.data.count < high.data.count)
         let lowBitmap = try #require(NSBitmapImageRep(data: low.data))
         let highBitmap = try #require(NSBitmapImageRep(data: high.data))

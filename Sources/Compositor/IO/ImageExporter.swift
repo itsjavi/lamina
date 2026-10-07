@@ -4,43 +4,45 @@ import ImageIO
 import UniformTypeIdentifiers
 
 nonisolated enum ExportError: LocalizedError {
-    case tooLarge, render, encode
+    case tooLarge, render, encode, webPTooLarge
     var errorDescription: String? {
         switch self {
         case .tooLarge: "Image export supports canvases up to \(DocumentLimits.maxSurfaceMegapixels) megapixels and \(DocumentLimits.maxSide.formatted()) pixels per side."
         case .render: "The canvas could not be rendered. Try a smaller canvas."
         case .encode: "The image could not be encoded."
+        case .webPTooLarge: "WebP supports images up to \(WebPEncoder.maxSide.formatted()) pixels per side."
         }
     }
 }
 
 /// The formats File › Export As… offers. Every export is the flattened canvas, 8 bits per channel, in sRGB.
 nonisolated enum ExportFormat: String, CaseIterable, Identifiable, Sendable {
-    case png, jpeg, heic, avif, tiff, pdf
+    case png, jpeg, heic, avif, webP = "webp", tiff, pdf
 
     var id: Self { self }
-    var title: String { rawValue.uppercased() }
+    var title: String { self == .webP ? "WebP" : rawValue.uppercased() }
     var type: UTType {
         switch self {
         case .png: .png
         case .jpeg: .jpeg
         case .heic: .heic
         case .avif: UTType(importedAs: "public.avif")
+        case .webP: .webP
         case .tiff: .tiff
         case .pdf: .pdf
         }
     }
     var fileExtension: String { self == .jpeg ? "jpg" : rawValue }
     /// Lossy formats, which have a quality setting.
-    var hasQuality: Bool { [.jpeg, .heic, .avif].contains(self) }
+    var hasQuality: Bool { [.jpeg, .heic, .avif, .webP].contains(self) }
     /// JPEG has no alpha: its transparent areas are filled with a chosen color.
     var keepsTransparency: Bool { self != .jpeg }
 
     /// The formats this Mac can write. ImageIO's encoders vary with the macOS version and the hardware (AVIF, HEIC),
-    /// so they're asked at run time; PDF is drawn by Core Graphics, which every Mac has.
+    /// so they're asked at run time; WebP is written by the bundled libwebp and PDF drawn by Core Graphics.
     static var available: [ExportFormat] { available(encoders: Set(CGImageDestinationCopyTypeIdentifiers() as? [String] ?? [])) }
     static func available(encoders: Set<String>) -> [ExportFormat] {
-        allCases.filter { $0 == .pdf || encoders.contains($0.type.identifier) }
+        allCases.filter { $0 == .webP || $0 == .pdf || encoders.contains($0.type.identifier) }
     }
 }
 
@@ -168,6 +170,8 @@ actor ImageExporter {
                 data = try encode(flattened, type: .jpeg, properties: properties as CFDictionary)
             case .png, .heic, .avif:
                 data = try encode(image, type: options.format.type, properties: properties as CFDictionary)
+            case .webP:
+                data = try WebPEncoder.encode(image, quality: options.quality)
             case .tiff:
                 // LZW: lossless, read by everything that reads TIFF, and far smaller than uncompressed.
                 properties[kCGImagePropertyTIFFDictionary] = [kCGImagePropertyTIFFCompression: 5]

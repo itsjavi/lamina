@@ -37,12 +37,12 @@ struct ExportFormatTests {
 
     @Test func listsOnlyFormatsThisMacCanWrite() {
         // An encoder list without AVIF or HEIC, as on a Mac whose ImageIO can't write them: they're left out.
-        #expect(ExportFormat.available(encoders: ["public.png", "public.jpeg", "public.tiff"]) == [.png, .jpeg, .tiff, .pdf])
+        #expect(ExportFormat.available(encoders: ["public.png", "public.jpeg", "public.tiff"]) == [.png, .jpeg, .webP, .tiff, .pdf])
         let encoders = Set(CGImageDestinationCopyTypeIdentifiers() as? [String] ?? [])
-        for format in ExportFormat.available where format != .pdf {
+        for format in ExportFormat.available where format != .webP && format != .pdf {
             #expect(encoders.contains(format.type.identifier), "\(format.title)")
         }
-        #expect(Set([.png, .jpeg, .tiff, .pdf]).isSubset(of: ExportFormat.available))
+        #expect(Set([.png, .jpeg, .webP, .tiff, .pdf]).isSubset(of: ExportFormat.available))
     }
 
     @Test(arguments: ExportFormat.available)
@@ -71,7 +71,8 @@ struct ExportFormatTests {
         try expectRedAndClear(image, keepsTransparency: format.keepsTransparency, comment)
         let properties = try #require(CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any])
         #expect(properties[kCGImagePropertyDepth] as? Int == 8, comment)
-        #expect(abs((properties[kCGImagePropertyDPIWidth] as? Double ?? 0) - 144) < 0.5, comment)
+        // WebP has no field for the resolution.
+        if format != .webP { #expect(abs((properties[kCGImagePropertyDPIWidth] as? Double ?? 0) - 144) < 0.5, comment) }
         if format == .tiff {
             let tiff = try #require(properties[kCGImagePropertyTIFFDictionary] as? [CFString: Any])
             #expect(tiff[kCGImagePropertyTIFFCompression] as? Int == 5)
@@ -92,11 +93,32 @@ struct ExportFormatTests {
         }
         let raster = ExportRaster(image: try #require(context.makeImage()))
         let lossy = ExportFormat.available.filter(\.hasQuality)
-        #expect(lossy.contains(.jpeg))
+        #expect(lossy.contains(.jpeg) && lossy.contains(.webP))
         for format in lossy {
             let low = try await ImageExporter.shared.encode(raster, options: ExportOptions(format: format, quality: 0.1))
             let high = try await ImageExporter.shared.encode(raster, options: ExportOptions(format: format, quality: 1))
             #expect(low.data.count < high.data.count, "\(format.title)")
         }
+    }
+
+    @Test func webPRefusesSidesPastItsLimit() async throws {
+        let context = try #require(CGContext(data: nil, width: WebPEncoder.maxSide + 1, height: 1, bitsPerComponent: 8,
+            bytesPerRow: (WebPEncoder.maxSide + 1) * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        let raster = ExportRaster(image: try #require(context.makeImage()))
+        await #expect(throws: ExportError.webPTooLarge) {
+            try await ImageExporter.shared.encode(raster, options: ExportOptions(format: .webP))
+        }
+    }
+
+    /// A WebP this app exports opens in it again.
+    @Test func exportedWebPImports() async throws {
+        let result = try await ImageExporter.shared.encode(try raster(), options: ExportOptions(format: .webP, quality: 0.9))
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("Export-\(UUID()).webp")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try await ImageExporter.shared.write(result.data, to: url)
+        let imported = try await ImageImporter.shared.decode(url)
+        #expect(imported.image.width == 64 && imported.image.height == 32)
+        try expectRedAndClear(imported.image, keepsTransparency: true, "WebP")
     }
 }

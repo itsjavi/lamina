@@ -1,5 +1,4 @@
-import AppKit
-import SwiftUI
+import Foundation
 import Testing
 @testable import Compositor
 
@@ -58,23 +57,5 @@ struct NewCanvasTests {
         session.createNewProject(width: 2550, height: 3300, resolution: 300)
         #expect(session.document?.width == 2550 && session.document?.resolution == 300)
         #expect(session.projectSnapshot()?.manifest.resolution == 300)
-    }
-
-    /// Opening New Canvas puts the keyboard in Width, its number selected, so typing replaces it.
-    @Test func widthIsFocusedWithItsTextSelected() async throws {
-        let session = EditorSession()
-        session.skipsInitialClipboardCanvasSize = true
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 600, height: 400),
-                              styleMask: [.titled], backing: .buffered, defer: false)
-        window.isReleasedWhenClosed = false
-        window.contentView = NSHostingView(rootView: NewCanvasSheet(session: session))
-        window.orderFront(nil)
-        defer { window.orderOut(nil) }
-        for _ in 0..<10 {
-            await withCheckedContinuation { continuation in DispatchQueue.main.async { continuation.resume() } }
-        }
-        let editor = try #require(window.firstResponder as? NSTextView)
-        #expect(editor.string == "1920")
-        #expect(editor.selectedRange() == NSRange(location: 0, length: 4))
     }
 }

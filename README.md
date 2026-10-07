@@ -29,7 +29,8 @@ brew install --cask robbietilton-compositor
 - Clipping masks and folder masks
 - Adjustment layers: Hue/Saturation, Levels, Curves, Exposure, Gradient Map, Grain, Black & White, Color Balance, Invert, Gaussian Blur, Motion Blur and Noise
 - Layer effects: Stroke, Drop Shadow, Color Overlay, Inner Shadow, Outer Glow and Inner Glow, rendered on the GPU and editable at any time
-- Merge Down, Merge Layers and Merge Group (⌘E)
+- Merge Down, Merge Layers and Merge Group (⌘E), Merge Visible and Flatten Image
+- Apply Layer Mask, Copy and Paste Layer Style, and Show/Hide All Other Layers
 - Duplicate, rename inline, reorder and nest by drag and drop; Option-drag to duplicate; a right-click menu in the Layers panel
 - Copy and paste whole layers and folders (⌘C/⌘V with no selection), within a project or between projects, or drag them between projects
 
@@ -40,12 +41,14 @@ brew install --cask robbietilton-compositor
 - Snapping to canvas and layer edges and centers, with guides
 - Exact values for position, size, scale and angle, stepped with the arrow keys
 - Flip Layer and Flip Canvas, horizontal and vertical
+- Align and Distribute layers by the pixels they show, to each other, the selection or the canvas, from the Move tool's bar or the Layer menu
 
 ### Selections
 - Rectangle and Ellipse Marquee, Freehand and Polygonal Lasso, and the Magic tool — Wand selects by color, Object traces whatever you click (Tab switches)
 - Select Subject, and Expand, Contract and Feather on any selection
 - Add to and subtract from selections, move the outline, or move and duplicate the pixels inside
-- Load a layer's pixels or a mask as a selection
+- Edit › Stroke: a line along the selection's outline, inside, centered or outside, in the foreground or background color, on pixels or masks
+- Load a layer's pixels or a mask as a selection, or add it to, subtract it from or intersect it with the selection
 - Content-Aware Fill, which can also extend an image past its edges
 
 ### Painting and retouching
@@ -62,13 +65,14 @@ brew install --cask robbietilton-compositor
 - Levels (with Auto), Curves, Hue/Saturation, Exposure, Gradient Map, Grain, Black & White, Color Balance and Invert
 - Gaussian Blur and Motion Blur that spread past a layer's edges
 - Add Noise, Vignette, Bloom / Glow, Tonal Contrast, Lens Correction and Remove Background
+- Unsharp Mask (Amount, Radius, Threshold) and High Pass
 - Live previews, limited to the selection when there is one
 
 ### Canvas and files
 - Multiple projects in tabs
 - Rulers (⌘R), guides dragged from them, a layout grid with adjustable spacing and subdivisions, and Snap To for guides, grid, layers and document bounds
 - Crop with snapping, ratios including 3:4 and 9:16, and Option for symmetric cropping; with a selection, the crop starts at it
-- Canvas Size, Image Size and Trim
+- Canvas Size, Image Size and Trim; Image Rotation (90° either way and 180°), which turns layer pixels losslessly
 - Sharp high-quality downsampling when zoomed out, and a pixel grid when zoomed in
 - Import JPEG, PNG, HEIC, WebP, TIFF, SVG, camera RAW (with a develop step first) and Photoshop PSD and PSB (8-bit RGB; not CMYK). Photoshop folders, masks, blend modes, fill rectangles/ellipses, and simple horizontal text stay editable; other vectors and vertical text become pixels. A conversion report is shown before anything is applied.
 - Large documents: the memory budget scales with your Mac, and a Photoshop file too big to open has its layers cropped to the canvas instead

@@ -286,8 +286,43 @@ struct LayerTests {
         #expect(subTitles.contains("Reveal All (White)"))
         #expect(subTitles.contains("Hide All (Black)"))
         #expect(titles.contains("Disable Mask"))
+        #expect(titles.contains("Apply Layer Mask"))
         #expect(titles.contains("Delete Mask"))
         #expect(titles.contains("Link Mask") || titles.contains("Unlink Mask"))
+        // Photoshop's layer commands.
+        for title in ["Merge Visible", "Flatten Image", "Copy Layer Style", "Paste Layer Style", "Clear Layer Style"] {
+            #expect(titles.contains(title), "\(title)")
+        }
+        #expect(titles.contains("Hide All Other Layers") || titles.contains("Show All Other Layers"))
+        // Selecting by the thumbnail is offered only when it's the thumbnail that was right-clicked.
+        #expect(!titles.contains("Intersect Pixels with Selection"))
+    }
+
+    /// A right-click on a thumbnail also loads what it holds as a selection, or combines it with the selection.
+    @Test func thumbnailContextMenuCombinesItWithTheSelection() throws {
+        let session = EditorSession()
+        session.createDocument(width: 100, height: 100)
+        let context = try BrushRaster.context(width: 40, height: 40, mask: false)
+        context.setFillColor(CGColor(srgbRed: 1, green: 0, blue: 0, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: 40, height: 40))
+        let image = try #require(context.makeImage())
+        // 40 × 40 at 30, 30.
+        session.insert(ImportedImage(image: image, thumbnail: image, name: "Square"))
+        let (_, coordinator, _) = makeLayerTable(session: session)
+        var menu = try #require(coordinator.contextMenu(for: 0, onThumbnail: true))
+        let titles = menu.items.map(\.title)
+        #expect(Array(titles.prefix(4)) == ["Select Pixels", "Add Pixels to Selection", "Subtract Pixels from Selection",
+                                            "Intersect Pixels with Selection"])
+        #expect(menu.items[0].isEnabled && !menu.items[3].isEnabled, "nothing to intersect with yet")
+        session.applySelection(CGPath(rect: CGRect(x: 0, y: 0, width: 50, height: 50), transform: nil), mode: .replace, name: "Select")
+        menu = try #require(coordinator.contextMenu(for: 0, onThumbnail: true))
+        #expect(menu.items[3].isEnabled)
+        coordinator.intersectTargetWithSelectionAction(nil)
+        #expect(session.selection?.path.boundingBoxOfPath == CGRect(x: 30, y: 30, width: 20, height: 20))
+        // The mask's thumbnail offers the same for the mask.
+        session.addLayerMask(revealing: true)
+        menu = try #require(coordinator.contextMenu(for: 0, onThumbnail: true))
+        #expect(menu.items.first?.title == "Select Mask" && menu.items[3].title == "Intersect Mask with Selection")
     }
 
     @Test func testRightClickOnUnselectedLayerSelectsIt() throws {
@@ -454,6 +489,8 @@ struct LayerTests {
         #expect(toggleMaskAfter.title == "Disable Mask")
         let deleteMaskAfter = try #require(menu.items.first { $0.title == "Delete Mask" })
         #expect(deleteMaskAfter.isEnabled == true)
+        let applyMaskAfter = try #require(menu.items.first { $0.title == "Apply Layer Mask" })
+        #expect(applyMaskAfter.isEnabled == false, "a blank layer has no pixels of its own to bake the mask into")
 
         // Disable mask
         coordinator.toggleMaskAction(nil)
@@ -554,5 +591,134 @@ struct LayerTests {
         #expect(session.activeLayer?.isVisible == !wasVisible)
         session.undo()
         #expect(session.activeLayer?.isVisible == wasVisible)
+    }
+
+    private func coloredAsset(_ color: CGColor, name: String, size: Int = 4) throws -> ImportedImage {
+        let ctx = try #require(CGContext(data: nil, width: size, height: size, bitsPerComponent: 8,
+            bytesPerRow: size * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        ctx.setFillColor(color)
+        ctx.fill(CGRect(x: 0, y: 0, width: size, height: size))
+        let image = try #require(ctx.makeImage())
+        return ImportedImage(image: image, thumbnail: image, name: name)
+    }
+
+    @Test func mergeVisibleCombinesOnlyVisibleLayersAtTheTopmostSlotAndUndoes() throws {
+        let session = EditorSession()
+        session.insert(try coloredAsset(CGColor(red: 1, green: 0, blue: 0, alpha: 1), name: "Red"))
+        let red = try #require(session.activeLayerID)
+        session.insert(try coloredAsset(CGColor(red: 0, green: 1, blue: 0, alpha: 1), name: "Green"))
+        let green = try #require(session.activeLayerID)
+        session.insert(try coloredAsset(CGColor(red: 0, green: 0, blue: 1, alpha: 1), name: "Blue"))
+        let blue = try #require(session.activeLayerID)
+        session.toggleLayerVisibility(green)
+        #expect(session.canMergeVisible)
+
+        let undoCount = session.history.undoCount
+        session.mergeVisible()
+        let layers = try #require(session.document?.layers)
+        #expect(layers.count == 2, "the hidden green layer stays out of the merge")
+        #expect(layers.first { $0.id == green }?.isVisible == false)
+        let merged = try #require(session.activeLayer)
+        #expect(merged.id != red && merged.id != blue)
+        #expect(merged.name == "Blue", "named after the topmost visible layer")
+        #expect(merged.parentID == nil)
+        #expect(session.history.undoCount == undoCount + 1)
+        #expect(session.history.undoName == "Merge Visible")
+
+        session.undo()
+        #expect(session.document?.layers.map(\.id) == [red, green, blue])
+        session.redo()
+        #expect(session.document?.layers.count == 2)
+
+        // Only the hidden layer is left: nothing visible remains to combine.
+        session.selectLayer(merged.id)
+        session.deleteActiveLayer()
+        #expect(!session.canMergeVisible)
+    }
+
+    @Test func flattenImageDiscardsHiddenLayersAsOneUndo() throws {
+        let session = EditorSession()
+        session.insert(try coloredAsset(CGColor(red: 1, green: 0, blue: 0, alpha: 1), name: "Red"))
+        let red = try #require(session.activeLayerID)
+        session.insert(try coloredAsset(CGColor(red: 0, green: 1, blue: 0, alpha: 1), name: "Green"))
+        let green = try #require(session.activeLayerID)
+        session.toggleLayerVisibility(green)
+
+        let undoCount = session.history.undoCount
+        session.flattenImage()
+        let layers = try #require(session.document?.layers)
+        #expect(layers.count == 1)
+        #expect(layers[0].name == "Background")
+        #expect(layers[0].id != red && layers[0].id != green)
+        #expect(session.history.undoCount == undoCount + 1)
+        #expect(session.history.undoName == "Flatten Image")
+
+        session.undo()
+        #expect(session.document?.layers.map(\.id) == [red, green])
+    }
+
+    @Test func layerStyleCopyPasteAndClearActOnEveryStyleableSelectedLayer() throws {
+        let session = EditorSession()
+        session.insert(try coloredAsset(CGColor(red: 1, green: 0, blue: 0, alpha: 1), name: "Red"))
+        let styled = try #require(session.activeLayerID)
+        session.insert(try coloredAsset(CGColor(red: 0, green: 1, blue: 0, alpha: 1), name: "Green"))
+        let plain = try #require(session.activeLayerID)
+        session.addGroup()
+        let group = try #require(session.activeLayerID)
+
+        #expect(!session.canCopyLayerStyle)
+        session.selectLayer(styled)
+        var effects = LayerEffects()
+        effects.shadow = ShadowEffect()
+        session.setEffects(effects, name: "Add Drop Shadow")
+        #expect(session.canCopyLayerStyle)
+        session.copyLayerStyle()
+        #expect(session.copiedLayerEffects?.shadow != nil)
+
+        session.selectLayers([plain, group], primary: plain)
+        #expect(session.canPasteLayerStyle)
+        let undoCount = session.history.undoCount
+        session.pasteLayerStyle()
+        #expect(session.document?.layers.first { $0.id == plain }?.effects?.shadow != nil)
+        #expect(session.document?.layers.first { $0.id == group }?.effects == nil, "a group can't hold effects")
+        #expect(session.history.undoCount == undoCount + 1, "one undo step, even with two targets")
+        session.undo()
+        #expect(session.document?.layers.first { $0.id == plain }?.effects == nil)
+
+        session.selectLayers([styled, plain], primary: styled)
+        session.pasteLayerStyle()
+        #expect(session.canClearLayerStyle)
+        session.clearLayerStyle()
+        #expect(session.document?.layers.first { $0.id == styled }?.effects == nil)
+        #expect(session.document?.layers.first { $0.id == plain }?.effects == nil)
+        #expect(!session.canClearLayerStyle)
+    }
+
+    @Test func toggleOtherLayersVisibilitySoloAndRestoreAsOneUndoStep() throws {
+        let session = sessionWithThreeLayers()
+        let layers = try #require(session.document?.layers)
+        let (first, second, third) = (layers[0].id, layers[1].id, layers[2].id)
+        #expect(session.canToggleOtherLayers)
+        #expect(session.hasOtherVisibleLayers(than: first))
+
+        let undoCount = session.history.undoCount
+        session.toggleOtherLayersVisibility(first)
+        #expect(session.document?.layers.first { $0.id == first }?.isVisible == true)
+        #expect(session.document?.layers.first { $0.id == second }?.isVisible == false)
+        #expect(session.document?.layers.first { $0.id == third }?.isVisible == false)
+        #expect(session.history.undoCount == undoCount + 1)
+        #expect(session.history.undoName == "Hide Other Layers")
+        #expect(!session.hasOtherVisibleLayers(than: first))
+
+        // Everything else is already hidden, so the same command brings it all back.
+        session.toggleOtherLayersVisibility(first)
+        #expect(session.document?.layers.allSatisfy { $0.isVisible } == true)
+        #expect(session.history.undoName == "Show Other Layers")
+
+        session.undo()
+        #expect(session.document?.layers.first { $0.id == second }?.isVisible == false)
+        session.undo()
+        #expect(session.document?.layers.allSatisfy { $0.isVisible } == true)
     }
 }

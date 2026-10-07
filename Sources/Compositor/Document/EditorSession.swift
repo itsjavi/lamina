@@ -272,6 +272,8 @@ final class EditorSession {
     /// The text's style before the font menu started previewing faces on it (see `previewFont`).
     @ObservationIgnored var fontPreviewOriginal: LayerTextStyle?
     var selectionFeatherAmount = 2
+    /// Edit › Stroke's settings, kept for the next time.
+    var strokeOptions = StrokeOptions()
     var wandSettings = WandSettings()
     var objectSelectionSettings = ObjectSelectionSettings()
     var showsPixelGrid = ToolDefaults.bool("pixelGrid", true) { didSet { ToolDefaults.set(showsPixelGrid, "pixelGrid") } }
@@ -624,7 +626,8 @@ final class EditorSession {
     private func restore(_ snapshot: DocumentHistory.Snapshot) {
         cancelCrop()
         cancelGradient()
-        let changedCanvas = document?.id != snapshot.document?.id
+        // A new document, or this one at another size (Canvas Size, Image Size, Rotate Canvas undone or redone).
+        let changedCanvas = document?.id != snapshot.document?.id || document?.size != snapshot.document?.size
         let keepMaskTarget = isMaskSelected && activeLayerID == snapshot.activeLayerID
         document = snapshot.document
         activeLayerID = snapshot.activeLayerID
@@ -708,6 +711,34 @@ final class EditorSession {
         beginEdit(document?.layers[index].isVisible == true ? "Hide Layer" : "Show Layer")
         defer { endEdit() }
         document?.layers[index].isVisible.toggle()
+    }
+
+    /// Whether some layer other than `id` still actually shows on the canvas — its own visibility and every
+    /// folder around it. Decides which way Option-click on an eye (or its context-menu equivalent) goes.
+    func hasOtherVisibleLayers(than id: UUID) -> Bool {
+        guard let document else { return false }
+        let visible = document.effectiveVisibleIDs, kept = soloKeeps(id)
+        return document.layers.contains { !kept.contains($0.id) && visible.contains($0.id) }
+    }
+    /// What soloing `id` leaves as it is: the folders around it, without which it wouldn't show, and what it holds.
+    private func soloKeeps(_ id: UUID) -> Set<UUID> {
+        var kept = descendantIDs(of: id).union([id])
+        var parent = document?.layers.first { $0.id == id }?.parentID
+        while let folder = parent, kept.insert(folder).inserted { parent = document?.layers.first { $0.id == folder }?.parentID }
+        return kept
+    }
+    var canToggleOtherLayers: Bool { canEditLayers && (document?.layers.count ?? 0) > 1 }
+    /// Solos `id` by hiding every other layer, or — once everything else is already hidden — brings them all
+    /// back, each at its own flag; one undo step either way, as Photoshop's Option-click on an eye does.
+    func toggleOtherLayersVisibility(_ id: UUID) {
+        guard canToggleOtherLayers, let document, document.layers.contains(where: { $0.id == id }) else { return }
+        let hide = hasOtherVisibleLayers(than: id), kept = soloKeeps(id)
+        let others = document.layers.indices.filter { !kept.contains(document.layers[$0].id) }
+        guard !others.isEmpty else { return }
+        finishOpacityEdit()
+        beginEdit(hide ? "Hide Other Layers" : "Show Other Layers")
+        for i in others { self.document?.layers[i].isVisible = !hide }
+        endEdit()
     }
 
     /// Photoshop's eye swipe: pressing an eye shows or hides that layer, and dragging over other eyes gives them the

@@ -139,7 +139,5 @@ private struct TransformValueField: View {
     }
     private func sync() { text = Self.formatted(Double(value)) }
     /// No trailing zeros on a whole number, two decimals otherwise.
-    static func formatted(_ value: Double) -> String {
-        abs(value - value.rounded()) < 0.005 ? String(Int(value.rounded())) : String(format: "%.2f", value)
-    }
+    static func formatted(_ value: Double) -> String { NumberLabel.upToTwoDecimals(value) }
 }

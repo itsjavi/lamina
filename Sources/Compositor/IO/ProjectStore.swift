@@ -34,7 +34,7 @@ nonisolated struct ProjectLayerRecord: Codable, Sendable {
     let id: UUID
     let name: String
     var isVisible: Bool
-    let transform: LayerTransform
+    var transform: LayerTransform
     let imageFile: String?
     var parentID: UUID? = nil
     var isGroup: Bool? = nil
@@ -53,6 +53,45 @@ nonisolated struct ProjectLayerRecord: Codable, Sendable {
     /// The stroke and drop shadow drawn around the layer.
     var effects: LayerEffects? = nil
     var text: LayerTextStyle? = nil
+}
+
+extension ProjectManifest {
+    /// Layer and mask rotations, and the hue bands of Hue/Saturation layers, brought within one turn. A project
+    /// written by hand or by an agent can hold any finite angle; whole extra turns change nothing that is drawn,
+    /// only the number an inspector shows, and an angle far past a turn has lost the precision it needs.
+    var anglesWithinOneTurn: ProjectManifest {
+        var result = self
+        for index in result.layers.indices {
+            result.layers[index].transform = result.layers[index].transform.withinOneTurn
+            result.layers[index].maskPlacement = result.layers[index].maskPlacement?.withinOneTurn
+            if let bands = result.layers[index].adjustment?.hsvSettings?.bands {
+                result.layers[index].adjustment?.hsvSettings?.bands = bands.mapValues(\.withinOneTurn)
+            }
+        }
+        return result
+    }
+}
+
+extension LayerTransform {
+    /// The same placement with its rotation within one turn either way.
+    var withinOneTurn: LayerTransform {
+        var result = self
+        if abs(rotation) > 360 { result.rotation = rotation.truncatingRemainder(dividingBy: 360) }
+        return result
+    }
+}
+
+extension HueBand {
+    /// The same band with every handle in 0…360, where the panel draws and moves them.
+    var withinOneTurn: HueBand {
+        func wrap(_ degrees: Double) -> Double {
+            guard !(0...360).contains(degrees) else { return degrees }
+            let remainder = degrees.truncatingRemainder(dividingBy: 360)
+            return remainder < 0 ? remainder + 360 : remainder
+        }
+        return HueBand(falloffStart: wrap(falloffStart), rangeStart: wrap(rangeStart),
+                       rangeEnd: wrap(rangeEnd), falloffEnd: wrap(falloffEnd))
+    }
 }
 
 nonisolated struct ProjectSnapshot: @unchecked Sendable {
@@ -147,7 +186,7 @@ actor ProjectStore {
         guard try url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true else { throw ProjectError.invalid }
         let metadataURL = url.appendingPathComponent("manifest.json")
         try checkFile(metadataURL, inside: url, maximumBytes: 4 * 1024 * 1024)
-        let manifest: ProjectManifest
+        var manifest: ProjectManifest
         let metadata = try Data(contentsOf: metadataURL)
         let header: Header
         do { header = try JSONDecoder().decode(Header.self, from: metadata) }
@@ -157,6 +196,7 @@ actor ProjectStore {
         do { manifest = try JSONDecoder().decode(ProjectManifest.self, from: metadata) }
         catch { throw ProjectError.invalid }
         try validate(manifest)
+        manifest = manifest.anglesWithinOneTurn
         var images: [UUID: ImportedImage] = [:]
         var masks: [UUID: ImportedImage] = [:]
         var pixels = 0, maskPixels = 0

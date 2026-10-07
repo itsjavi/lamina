@@ -1,4 +1,6 @@
 import AppKit
+import ImageIO
+import UniformTypeIdentifiers
 
 /// Pixels copied from the canvas, with where they came from so Paste can put them back in place.
 struct PixelClipboard {
@@ -135,25 +137,68 @@ extension EditorSession {
         await clearSelectedPixels()
     }
 
-    var canPaste: Bool {
+    var canPaste: Bool { canPaste(from: .general) }
+
+    func canPaste(from pasteboard: NSPasteboard) -> Bool {
         guard document != nil, canEditLayers else { return false }
-        if let pixelClipboard, NSPasteboard.general.changeCount == pixelClipboard.changeCount { return true }
-        return NSPasteboard.general.canReadObject(forClasses: [NSImage.self], options: nil)
+        if let pixelClipboard, pasteboard.changeCount == pixelClipboard.changeCount { return true }
+        return pasteboard.canReadObject(forClasses: [NSImage.self], options: nil)
     }
 
     /// Cmd-V: pastes as a new layer above the active one. Pixels copied here go back exactly
-    /// where they came from; images copied in other apps are centered.
-    func paste() {
-        guard canPaste, let document else { return }
-        let pasteboard = NSPasteboard.general
+    /// where they came from; images copied in other apps are centered. An image the document couldn't be saved
+    /// with is refused with a message, before it is decoded.
+    func paste(from pasteboard: NSPasteboard = .general) {
+        guard canPaste(from: pasteboard), let document else { return }
         if let clip = pixelClipboard, pasteboard.changeCount == clip.changeCount {
             addPixelLayer(clip.image, at: clip.origin, name: nextLayerName(), editName: "Paste")
-        } else if let external = NSImage(pasteboard: pasteboard)?.cgImage(forProposedRect: nil, context: nil, hints: nil),
-                  let image = try? Self.sRGBCopy(of: external) {
+            return
+        }
+        do {
+            guard let image = try Self.pastedImage(from: pasteboard, joining: layerFootprint) else { NSSound.beep(); return }
             let origin = CGPoint(x: floor((document.size.width - CGFloat(image.width)) / 2),
                                  y: floor((document.size.height - CGFloat(image.height)) / 2))
             addPixelLayer(image, at: origin, name: nextLayerName(), editName: "Paste")
-        } else { NSSound.beep() }
+        } catch { brushError = error.localizedDescription }
+    }
+
+    /// The image another app put on `pasteboard`, in the working sRGB format; nil when there is none. Its size is
+    /// read and admitted to a document holding `current` (`DocumentLimits.admit`) before its pixels are decoded or
+    /// drawn, so an oversized paste costs nothing. Bitmaps are decoded with ImageIO, turned upright; anything else
+    /// NSImage can draw (PDF and other vector data) is drawn at its own size.
+    static func pastedImage(from pasteboard: NSPasteboard, joining current: DocumentLimits.Footprint) throws -> CGImage? {
+        func admit(_ width: Int, _ height: Int) throws {
+            var added = DocumentLimits.Footprint()
+            added.add(image: CGSize(width: width, height: height), mask: nil)
+            try DocumentLimits.admit(added, to: current)
+        }
+        let bitmaps: [NSPasteboard.PasteboardType] = [.png, .tiff, .init(UTType.jpeg.identifier), .init(UTType.heic.identifier)]
+        if let type = pasteboard.availableType(from: bitmaps), let data = pasteboard.data(forType: type) {
+            guard let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary),
+                  let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+                  let width = properties[kCGImagePropertyPixelWidth] as? Int,
+                  let height = properties[kCGImagePropertyPixelHeight] as? Int,
+                  width > 0, height > 0 else { throw ImageImportError.unreadable }
+            try admit(width, height)
+            // At full size, turned upright by its orientation as an imported image is.
+            guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceThumbnailMaxPixelSize: max(width, height),
+                kCGImageSourceShouldCacheImmediately: true,
+            ] as CFDictionary) else { throw ImageImportError.unreadable }
+            return try sRGBCopy(of: image)
+        }
+        guard let vector = NSImage(pasteboard: pasteboard) else { return nil }
+        // Drawn at its size in points, which has to fit before anything is drawn.
+        let size = vector.size
+        guard size.width.isFinite, size.height.isFinite, size.width >= 1, size.height >= 1 else { throw ImageImportError.unreadable }
+        try admit(Int(min(size.width.rounded(.up), DocumentLimits.maxSideExtent + 1)),
+                  Int(min(size.height.rounded(.up), DocumentLimits.maxSideExtent + 1)))
+        var rect = CGRect(origin: .zero, size: size)
+        guard let drawn = vector.cgImage(forProposedRect: &rect, context: nil, hints: nil) else { throw ImageImportError.unreadable }
+        try admit(drawn.width, drawn.height)
+        return try sRGBCopy(of: drawn)
     }
 
     /// Cmd-J (Layer via Copy): the selection's pixels become a new layer in place; with no
@@ -186,6 +231,10 @@ extension EditorSession {
     /// original, as Photoshop's do. The copies end up selected.
     func duplicateLayers(_ ids: [UUID], editName: String = "Duplicate Layer") {
         guard canEditLayers, !ids.isEmpty else { return }
+        // Everything the copies will hold, folder contents included, has to fit before any is made.
+        let copied = ids.reduce(into: Set(ids)) { $0.formUnion(descendantIDs(of: $1)) }
+        do { try admitLayers(Self.footprint(of: (document?.layers ?? []).filter { copied.contains($0.id) })) }
+        catch { brushError = error.localizedDescription; return }
         let active = activeLayerID
         beginEdit(editName)
         var copiesOf: [UUID: UUID] = [:]
@@ -249,7 +298,11 @@ extension EditorSession {
     /// Inserts pixels as a new layer above the active one (inside its folder), all in one undo
     /// step. Pasting drops the selection, as in Photoshop; a drawn shape keeps it.
     func addPixelLayer(_ image: CGImage, at origin: CGPoint, name: String, editName: String, dropsSelection: Bool = true, shape: LayerShape? = nil, text: LayerText? = nil) {
-        guard let document, let thumbnail = try? PixelInvert.thumbnail(of: image) else { return }
+        guard let document else { return }
+        var added = DocumentLimits.Footprint()
+        added.add(image: CGSize(width: image.width, height: image.height), mask: nil)
+        do { try admitLayers(added) } catch { brushError = error.localizedDescription; return }
+        guard let thumbnail = try? PixelInvert.thumbnail(of: image) else { return }
         var layer = ImageLayer(asset: ImportedImage(image: image, thumbnail: thumbnail, name: name), origin: origin)
         layer.name = name
         layer.shape = shape
@@ -262,6 +315,24 @@ extension EditorSession {
         if dropsSelection { self.document?.selection = nil }
         activeLayerID = layer.id
         endEdit()
+    }
+
+    /// What the document's layers hold now, counted as saving counts it.
+    var layerFootprint: DocumentLimits.Footprint { Self.footprint(of: document?.layers ?? []) }
+
+    static func footprint(of layers: some Sequence<ImageLayer>) -> DocumentLimits.Footprint {
+        var footprint = DocumentLimits.Footprint()
+        for layer in layers {
+            footprint.add(image: layer.asset.map { CGSize(width: $0.image.width, height: $0.image.height) },
+                          mask: layer.mask.map { CGSize(width: $0.asset.image.width, height: $0.asset.image.height) })
+        }
+        return footprint
+    }
+
+    /// Throws unless the document could still be saved with `added` in it too: the one check that every way of
+    /// adding pixels inside the app (Paste, Layer via Copy, Duplicate, a new shape or text) goes through.
+    func admitLayers(_ added: DocumentLimits.Footprint) throws {
+        try DocumentLimits.admit(added, to: layerFootprint)
     }
 
     func nextLayerName() -> String {

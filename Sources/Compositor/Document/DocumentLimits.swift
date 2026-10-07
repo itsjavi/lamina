@@ -36,7 +36,56 @@ nonisolated enum DocumentLimits {
     static let documentPixelBudget = min(800_000_000,
         max(maxSurfacePixels, Int(clamping: ProcessInfo.processInfo.physicalMemory / 16)))
 
+    /// Most layers, folders and adjustments included, one document may hold.
+    static let maxLayers = 10_000
+
     /// The two ceilings as megapixels, for the messages that quote them back to the reader.
     static var maxSurfaceMegapixels: Int { maxSurfacePixels / 1_000_000 }
     static var documentBudgetMegapixels: Int { documentPixelBudget / 1_000_000 }
+
+    /// What a document's layers hold, counted the way saving counts it: every layer's own image and mask, even
+    /// when layers share one, since each is written to its own file.
+    struct Footprint: Equatable, Sendable {
+        var layers = 0
+        var pixels = 0
+        var maskPixels = 0
+        /// The longest side of any image or mask.
+        var longestSide = 0
+
+        /// Counts one layer with an image and a mask of these sizes (nil when it has none).
+        mutating func add(image: CGSize?, mask: CGSize?) {
+            layers += 1
+            for (size, isMask) in [(image, false), (mask, true)] {
+                guard let size else { continue }
+                let width = Int(size.width), height = Int(size.height)
+                if isMask { maskPixels += width * height } else { pixels += width * height }
+                longestSide = max(longestSide, width, height)
+            }
+        }
+    }
+
+    /// Throws unless a document holding `current` can take `added` as well and still be saved, which is what
+    /// importing asks too: at most `maxLayers` layers, no image or mask longer than `maxSide`, and the images, like
+    /// the masks, within `documentPixelBudget`. Paste and Duplicate go through this before they change anything.
+    static func admit(_ added: Footprint, to current: Footprint) throws {
+        guard added.longestSide <= maxSide else { throw DocumentLimitError.sideTooLong }
+        guard current.layers <= maxLayers - added.layers else { throw DocumentLimitError.tooManyLayers }
+        guard current.pixels <= documentPixelBudget - added.pixels,
+              current.maskPixels <= documentPixelBudget - added.maskPixels else { throw DocumentLimitError.overBudget }
+    }
+}
+
+/// Why pixels were refused before they entered a document: with them, it could no longer be saved.
+nonisolated enum DocumentLimitError: LocalizedError, Equatable {
+    case sideTooLong, tooManyLayers, overBudget
+    var errorDescription: String? {
+        switch self {
+        case .sideTooLong:
+            "That image is longer than \(DocumentLimits.maxSide.formatted()) pixels on a side, the most a layer can be."
+        case .tooManyLayers:
+            "A document can hold up to \(DocumentLimits.maxLayers.formatted()) layers."
+        case .overBudget:
+            "That would take this document past its \(DocumentLimits.documentBudgetMegapixels)-megapixel limit, so it couldn’t be saved."
+        }
+    }
 }

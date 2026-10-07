@@ -3,6 +3,18 @@ import SwiftUI
 struct BrushControls: View {
     @Bindable var session: EditorSession
     var body: some View {
+        // With everything the Brush has (Flow, the pressure buttons, Dodge and Burn's options) the bar is wider than
+        // many windows. Where it doesn't fit, the sliders go and their fields stay, each still scrubbable by its label,
+        // rather than the bar being cut off.
+        ViewThatFits(in: .horizontal) {
+            controls(sliders: true)
+            controls(sliders: false)
+        }
+        .padding(.horizontal, 18).toolHeaderBar().releasesFocusOnCommit(session)
+        .disabled(session.showsBusy)
+    }
+
+    private func controls(sliders: Bool) -> some View {
         HStack(spacing: 12) {
             Text(session.tool == .spotHealing ? "Spot Healing" : session.tool == .cloneStamp ? "Clone Stamp" : session.tool == .blur ? "Smear" : session.brushMode == .erase ? "Eraser" : session.brushMode == .paint ? "Brush" : session.brushMode.rawValue).font(ToolHeaderStyle.titleFont)
             if session.tool == .brush {
@@ -47,8 +59,15 @@ struct BrushControls: View {
                     session.brushSettings.diameter = value.isFinite ? min(2000, max(1, value)) : 40
                 }
                 .unitSuffix("px")
+            // A pen's pressure, as Photoshop's two buttons: one beside Size, one beside Opacity.
+            if session.tool == .brush {
+                Toggle(isOn: $session.brushSettings.pressureSize) { Image(systemName: "scribble.variable") }
+                    .toggleStyle(.button)
+                    .help("Pen pressure sets the size: a light touch paints a thinner line. A mouse or trackpad always paints full size.")
+                    .accessibilityLabel("Pressure for size")
+            }
             Text("Hardness").scrubbable(sensitivity: 0.01, value: $session.brushSettings.hardness, range: 0...1)
-            Slider(value: $session.brushSettings.hardness, in: 0...1).frame(width: 100)
+            if sliders { Slider(value: $session.brushSettings.hardness, in: 0...1).frame(width: 100) }
             TextField("Hardness", value: Binding<Double>(get: { Double(session.brushSettings.hardness * 100) },
                 set: { session.brushSettings.hardness = $0.isFinite ? CGFloat(min(1, max(0, $0 / 100))) : 1 }),
                 format: .number.precision(.fractionLength(0)))
@@ -58,7 +77,7 @@ struct BrushControls: View {
                 .unitSuffix("%")
             Text(session.tool == .blur ? "Strength" : "Opacity")
                 .scrubbable(sensitivity: 0.01, value: $session.brushSettings.opacity, range: 0.01...1)
-            Slider(value: $session.brushSettings.opacity, in: 0.01...1).frame(width: 100)
+            if sliders { Slider(value: $session.brushSettings.opacity, in: 0.01...1).frame(width: 100) }
             TextField("Opacity", value: Binding<Double>(get: { Double(session.brushSettings.opacity * 100) },
                 set: { session.brushSettings.opacity = $0.isFinite ? CGFloat(min(100, max(1, $0)) / 100) : 1 }),
                 format: .number.precision(.fractionLength(0)))
@@ -67,12 +86,31 @@ struct BrushControls: View {
                             change: { session.brushSettings.opacity = CGFloat(min(100, max(1, $0)) / 100) })
                 .help("Press 1–9 for 10–90%, 0 for 100%")
                 .unitSuffix("%")
+            if session.tool == .brush {
+                Toggle(isOn: $session.brushSettings.pressureOpacity) { Image(systemName: "drop.halffull") }
+                    .toggleStyle(.button)
+                    .help("Pen pressure sets the opacity: a light touch paints fainter, up to the brush’s Opacity. A mouse or trackpad always paints at full opacity.")
+                    .accessibilityLabel("Pressure for opacity")
+                // Photoshop's Flow: how much each dab lays down, building up toward Opacity as the stroke goes over itself.
+                // A field without a slider, like Size, so the bar stays narrow enough with everything the Brush has.
+                Text("Flow").scrubbable(sensitivity: 0.01, value: $session.brushSettings.flow, range: 0.01...1)
+                TextField("Flow", value: Binding<Double>(get: { Double(session.brushSettings.flow * 100) },
+                    set: { session.brushSettings.flow = $0.isFinite ? CGFloat(min(100, max(1, $0)) / 100) : 1 }),
+                    format: .number.precision(.fractionLength(0)))
+                    .frame(width: 42).textFieldStyle(.roundedBorder)
+                    .arrowSteps(value: { Double(session.brushSettings.flow * 100) },
+                                change: { session.brushSettings.flow = CGFloat(min(100, max(1, $0)) / 100) })
+                    .help("How much paint each dab lays down. Going over the same place in one stroke builds it up, up to the Opacity")
+                    .unitSuffix("%")
+            }
             // Blur softens by a radius of its own, apart from how strongly it lays the softening down.
             if session.tool == .blur, session.blurMode == .blur {
                 Text("Radius").scrubbable(sensitivity: 0.1, value: $session.brushSettings.blurRadius, range: 0.5...50)
                 // The slider covers everyday radii; typing or scrubbing reaches up to 50.
-                Slider(value: Binding(get: { min(20, session.brushSettings.blurRadius) },
-                                      set: { session.brushSettings.blurRadius = $0 }), in: 0.5...20).frame(width: 100)
+                if sliders {
+                    Slider(value: Binding(get: { min(20, session.brushSettings.blurRadius) },
+                                          set: { session.brushSettings.blurRadius = $0 }), in: 0.5...20).frame(width: 100)
+                }
                 TextField("Radius", value: Binding<Double>(get: { Double(session.brushSettings.blurRadius) },
                     set: { session.brushSettings.blurRadius = $0.isFinite ? CGFloat(min(50, max(0.5, $0))) : 5 }),
                     format: .number.precision(.fractionLength(0...1)))
@@ -90,7 +128,6 @@ struct BrushControls: View {
                 .fixedSize()
                 .help("Work mostly on the dark, middle or light tones; the rest are touched less the further they are")
                 Text("Exposure").scrubbable(sensitivity: 0.01, value: $session.toneExposure, range: 0...1)
-                Slider(value: $session.toneExposure, in: 0...1).frame(width: 100)
                 TextField("Exposure", value: Binding<Double>(get: { Double(session.toneExposure * 100) },
                     set: { session.toneExposure = $0.isFinite ? CGFloat(min(100, max(0, $0)) / 100) : 0.5 }),
                     format: .number.precision(.fractionLength(0)))
@@ -104,7 +141,7 @@ struct BrushControls: View {
             if session.tool == .brush {
                 Text("Smoothing")
                     .scrubbable(sensitivity: 1, value: $session.brushSettings.smoothing, range: 0...100)
-                Slider(value: $session.brushSettings.smoothing, in: 0...100).frame(width: 100)
+                if sliders { Slider(value: $session.brushSettings.smoothing, in: 0...100).frame(width: 100) }
                 TextField("Smoothing", value: Binding<Double>(get: { Double(session.brushSettings.smoothing) },
                     set: { session.brushSettings.smoothing = $0.isFinite ? CGFloat(min(100, max(0, $0))) : 0 }),
                     format: .number.precision(.fractionLength(0)))
@@ -143,8 +180,6 @@ struct BrushControls: View {
             }
             if session.isMaskSelected { Text("Mask").foregroundStyle(.secondary) }
         }
-        .padding(.horizontal, 18).toolHeaderBar().releasesFocusOnCommit(session)
-        .disabled(session.showsBusy)
     }
 }
 

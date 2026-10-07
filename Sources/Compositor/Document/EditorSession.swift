@@ -191,6 +191,8 @@ final class EditorSession {
     @ObservationIgnored var brushAnchor: CGPoint?
     /// The pointer itself, so a smoothed stroke can catch up to it when the button is released.
     @ObservationIgnored var brushPointer: CGPoint?
+    /// The pen's latest pressure in this stroke; 1 for a mouse. Events that carry none (the release) keep it.
+    @ObservationIgnored var brushPressure: CGFloat = 1
     @ObservationIgnored var maskDistortPreviewCache: MaskDistortPreviewCache?
     /// The last rounded rectangle drawn for a transform in progress, by layer, with the size it was drawn at.
     @ObservationIgnored var shapeTransformPreviewCache: [UUID: (size: CGSize, image: CGImage)] = [:]
@@ -244,6 +246,9 @@ final class EditorSession {
             }
         }
         result.smoothing = brushSettings.smoothing
+        result.flow = brushSettings.flow
+        result.pressureSize = brushSettings.pressureSize
+        result.pressureOpacity = brushSettings.pressureOpacity
         result.mode = brushMode
         result.toneRange = toneRange
         result.toneExposure = toneExposure
@@ -263,6 +268,9 @@ final class EditorSession {
         settings.hardness = tip.hardness
         settings.opacity = tip.opacity
         settings.smoothing = defaults.smoothing
+        settings.flow = defaults.flow
+        settings.pressureSize = defaults.pressureSize
+        settings.pressureOpacity = defaults.pressureOpacity
         settings.red = defaults.foreground.red
         settings.green = defaults.foreground.green
         settings.blue = defaults.foreground.blue

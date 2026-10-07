@@ -82,3 +82,19 @@ void brush_tone(uint8_t *rgba, size_t width, size_t height, size_t stride, int l
         }
     }
 }
+
+void coverage_remap(uint8_t *gray, size_t stride, size_t width, size_t height, const uint8_t levels[256]) {
+    for (size_t y = 0; y < height; ++y) {
+        uint8_t *row = gray + y * stride;
+        for (size_t x = 0; x < width; ++x) row[x] = levels[row[x]];
+    }
+}
+
+void coverage_multiply(const uint8_t *coverage, size_t coverageStride, const uint8_t *cap, size_t capStride,
+                       uint8_t *out, size_t outStride, size_t width, size_t height) {
+    for (size_t y = 0; y < height; ++y) {
+        const uint8_t *a = coverage + y * coverageStride, *b = cap + y * capStride;
+        uint8_t *o = out + y * outStride;
+        for (size_t x = 0; x < width; ++x) o[x] = (uint8_t)((a[x] * b[x] + 127u) / 255u);
+    }
+}

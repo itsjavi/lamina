@@ -11,4 +11,9 @@ void layer_restore_alpha(uint8_t *rgba, size_t stride, const uint8_t *alpha, siz
 // smooth weight for its brightness in `range` (0 shadows, 1 midtones, 2 highlights). Alpha is left as it is, so
 // transparent pixels stay transparent. Premultiplied RGBA, in place.
 void brush_tone(uint8_t *rgba, size_t width, size_t height, size_t stride, int lightens, int range, double strength);
+// Grayscale coverage mapped through `levels`, in place: the brush tip as one flow dab lays it.
+void coverage_remap(uint8_t *gray, size_t stride, size_t width, size_t height, const uint8_t levels[256]);
+// `out` = `coverage` × `cap` / 255: a stroke shown through the firmest pen press that reached each pixel.
+void coverage_multiply(const uint8_t *coverage, size_t coverageStride, const uint8_t *cap, size_t capStride,
+                       uint8_t *out, size_t outStride, size_t width, size_t height);
 #endif

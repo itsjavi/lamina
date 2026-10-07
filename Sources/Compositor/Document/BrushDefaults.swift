@@ -1,6 +1,7 @@
 import Foundation
 
-/// The brush tips, the Brush's mode (with Dodge and Burn's range and exposure) and the two colors belong to the person too (`ToolDefaults`): a new document
+/// The brush tips, the Brush's flow, pressure buttons and mode (with Dodge and Burn's range and exposure) and the two
+/// colors belong to the person too (`ToolDefaults`): a new document
 /// starts with them as they were last left, in any document, as Photoshop's do.
 nonisolated struct BrushDefaults: Equatable, Sendable {
     struct Tip: Equatable, Sendable {
@@ -11,6 +12,9 @@ nonisolated struct BrushDefaults: Equatable, Sendable {
     /// One tip per family: Brush and Spot Healing, Clone Stamp, then Smear. The last two start soft.
     var tips = [Tip(diameter: 40, hardness: 1, opacity: 1), Tip(diameter: 40, hardness: 0, opacity: 1), Tip(diameter: 40, hardness: 0, opacity: 1)]
     var smoothing: CGFloat = 0
+    var flow: CGFloat = 1
+    var pressureSize = false
+    var pressureOpacity = false
     var mode = BrushToolMode.paint
     var toneRange = ToneRange.midtones
     var toneExposure: CGFloat = 0.5
@@ -32,6 +36,9 @@ nonisolated struct BrushDefaults: Equatable, Sendable {
                                       opacity: number(name + "Opacity", fallback.opacity, in: 0.01...1))
         }
         result.smoothing = number("brushSmoothing", result.smoothing, in: 0...100)
+        result.flow = number("brushFlow", result.flow, in: 0.01...1)
+        result.pressureSize = ToolDefaults.bool("brushPressureSize", result.pressureSize, in: store)
+        result.pressureOpacity = ToolDefaults.bool("brushPressureOpacity", result.pressureOpacity, in: store)
         result.mode = BrushToolMode(rawValue: ToolDefaults.string("brushMode", "", in: store)) ?? result.mode
         result.toneRange = ToneRange(rawValue: ToolDefaults.string("toneRange", "", in: store)) ?? result.toneRange
         result.toneExposure = number("toneExposure", result.toneExposure, in: 0...1)
@@ -48,6 +55,9 @@ nonisolated struct BrushDefaults: Equatable, Sendable {
             ToolDefaults.set(Double(tips[family].opacity), name + "Opacity", in: store)
         }
         if smoothing != old.smoothing { ToolDefaults.set(Double(smoothing), "brushSmoothing", in: store) }
+        if flow != old.flow { ToolDefaults.set(Double(flow), "brushFlow", in: store) }
+        if pressureSize != old.pressureSize { ToolDefaults.set(pressureSize, "brushPressureSize", in: store) }
+        if pressureOpacity != old.pressureOpacity { ToolDefaults.set(pressureOpacity, "brushPressureOpacity", in: store) }
         if mode != old.mode { ToolDefaults.set(mode.rawValue, "brushMode", in: store) }
         if toneRange != old.toneRange { ToolDefaults.set(toneRange.rawValue, "toneRange", in: store) }
         if toneExposure != old.toneExposure { ToolDefaults.set(Double(toneExposure), "toneExposure", in: store) }

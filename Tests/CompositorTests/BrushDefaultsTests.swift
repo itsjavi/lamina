@@ -81,6 +81,8 @@ struct BrushDefaultsTests {
         first.brushSettings.hardness = 0.25
         first.brushSettings.opacity = 0.7
         first.brushSettings.smoothing = 20
+        first.brushSettings.flow = 0.35
+        first.brushSettings.pressureSize = true
         first.brushMode = .erase
         first.toneRange = .highlights
         first.toneExposure = 0.8

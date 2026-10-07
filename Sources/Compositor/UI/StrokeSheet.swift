@@ -29,8 +29,9 @@ struct StrokeSheet: View {
                 Text("Width").frame(minWidth: 60, alignment: .leading)
                     .scrubbable(sensitivity: 1, value: Binding<Int>(get: { width ?? 1 }, set: { input = String($0) }),
                                 range: 1...maximum)
+                // No `step`: on macOS it draws a tick for every pixel, and the binding already rounds.
                 Slider(value: Binding(get: { Double(width ?? 1) }, set: { input = String(Int($0.rounded())) }),
-                       in: 1...Double(maximum), step: 1)
+                       in: 1...Double(maximum))
                 TextField("Width", text: $input)
                     .frame(width: 56).textFieldStyle(.roundedBorder)
                     .multilineTextAlignment(.trailing).focused($focused)

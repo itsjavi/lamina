@@ -24,6 +24,20 @@ struct CameraRawSpeedTests {
         return try #require(context.makeImage())
     }
 
+    /// A photo-like opaque picture: smooth gradients with fine detail over them.
+    static func photo(width: Int, height: Int) throws -> CGImage {
+        let context = try BrushRaster.context(width: width, height: height, mask: false)
+        let bytes = try #require(context.data).assumingMemoryBound(to: UInt8.self)
+        for y in 0..<height {
+            for x in 0..<width {
+                let p = y * context.bytesPerRow + x * 4
+                bytes[p] = UInt8((x / 8 + y) % 256); bytes[p + 1] = UInt8((x + y / 4) % 256)
+                bytes[p + 2] = UInt8((x * y / 64) % 256); bytes[p + 3] = 255
+            }
+        }
+        return try #require(context.makeImage())
+    }
+
     /// FNV-1a over each row's pixels (not its padding).
     static func hash(_ image: CGImage) throws -> UInt64 {
         let data = try #require(image.dataProvider?.data)
@@ -84,6 +98,47 @@ struct CameraRawSpeedTests {
         let hash = try Self.hash(try settings.apply(try Self.picture(width: width, height: height)))
         #expect(hash == expected, "\(width) × \(height): \(hash)")
     }
+
+    /// The histogram and vectorscope only need the shape of the tones, so they count a copy no larger than 512 px
+    /// rather than every pixel of the preview. A smaller picture is counted as it is.
+    @Test func scopesCountASmallCopy() throws {
+        var settings = FilterSettings()
+        settings.cameraRaw.exposure = 0.3
+        func counted(_ image: CGImage) throws -> Double {
+            let job = FilterJob(kind: .cameraRaw, image: image, settings: settings, scale: 1, selection: nil, mapping: .identity)
+            return try CameraRawScope.preview(job).scope.red.reduce(0, +)
+        }
+        let photo = try counted(try Self.photo(width: 2048, height: 1365))
+        #expect(photo <= 512 * 342 && photo > 512 * 340)
+        let context = try BrushRaster.context(width: 100, height: 60, mask: false)
+        context.setFillColor(CGColor(srgbRed: 0.4, green: 0.5, blue: 0.6, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: 100, height: 60))
+        #expect(try counted(try #require(context.makeImage())) == 6000)
+    }
+
+    /// Blown highlights scattered through the picture (specular glints, noise pushed past white) must still show as
+    /// the histogram's spike at white: the copy picks pixels rather than averaging them into their neighbors.
+    @Test func scopesStillShowScatteredClipping() throws {
+        let width = 2048, height = 1365
+        let context = try BrushRaster.context(width: width, height: height, mask: false)
+        let bytes = try #require(context.data).assumingMemoryBound(to: UInt8.self)
+        var white = 0
+        for y in 0..<height {
+            for x in 0..<width {
+                let p = y * context.bytesPerRow + x * 4
+                let clipped = (x * 7 + y * 13) % 97 == 0
+                if clipped { white += 1 }
+                let level: UInt8 = clipped ? 255 : 110
+                bytes[p] = level; bytes[p + 1] = level; bytes[p + 2] = level; bytes[p + 3] = 255
+            }
+        }
+        let job = FilterJob(kind: .cameraRaw, image: try #require(context.makeImage()), settings: FilterSettings(), scale: 1,
+                            selection: nil, mapping: .identity)
+        let scope = try CameraRawScope.preview(job).scope
+        let share = scope.red[255] / scope.red.reduce(0, +)
+        let full = Double(white) / Double(width * height)
+        #expect(abs(share - full) < full * 0.3, "white in the scope \(share), in the picture \(full)")
+    }
 }
 
 /// How long Camera Raw takes, one test at a time: run side by side, each would get only part of the cores. Off unless
@@ -92,20 +147,6 @@ struct CameraRawSpeedTests {
 @MainActor @Suite(.serialized, .enabled(if: ProcessInfo.processInfo.environment["CAMERA_RAW_BENCHMARK"] == "1",
                                        "set CAMERA_RAW_BENCHMARK=1 to time Camera Raw"))
 struct CameraRawTimingTests {
-    /// A photo-like opaque picture: smooth gradients with fine detail over them.
-    static func photo(width: Int, height: Int) throws -> CGImage {
-        let context = try BrushRaster.context(width: width, height: height, mask: false)
-        let bytes = try #require(context.data).assumingMemoryBound(to: UInt8.self)
-        for y in 0..<height {
-            for x in 0..<width {
-                let p = y * context.bytesPerRow + x * 4
-                bytes[p] = UInt8((x / 8 + y) % 256); bytes[p + 1] = UInt8((x + y / 4) % 256)
-                bytes[p + 2] = UInt8((x * y / 64) % 256); bytes[p + 3] = 255
-            }
-        }
-        return try #require(context.makeImage())
-    }
-
     /// The best of five runs, in milliseconds: the least disturbed by whatever else the machine is doing.
     static func milliseconds(_ body: () throws -> Void) rethrows -> Double {
         var best = Double.infinity
@@ -121,7 +162,7 @@ struct CameraRawTimingTests {
     /// A 24-megapixel photo (6000 × 4000) in the Camera Raw panel: what one slider step costs on its preview copy,
     /// scopes included, and what applying the grade to the full image costs.
     @Test func twentyFourMegapixelPhoto() throws {
-        let photo = try Self.photo(width: 6000, height: 4000)
+        let photo = try CameraRawSpeedTests.photo(width: 6000, height: 4000)
         // The copy FilterEdit previews, no larger than its previewLimit.
         let factor = min(1, FilterEdit.previewLimit / CGFloat(max(photo.width, photo.height)))
         let width = Int(CGFloat(photo.width) * factor), height = Int(CGFloat(photo.height) * factor)

@@ -37,4 +37,6 @@ fork with upstream's feed and key would auto-update to upstream releases and rep
   window, as the app host did, and `ToolDefaults` recognizes tests by the missing `.app` bundle.
 - No SwiftUI previews or asset catalogs; the codebase had no previews and only the icon in its catalog.
 - Follow-ups: the Sparkle key and first release, a Core library, and Swift 6 language mode.
+- 2026-10-07: decision-2 renames the fork to Lamina and gives projects their own format, superseding the bundle id,
+  feed and `com.compositor.*` file identifiers above.
 

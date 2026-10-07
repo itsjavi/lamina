@@ -4,9 +4,10 @@ title: Extract the .comp format and PSD parsing into a UI-free CompositorCore
 status: To Do
 assignee: []
 created_date: '2026-10-07 17:48'
-updated_date: '2026-10-07 18:01'
+updated_date: '2026-10-07 20:36'
 labels: []
-dependencies: []
+dependencies:
+  - TASK-7
 references:
   - >-
     backlog/decisions/decision-1 -

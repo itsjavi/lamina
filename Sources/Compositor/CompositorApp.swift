@@ -307,6 +307,8 @@ struct CompositorApp: App {
                     }
                     .configuredKeyboardShortcut("g", modifiers: [.command, .option])
                     .disabled(session.activeLayerID.map { !session.canToggleClippingMask($0) } ?? true)
+                    Button("Apply Layer Mask") { session.applyLayerMask() }
+                        .disabled(!session.canApplyLayerMask)
                     Divider()
                     Button("Group Selected Layers") { session.groupSelectedLayers() }
                         .configuredKeyboardShortcut("g").disabled(!session.canEditLayers)
@@ -321,6 +323,9 @@ struct CompositorApp: App {
                     Button(session.activeLayer?.isVisible == false ? "Show Layer" : "Hide Layer") {
                         if let id = session.activeLayerID { session.toggleLayerVisibility(id) }
                     }.disabled(!session.canEditLayers || session.activeLayer == nil)
+                    Button(session.activeLayerID.map { session.hasOtherVisibleLayers(than: $0) } == false ? "Show All Other Layers" : "Hide All Other Layers") {
+                        if let id = session.activeLayerID { session.toggleOtherLayersVisibility(id) }
+                    }.disabled(!session.canToggleOtherLayers || session.activeLayer == nil)
                     Divider()
                     Button("Move Layer Up") { session.moveActiveLayer(by: 1) }
                         .configuredKeyboardShortcut("]").disabled(!session.canMoveActiveLayer(by: 1))
@@ -329,6 +334,11 @@ struct CompositorApp: App {
                     Group {
                         Button(session.mergeTitle) { session.mergeLayers() }
                             .configuredKeyboardShortcut("e").disabled(!session.canMergeLayers)
+                        // ⇧⌘E is already Export PNG's shortcut, so Merge Visible goes unbound rather than steal it.
+                        Button("Merge Visible") { session.mergeVisible() }
+                            .disabled(!session.canMergeVisible)
+                        Button("Flatten Image") { session.flattenImage() }
+                            .disabled(!session.canFlattenImage)
                         Divider()
                         Button("Flip Layer Horizontal") { session.flipLayers(horizontally: true) }
                             .disabled(!session.canTransform)
@@ -346,6 +356,14 @@ struct CompositorApp: App {
                             }
                         }
                             .disabled(!session.canDistributeLayers)
+                    }
+                    Menu("Layer Style") {
+                        Button("Copy Layer Style") { session.copyLayerStyle() }
+                            .disabled(!session.canCopyLayerStyle)
+                        Button("Paste Layer Style") { session.pasteLayerStyle() }
+                            .disabled(!session.canPasteLayerStyle)
+                        Button("Clear Layer Style") { session.clearLayerStyle() }
+                            .disabled(!session.canClearLayerStyle)
                     }
                     Divider()
                     Button(session.selectedEffect != nil ? "Delete " + session.selectedEffect!.kind.rawValue : session.isMaskSelected && session.activeLayer?.mask != nil ? "Delete Layer Mask" : session.selectedLayerIDs.count > 1 ? "Delete Layers" : "Delete Layer") {

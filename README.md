@@ -29,7 +29,8 @@ brew install --cask robbietilton-compositor
 - Clipping masks and folder masks
 - Adjustment layers: Hue/Saturation, Levels, Curves, Exposure, Gradient Map, Grain, Black & White, Color Balance, Invert, Gaussian Blur, Motion Blur and Noise
 - Layer effects: Stroke, Drop Shadow, Color Overlay, Inner Shadow, Outer Glow and Inner Glow, rendered on the GPU and editable at any time
-- Merge Down, Merge Layers and Merge Group (⌘E)
+- Merge Down, Merge Layers and Merge Group (⌘E), Merge Visible and Flatten Image
+- Apply Layer Mask, Copy and Paste Layer Style, and Show/Hide All Other Layers
 - Duplicate, rename inline, reorder and nest by drag and drop; Option-drag to duplicate; a right-click menu in the Layers panel
 - Copy and paste whole layers and folders (⌘C/⌘V with no selection), within a project or between projects, or drag them between projects
 
@@ -46,7 +47,7 @@ brew install --cask robbietilton-compositor
 - Rectangle and Ellipse Marquee, Freehand and Polygonal Lasso, and the Magic tool — Wand selects by color, Object traces whatever you click (Tab switches)
 - Select Subject, and Expand, Contract and Feather on any selection
 - Add to and subtract from selections, move the outline, or move and duplicate the pixels inside
-- Load a layer's pixels or a mask as a selection
+- Load a layer's pixels or a mask as a selection, or add it to, subtract it from or intersect it with the selection
 - Content-Aware Fill, which can also extend an image past its edges
 
 ### Painting and retouching

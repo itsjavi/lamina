@@ -108,12 +108,28 @@ struct NativeLayerList: NSViewRepresentable {
             return rows[row]
         }
 
-        func contextMenu(for row: Int) -> NSMenu? {
+        /// `onThumbnail`: the right-click landed on the layer's or the mask's thumbnail, which, as in Photoshop, also
+        /// offers to load what it holds as a selection, or to combine it with the selection.
+        func contextMenu(for row: Int, onThumbnail: Bool = false) -> NSMenu? {
             guard rows.indices.contains(row) else { return nil }
             if session.selectedLayerIDs.isEmpty {
                 session.selectLayer(rows[row].id)
             }
             let menu = NSMenu()
+
+            if onThumbnail {
+                let noun = session.isMaskSelected ? "Mask" : "Pixels"
+                for (title, action) in [("Select " + noun, #selector(selectTargetAction)),
+                                        ("Add \(noun) to Selection", #selector(addTargetToSelectionAction)),
+                                        ("Subtract \(noun) from Selection", #selector(subtractTargetFromSelectionAction)),
+                                        ("Intersect \(noun) with Selection", #selector(intersectTargetWithSelectionAction))] {
+                    let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+                    item.target = self
+                    item.isEnabled = validateMenuItem(item)
+                    menu.addItem(item)
+                }
+                menu.addItem(NSMenuItem.separator())
+            }
 
             // 1. Duplicate Layer
             let duplicateItem = NSMenuItem(title: "Duplicate Layer", action: #selector(duplicateLayerAction), keyEquivalent: "")
@@ -175,6 +191,12 @@ struct NativeLayerList: NSViewRepresentable {
             mergeItem.target = self
             mergeItem.isEnabled = validateMenuItem(mergeItem)
             menu.addItem(mergeItem)
+            for (title, action) in [("Merge Visible", #selector(mergeVisibleAction)), ("Flatten Image", #selector(flattenImageAction))] {
+                let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+                item.target = self
+                item.isEnabled = validateMenuItem(item)
+                menu.addItem(item)
+            }
 
             menu.addItem(NSMenuItem.separator())
 
@@ -200,6 +222,11 @@ struct NativeLayerList: NSViewRepresentable {
             toggleMaskItem.isEnabled = validateMenuItem(toggleMaskItem)
             menu.addItem(toggleMaskItem)
 
+            let applyMaskItem = NSMenuItem(title: "Apply Layer Mask", action: #selector(applyLayerMaskAction), keyEquivalent: "")
+            applyMaskItem.target = self
+            applyMaskItem.isEnabled = validateMenuItem(applyMaskItem)
+            menu.addItem(applyMaskItem)
+
             // 10. Delete Mask
             let deleteMaskItem = NSMenuItem(title: "Delete Mask", action: #selector(deleteMaskAction), keyEquivalent: "")
             deleteMaskItem.target = self
@@ -215,12 +242,30 @@ struct NativeLayerList: NSViewRepresentable {
 
             menu.addItem(NSMenuItem.separator())
 
+            for (title, action) in [("Copy Layer Style", #selector(copyLayerStyleAction)),
+                                    ("Paste Layer Style", #selector(pasteLayerStyleAction)),
+                                    ("Clear Layer Style", #selector(clearLayerStyleAction))] {
+                let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+                item.target = self
+                item.isEnabled = validateMenuItem(item)
+                menu.addItem(item)
+            }
+
+            menu.addItem(NSMenuItem.separator())
+
             // 12. Hide Layer / Show Layer
             let visibilityTitle = session.activeLayer?.isVisible == false ? "Show Layer" : "Hide Layer"
             let visibilityItem = NSMenuItem(title: visibilityTitle, action: #selector(toggleVisibilityAction), keyEquivalent: "")
             visibilityItem.target = self
             visibilityItem.isEnabled = validateMenuItem(visibilityItem)
             menu.addItem(visibilityItem)
+
+            let hidesOthers = session.activeLayerID.map { session.hasOtherVisibleLayers(than: $0) } ?? true
+            let othersItem = NSMenuItem(title: hidesOthers ? "Hide All Other Layers" : "Show All Other Layers",
+                                        action: #selector(toggleOtherLayersVisibilityAction), keyEquivalent: "")
+            othersItem.target = self
+            othersItem.isEnabled = validateMenuItem(othersItem)
+            menu.addItem(othersItem)
 
             return menu
         }
@@ -253,6 +298,25 @@ struct NativeLayerList: NSViewRepresentable {
                 return session.canEditLayers && session.activeLayer?.mask != nil && session.activeLayer?.isGroup == false && session.activeLayer?.adjustment == nil
             case #selector(toggleVisibilityAction):
                 return session.canEditLayers && session.activeLayer != nil
+            case #selector(mergeVisibleAction):
+                return session.canMergeVisible
+            case #selector(flattenImageAction):
+                return session.canFlattenImage
+            case #selector(applyLayerMaskAction):
+                return session.canApplyLayerMask
+            case #selector(copyLayerStyleAction):
+                return session.canCopyLayerStyle
+            case #selector(pasteLayerStyleAction):
+                return session.canPasteLayerStyle
+            case #selector(clearLayerStyleAction):
+                return session.canClearLayerStyle
+            case #selector(toggleOtherLayersVisibilityAction):
+                return session.canToggleOtherLayers && session.activeLayer != nil
+            case #selector(selectTargetAction):
+                return session.canEditSelection && hasSelectableTarget
+            case #selector(addTargetToSelectionAction), #selector(subtractTargetFromSelectionAction),
+                 #selector(intersectTargetWithSelectionAction):
+                return session.canEditSelection && hasSelectableTarget && session.selection != nil
             default:
                 if menuItem.submenu != nil && menuItem.title == "Add Mask" {
                     return session.canEditMask && session.activeLayer?.mask == nil
@@ -325,6 +389,37 @@ struct NativeLayerList: NSViewRepresentable {
         @objc func toggleVisibilityAction(_ sender: Any?) {
             guard let id = session.activeLayerID else { return }
             session.toggleLayerVisibility(id)
+        }
+
+        @objc func toggleOtherLayersVisibilityAction(_ sender: Any?) {
+            guard let id = session.activeLayerID else { return }
+            session.toggleOtherLayersVisibility(id)
+        }
+
+        @objc func mergeVisibleAction(_ sender: Any?) { session.mergeVisible() }
+        @objc func flattenImageAction(_ sender: Any?) { session.flattenImage() }
+        @objc func applyLayerMaskAction(_ sender: Any?) { session.applyLayerMask() }
+        @objc func copyLayerStyleAction(_ sender: Any?) { session.copyLayerStyle() }
+        @objc func pasteLayerStyleAction(_ sender: Any?) { session.pasteLayerStyle() }
+        @objc func clearLayerStyleAction(_ sender: Any?) { session.clearLayerStyle() }
+
+        /// The thumbnail right-clicked holds something to select: the mask, or the layer's own pixels.
+        private var hasSelectableTarget: Bool {
+            guard let layer = session.activeLayer else { return false }
+            return session.isMaskSelected ? layer.mask != nil : layer.asset != nil && !layer.isGroup
+        }
+        private func loadTargetSelection(_ mode: SelectionMode) {
+            guard let id = session.activeLayerID else { return }
+            if session.isMaskSelected { session.loadMaskSelection(layerID: id, mode: mode) }
+            else { session.loadLayerSelection(layerID: id, mode: mode) }
+        }
+        @objc func selectTargetAction(_ sender: Any?) { loadTargetSelection(.replace) }
+        @objc func addTargetToSelectionAction(_ sender: Any?) { loadTargetSelection(.add) }
+        @objc func subtractTargetFromSelectionAction(_ sender: Any?) { loadTargetSelection(.subtract) }
+        @objc func intersectTargetWithSelectionAction(_ sender: Any?) {
+            guard let id = session.activeLayerID else { return }
+            if session.isMaskSelected { session.intersectMaskSelection(layerID: id) }
+            else { session.intersectLayerSelection(layerID: id) }
         }
 
         func numberOfRows(in tableView: NSTableView) -> Int { rows.count }
@@ -502,11 +597,13 @@ final class LayerTableView: NSTableView {
 
         let cell = view(atColumn: 0, row: row, makeIfNecessary: false) as? LayerCell
         let isEffect = cell?.selectEffect(at: event.locationInWindow, editing: false) == true
+        var onThumbnail = false
         if !isEffect {
             currentSession.effectSelection = nil
             let thumb = thumbnail(at: point)
             let isMaskThumb = thumb?.isMaskTarget == true
             let isLayerThumb = thumb?.loadsSelection == true
+            onThumbnail = isMaskThumb || isLayerThumb
 
             if selectedRowIndexes.contains(row) {
                 if isMaskThumb {
@@ -527,7 +624,7 @@ final class LayerTableView: NSTableView {
             }
         }
 
-        return coordinator.contextMenu(for: row)
+        return coordinator.contextMenu(for: row, onThumbnail: onThumbnail)
     }
     private static func clippingCursor(releasing: Bool) -> NSCursor {
         let image = NSImage(size: NSSize(width: 30, height: 28), flipped: false) { _ in
@@ -1053,12 +1150,16 @@ private final class LayerCell: NSTableCellView, NSTextFieldDelegate {
     }
     @objc func loadMaskSelection() {
         guard let layerID else { return }
-        session?.loadMaskSelection(layerID: layerID, mode: Self.loadMode)
+        if Self.intersects { session?.intersectMaskSelection(layerID: layerID) }
+        else { session?.loadMaskSelection(layerID: layerID, mode: Self.loadMode) }
     }
     @objc func loadLayerSelection() {
         guard let layerID else { return }
-        session?.loadLayerSelection(layerID: layerID, mode: Self.loadMode)
+        if Self.intersects { session?.intersectLayerSelection(layerID: layerID) }
+        else { session?.loadLayerSelection(layerID: layerID, mode: Self.loadMode) }
     }
+    /// Cmd-Shift-Option intersects, as in Photoshop.
+    private static var intersects: Bool { (NSApp.currentEvent?.modifierFlags ?? []).isSuperset(of: [.shift, .option]) }
     /// Cmd-Shift adds and Cmd-Option subtracts, as in Photoshop.
     private static var loadMode: SelectionMode {
         let flags = NSApp.currentEvent?.modifierFlags ?? []

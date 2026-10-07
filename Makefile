@@ -1,0 +1,40 @@
+INSTALL_DIR ?= /Applications
+
+.PHONY: app dev run run-dev test install release appcast bump clean
+
+app: ## Build build/Compositor.app (release, with the updater)
+	scripts/build-app.sh release
+
+dev: ## Build build/Compositor Dev.app (debug, separate id, sandbox container and prefs, no updater)
+	scripts/build-app.sh dev
+
+run: app ## Build and open the release app
+	open build/Compositor.app
+
+run-dev: dev ## Build and open the dev app
+	open "build/Compositor Dev.app"
+
+test: ## Run the unit tests
+	swift test
+
+install: app ## Copy the release app to /Applications (quits the running copy first) and open it
+	-osascript -e 'tell application id "com.itsjavi.compositor" to quit' 2>/dev/null
+	rm -rf "$(INSTALL_DIR)/Compositor.app"
+	cp -R build/Compositor.app "$(INSTALL_DIR)/"
+	open "$(INSTALL_DIR)/Compositor.app"
+
+# Apple silicon app, zip and DMG in build/release; signs and notarizes when
+# DEVELOPER_ID and NOTARY_PROFILE are set (see scripts/release.sh).
+release:
+	scripts/release.sh
+
+# Signs build/release's zip (EdDSA key "compositor" from the Keychain) and updates build/appcast/appcast.xml.
+appcast:
+	scripts/appcast.sh
+
+# Bumps VERSION, commits and tags it: make bump V=patch|minor|major|X.Y.Z [PUSH=1]
+bump:
+	scripts/bump-version.sh $(V) $(if $(PUSH),--push)
+
+clean: ## Remove build outputs
+	rm -rf .build build

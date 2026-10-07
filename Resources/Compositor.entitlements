@@ -8,7 +8,8 @@
     <true/>
     <key>com.apple.security.network.client</key>
     <true/>
-    <!-- Sparkle installs updates through its helper services, which a sandboxed app reaches by name. -->
+    <!-- Sparkle installs updates through its helper services, which a sandboxed app reaches by name.
+         build-app.sh replaces $(PRODUCT_BUNDLE_IDENTIFIER) with the variant's bundle id. -->
     <key>com.apple.security.temporary-exception.mach-lookup.global-name</key>
     <array>
         <string>$(PRODUCT_BUNDLE_IDENTIFIER)-spks</string>

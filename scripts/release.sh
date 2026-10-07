@@ -1,89 +1,70 @@
-#!/bin/zsh
-# Builds a signed, notarized Compositor DMG that opens without warnings on any Mac.
+#!/bin/bash
+# Builds a release of Compositor.app for Apple silicon into ./build/release: the app, a zip
+# (for Sparkle updates) and a DMG (for downloads).
 #
-# Needs, all kept out of this repository:
-#   - a "Developer ID Application" certificate in the login keychain
-#   - notarization credentials saved once with:
-#       xcrun notarytool store-credentials "compositor-notary" --apple-id "…" --team-id 3E4X3B9Z9T
-#   - create-dmg (brew install create-dmg)
-# The DMG window background is scripts/dmg/dmg-bg.jpg (600 × 380, the window's exact size) plus
-# dmg-bg-retina.jpg (1200 × 760) for Retina displays.
+# Credentials, all optional (without them the build is ad-hoc signed, and other Macs need
+# System Settings ▸ Privacy & Security ▸ Open Anyway on first launch):
+#   DEVELOPER_ID="Developer ID Application: Name (TEAMID)"   # signing identity in the Keychain
+#   NOTARY_PROFILE=compositor    # a notarytool Keychain profile, made once with
+#                                # xcrun notarytool store-credentials compositor --apple-id … --team-id …
+#   NOTARY_KEYCHAIN=<path>       # the keychain holding that profile, if not the login keychain (CI)
+# VERSION and BUILD override ./VERSION and the commit-count build number (see build-app.sh).
 set -euo pipefail
+cd "$(dirname "$0")/.."
 
-PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-APP=Compositor
-TEAM=3E4X3B9Z9T
-IDENTITY="Developer ID Application"
-NOTARY_PROFILE=compositor-notary
-# Built outside Dropbox: the extended attributes it adds to files make code signing fail.
-WORK="$HOME/Library/Caches/CompositorRelease"
-DIST="$PROJECT_DIR/dist"
-
-settings=$(xcodebuild -project "$PROJECT_DIR/$APP.xcodeproj" -scheme "$APP" -configuration Release -showBuildSettings 2>/dev/null)
-VERSION=$(print -r -- "$settings" | awk -F' = ' '/ MARKETING_VERSION = /{print $2; exit}')
-BUILD=$(print -r -- "$settings" | awk -F' = ' '/ CURRENT_PROJECT_VERSION = /{print $2; exit}')
-echo "==> $APP $VERSION ($BUILD)"
-
-rm -rf "$WORK"
-mkdir -p "$WORK" "$DIST"
-
-echo "==> Archiving a Release build"
-xcodebuild archive -quiet \
-  -project "$PROJECT_DIR/$APP.xcodeproj" -scheme "$APP" -configuration Release \
-  -destination "generic/platform=macOS" \
-  -archivePath "$WORK/$APP.xcarchive" -derivedDataPath "$WORK/DerivedData" \
-  CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="$IDENTITY" DEVELOPMENT_TEAM="$TEAM"
-
-echo "==> Exporting, signed with Developer ID"
-xcodebuild -exportArchive -quiet \
-  -archivePath "$WORK/$APP.xcarchive" \
-  -exportOptionsPlist "$PROJECT_DIR/scripts/ExportOptions.plist" \
-  -exportPath "$WORK/export"
-APP_PATH="$WORK/export/$APP.app"
-codesign --verify --deep --strict --verbose=2 "$APP_PATH"
-
-echo "==> Notarizing the app"
-ditto -c -k --keepParent "$APP_PATH" "$WORK/$APP.zip"
-xcrun notarytool submit "$WORK/$APP.zip" --keychain-profile "$NOTARY_PROFILE" --wait
-xcrun stapler staple "$APP_PATH"
-
-echo "==> Building the DMG window"
-STAGE="$WORK/dmg"
-mkdir -p "$STAGE"
-cp -R "$APP_PATH" "$STAGE/"
-DMG="$DIST/$APP-$VERSION.dmg"
-rm -f "$DMG"
-# Icon centers in the DMG window, in points from its top-left.
-APP_X=160
-APPLICATIONS_X=440
-ICON_Y=180
-background=()
-LOW="$PROJECT_DIR/scripts/dmg/dmg-bg.jpg"
-HIGH="$PROJECT_DIR/scripts/dmg/dmg-bg-retina.jpg"
-if [[ -f "$LOW" && -f "$HIGH" ]]; then
-  # Finder takes one background file; a TIFF holding both sizes stays sharp on Retina displays.
-  sips -s format png -s dpiWidth 72 -s dpiHeight 72 "$LOW" --out "$WORK/background.png" >/dev/null
-  sips -s format png -s dpiWidth 144 -s dpiHeight 144 "$HIGH" --out "$WORK/background@2x.png" >/dev/null
-  tiffutil -cathidpicheck "$WORK/background.png" "$WORK/background@2x.png" -out "$WORK/background.tiff" >/dev/null
-  background=(--background "$WORK/background.tiff")
-elif [[ -f "$LOW" ]]; then
-  background=(--background "$LOW")
+OUT="build/release"
+APP="build/Compositor.app"
+missing=()
+if [ -z "${DEVELOPER_ID:-}" ]; then
+  missing+=("DEVELOPER_ID (a Developer ID Application identity)")
+elif ! security find-identity -v -p codesigning | grep -qF "$DEVELOPER_ID"; then
+  echo "error: no signing identity matching \"$DEVELOPER_ID\" in the Keychain" >&2
+  exit 1
 fi
-create-dmg \
-  --volname "$APP" \
-  --window-pos 200 120 --window-size 600 380 \
-  --icon-size 128 --text-size 13 \
-  --icon "$APP.app" "$APP_X" "$ICON_Y" --hide-extension "$APP.app" \
-  --app-drop-link "$APPLICATIONS_X" "$ICON_Y" \
-  "${background[@]}" \
-  "$DMG" "$STAGE"
+if [ -z "${NOTARY_PROFILE:-}" ]; then missing+=("NOTARY_PROFILE (a notarytool Keychain profile)"); fi
+if [ ! -s Resources/SparklePublicKey.txt ] && [ -z "${SPARKLE_PUBLIC_KEY:-}" ]; then missing+=("Resources/SparklePublicKey.txt (Sparkle's public key: without it the app can't update itself)"); fi
 
-echo "==> Signing and notarizing the DMG"
-codesign --sign "$IDENTITY" --timestamp "$DMG"
-xcrun notarytool submit "$DMG" --keychain-profile "$NOTARY_PROFILE" --wait
-xcrun stapler staple "$DMG"
+ARCH=arm64 HARDENED=1 SIGN_IDENTITY="${DEVELOPER_ID:--}" ./scripts/build-app.sh release
 
-echo "==> What Gatekeeper will say on another Mac"
-spctl --assess --type open --context context:primary-signature --verbose=2 "$DMG"
-spctl --assess --type execute --verbose=2 "$APP_PATH"
-echo "==> Done: $DMG"
+VERSION="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Contents/Info.plist")"
+BUILD="$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP/Contents/Info.plist")"
+BASE="Compositor-$VERSION"
+rm -rf "$OUT"
+mkdir -p "$OUT"
+
+make_zip() { ditto -c -k --sequesterRsrc --keepParent "$APP" "$OUT/$BASE.zip"; }
+
+notarize() {
+  xcrun notarytool submit "$1" --keychain-profile "$NOTARY_PROFILE" \
+    ${NOTARY_KEYCHAIN:+--keychain "$NOTARY_KEYCHAIN"} --wait
+}
+
+if [ -n "${DEVELOPER_ID:-}" ] && [ -n "${NOTARY_PROFILE:-}" ]; then
+  # The app is notarized through a zip, then stapled so it opens offline too.
+  make_zip
+  notarize "$OUT/$BASE.zip"
+  xcrun stapler staple "$APP"
+  rm "$OUT/$BASE.zip"
+fi
+make_zip
+
+STAGE="$(mktemp -d)"
+trap 'rm -rf "$STAGE"' EXIT
+cp -R "$APP" "$STAGE/"
+ln -s /Applications "$STAGE/Applications"
+hdiutil create -quiet -volname "Compositor $VERSION" -srcfolder "$STAGE" -fs HFS+ -format UDZO "$OUT/$BASE.dmg"
+if [ -n "${DEVELOPER_ID:-}" ]; then
+  codesign --force --sign "$DEVELOPER_ID" --timestamp "$OUT/$BASE.dmg"
+  if [ -n "${NOTARY_PROFILE:-}" ]; then
+    notarize "$OUT/$BASE.dmg"
+    xcrun stapler staple "$OUT/$BASE.dmg"
+  fi
+fi
+cp -R "$APP" "$OUT/"
+(cd "$OUT" && shasum -a 256 "$BASE.zip" "$BASE.dmg" > SHA256SUMS)
+
+echo "✓ Compositor $VERSION ($BUILD) in $OUT: Compositor.app, $BASE.zip, $BASE.dmg, SHA256SUMS"
+if [ ${#missing[@]} -gt 0 ]; then
+  echo "⚠ Not ready to ship (ad-hoc builds need Open Anyway on other Macs on first launch). Missing:"
+  for item in "${missing[@]}"; do echo "  - $item"; done
+fi

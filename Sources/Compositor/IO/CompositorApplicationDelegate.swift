@@ -7,8 +7,13 @@ final class CompositorApplicationDelegate: NSObject, NSApplicationDelegate {
     var projects: ProjectController { workspace.current.controller }
     var showEditor: (() -> Void)?
     /// Checks the update feed and installs new versions (Sparkle). Started only after launch: its first-run prompt,
-    /// shown during launch, kept the editor window from ever opening.
-    let updater = SPUStandardUpdaterController(startingUpdater: false, updaterDelegate: nil, userDriverDelegate: nil)
+    /// shown during launch, kept the editor window from ever opening. Only builds with a feed and a public key have
+    /// one: build-app.sh keeps them for release builds, so the Dev build never updates itself over the installed app.
+    let updater: SPUStandardUpdaterController? = {
+        let info = Bundle.main.infoDictionary ?? [:]
+        guard info["SUFeedURL"] is String, (info["SUPublicEDKey"] as? String)?.isEmpty == false else { return nil }
+        return SPUStandardUpdaterController(startingUpdater: false, updaterDelegate: nil, userDriverDelegate: nil)
+    }()
 
     // Finder Open With and Dock drops, including files delivered during launch.
     func application(_ application: NSApplication, open urls: [URL]) {
@@ -39,7 +44,7 @@ final class CompositorApplicationDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [updater] in updater.startUpdater() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [updater] in updater?.startUpdater() }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

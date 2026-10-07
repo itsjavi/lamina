@@ -1,0 +1,147 @@
+# Pushing a vX.Y.Z tag builds Compositor for Apple silicon and publishes it:
+# a GitHub release named after the tag with the DMG, the zip and SHA256SUMS,
+# and, with R2 credentials, the public copies and Sparkle's appcast.xml on downloads.itsjavi.com/compositor.
+# Every secret is optional; see README, "Releases from CI".
+name: Release
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    # Xcode 27 (the macOS 27 SDK), like local builds; CI's tests keep Xcode 26 building.
+    runs-on: xcode-27
+    timeout-minutes: 60
+    # Protected environment: its secrets only reach tag builds that pass its rules.
+    environment: release
+    env:
+      TAG: ${{ github.ref_name }}
+      HAS_DEVELOPER_ID: ${{ secrets.DEVELOPER_ID_P12 != '' }}
+      HAS_NOTARY: ${{ secrets.APPLE_ID != '' && secrets.APPLE_APP_PASSWORD != '' && secrets.APPLE_TEAM_ID != '' }}
+      HAS_SPARKLE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
+      HAS_R2: ${{ secrets.R2_ACCOUNT_ID != '' && secrets.R2_ACCESS_KEY_ID != '' && secrets.R2_SECRET_ACCESS_KEY != '' && secrets.R2_BUCKET != '' }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # the build number is the commit count
+
+      - name: Version from the tag
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::$TAG isn't a vX.Y.Z tag"
+            exit 1
+          fi
+          version="${TAG#v}"
+          if [ "$version" != "$(tr -d '[:space:]' < VERSION)" ]; then
+            echo "::error::The tag says $version but ./VERSION says $(cat VERSION): bump VERSION in the tagged commit"
+            exit 1
+          fi
+          { echo "VERSION=$version"; echo "KEYCHAIN=$RUNNER_TEMP/release.keychain-db"; } >> "$GITHUB_ENV"
+
+      - name: Select Xcode
+        run: ./scripts/ci-select-xcode.sh
+
+      - name: Test
+        run: swift test --disable-keychain
+
+      - name: Import the Developer ID certificate
+        if: env.HAS_DEVELOPER_ID == 'true'
+        env:
+          P12: ${{ secrets.DEVELOPER_ID_P12 }}
+          P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+        run: |
+          password="$(uuidgen)"
+          security create-keychain -p "$password" "$KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN"
+          security unlock-keychain -p "$password" "$KEYCHAIN"
+          echo "$P12" | base64 --decode > "$RUNNER_TEMP/developer-id.p12"
+          security import "$RUNNER_TEMP/developer-id.p12" -k "$KEYCHAIN" -P "$P12_PASSWORD" -T /usr/bin/codesign
+          rm "$RUNNER_TEMP/developer-id.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$password" "$KEYCHAIN" >/dev/null
+          # Add it to the search list (codesign and find-identity look there), keeping the others.
+          read -ra others <<< "$(security list-keychains -d user | tr -d '"' | xargs)"
+          security list-keychains -d user -s "$KEYCHAIN" "${others[@]}"
+          identity="$(security find-identity -v -p codesigning "$KEYCHAIN" | sed -n 's/.*"\(Developer ID Application: .*\)"/\1/p' | head -1)"
+          if [ -z "$identity" ]; then
+            echo "::error::DEVELOPER_ID_P12 holds no Developer ID Application identity"
+            exit 1
+          fi
+          echo "DEVELOPER_ID=$identity" >> "$GITHUB_ENV"
+
+      - name: Store notarization credentials
+        if: env.HAS_DEVELOPER_ID == 'true' && env.HAS_NOTARY == 'true'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          xcrun notarytool store-credentials compositor-ci --keychain "$KEYCHAIN" \
+            --apple-id "$APPLE_ID" --password "$APPLE_APP_PASSWORD" --team-id "$APPLE_TEAM_ID"
+          { echo "NOTARY_PROFILE=compositor-ci"; echo "NOTARY_KEYCHAIN=$KEYCHAIN"; } >> "$GITHUB_ENV"
+
+      - name: Build
+        run: make release
+
+      - name: Update the appcast
+        if: env.HAS_SPARKLE_KEY == 'true'
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          key="$RUNNER_TEMP/sparkle.key"
+          printf '%s' "$SPARKLE_PRIVATE_KEY" > "$key"
+          # Without R2 this feed is only attached to the GitHub release, so it lists just this build.
+          if [ "$HAS_R2" != 'true' ]; then export NEW_FEED=1; fi
+          SPARKLE_KEY_FILE="$key" make appcast
+          rm "$key"
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          files=("build/release/Compositor-$VERSION.dmg" "build/release/Compositor-$VERSION.zip" build/release/SHA256SUMS)
+          if [ -f build/appcast/appcast.xml ]; then files+=(build/appcast/appcast.xml); fi
+          notes="$RUNNER_TEMP/notes.md"
+          if [ -n "${NOTARY_PROFILE:-}" ]; then
+            echo "Signed with Developer ID, notarized and stapled." > "$notes"
+          else
+            echo "⚠ **Not notarized**: ad-hoc signed. On another Mac, the first launch needs System Settings ▸ Privacy & Security ▸ Open Anyway." > "$notes"
+          fi
+          if [ "$HAS_SPARKLE_KEY" != 'true' ]; then echo "No appcast: SPARKLE_PRIVATE_KEY isn't set." >> "$notes"; fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${files[@]}" --clobber
+          else
+            gh release create "$TAG" "${files[@]}" --title "$TAG" --notes-file "$notes" --generate-notes --verify-tag
+          fi
+
+      - name: Publish to R2
+        if: env.HAS_R2 == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          command -v aws >/dev/null || brew install awscli
+          put() {
+            aws s3 cp "$1" "s3://$R2_BUCKET/compositor/$(basename "$1")" --only-show-errors \
+              --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" --content-type "$2" "${@:3}"
+          }
+          put "build/release/Compositor-$VERSION.zip" application/zip
+          put "build/release/Compositor-$VERSION.dmg" application/x-apple-diskimage
+          # The feed goes last, so it never lists a file that isn't there yet.
+          if [ -f build/appcast/appcast.xml ]; then
+            put build/appcast/appcast.xml application/xml --cache-control "max-age=300"
+          fi
+
+      - name: Remove the keychain
+        if: always() && env.HAS_DEVELOPER_ID == 'true'
+        run: security delete-keychain "$KEYCHAIN" || true

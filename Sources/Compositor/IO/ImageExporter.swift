@@ -4,13 +4,45 @@ import ImageIO
 import UniformTypeIdentifiers
 
 nonisolated enum ExportError: LocalizedError {
-    case tooLarge, render, encode
+    case tooLarge, render, encode, webPTooLarge
     var errorDescription: String? {
         switch self {
         case .tooLarge: "Image export supports canvases up to \(DocumentLimits.maxSurfaceMegapixels) megapixels and \(DocumentLimits.maxSide.formatted()) pixels per side."
         case .render: "The canvas could not be rendered. Try a smaller canvas."
         case .encode: "The image could not be encoded."
+        case .webPTooLarge: "WebP supports images up to \(WebPEncoder.maxSide.formatted()) pixels per side."
         }
+    }
+}
+
+/// The formats File › Export As… offers. Every export is the flattened canvas, 8 bits per channel, in sRGB.
+nonisolated enum ExportFormat: String, CaseIterable, Identifiable, Sendable {
+    case png, jpeg, heic, avif, webP = "webp", tiff, pdf
+
+    var id: Self { self }
+    var title: String { self == .webP ? "WebP" : rawValue.uppercased() }
+    var type: UTType {
+        switch self {
+        case .png: .png
+        case .jpeg: .jpeg
+        case .heic: .heic
+        case .avif: UTType(importedAs: "public.avif")
+        case .webP: .webP
+        case .tiff: .tiff
+        case .pdf: .pdf
+        }
+    }
+    var fileExtension: String { self == .jpeg ? "jpg" : rawValue }
+    /// Lossy formats, which have a quality setting.
+    var hasQuality: Bool { [.jpeg, .heic, .avif, .webP].contains(self) }
+    /// JPEG has no alpha: its transparent areas are filled with a chosen color.
+    var keepsTransparency: Bool { self != .jpeg }
+
+    /// The formats this Mac can write. ImageIO's encoders vary with the macOS version and the hardware (AVIF, HEIC),
+    /// so they're asked at run time; WebP is written by the bundled libwebp and PDF drawn by Core Graphics.
+    static var available: [ExportFormat] { available(encoders: Set(CGImageDestinationCopyTypeIdentifiers() as? [String] ?? [])) }
+    static func available(encoders: Set<String>) -> [ExportFormat] {
+        allCases.filter { $0 == .webP || $0 == .pdf || encoders.contains($0.type.identifier) }
     }
 }
 
@@ -118,36 +150,100 @@ actor ImageExporter {
         return data as Data
     }
 
-    func jpeg(_ raster: ExportRaster, options: JPEGOptions) throws -> JPEGResult {
+    /// The flattened canvas encoded as `options.format`, with a preview decoded back from the encoded file, so the
+    /// export sheet shows the format's own artifacts.
+    func encode(_ raster: ExportRaster, options: ExportOptions) throws -> ExportResult {
         try Task.checkCancellation()
         return try autoreleasepool {
             let image = raster.image
-            guard let context = CGContext(data: nil, width: image.width, height: image.height,
-                bitsPerComponent: 8, bytesPerRow: image.width * 4,
-                space: CGColorSpace(name: CGColorSpace.sRGB)!,
-                bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { throw ExportError.render }
-            context.setFillColor(CGColor(colorSpace: context.colorSpace!,
-                components: [options.red, options.green, options.blue, 1])!)
-            let bounds = CGRect(x: 0, y: 0, width: image.width, height: image.height)
-            context.fill(bounds)
-            context.draw(image, in: bounds)
-            guard let flattened = context.makeImage() else { throw ExportError.render }
+            var properties: [CFString: Any] = [kCGImagePropertyDPIWidth: raster.resolution, kCGImagePropertyDPIHeight: raster.resolution]
+            if options.format.hasQuality {
+                // ImageIO's AVIF encoder fails at exactly 1 (lossless), and gives the same file from 0.99 up.
+                let best = options.format == .avif ? 0.99 : 1
+                properties[kCGImageDestinationLossyCompressionQuality] = min(best, max(0, options.quality))
+            }
+            let data: Data
+            switch options.format {
+            case .jpeg:
+                let flattened = try matted(image, options: options)
+                try Task.checkCancellation()
+                data = try encode(flattened, type: .jpeg, properties: properties as CFDictionary)
+            case .png, .heic, .avif:
+                data = try encode(image, type: options.format.type, properties: properties as CFDictionary)
+            case .webP:
+                data = try WebPEncoder.encode(image, quality: options.quality)
+            case .tiff:
+                // LZW: lossless, read by everything that reads TIFF, and far smaller than uncompressed.
+                properties[kCGImagePropertyTIFFDictionary] = [kCGImagePropertyTIFFCompression: 5]
+                data = try encode(image, type: .tiff, properties: properties as CFDictionary)
+            case .pdf:
+                data = try pdf(raster)
+            }
             try Task.checkCancellation()
-            let data = try encode(flattened, type: .jpeg,
-                properties: [kCGImageDestinationLossyCompressionQuality: min(1, max(0, options.quality)),
-                             kCGImagePropertyDPIWidth: raster.resolution,
-                             kCGImagePropertyDPIHeight: raster.resolution] as CFDictionary)
-            try Task.checkCancellation()
-            guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-                  let preview = CGImageSourceCreateThumbnailAtIndex(source, 0, [
-                    kCGImageSourceCreateThumbnailFromImageAlways: true,
-                    // Full size, so the dialog's 100% view shows the real artifacts; capped to keep memory in bounds.
-                    kCGImageSourceThumbnailMaxPixelSize: min(max(image.width, image.height), 8192),
-                    kCGImageSourceShouldCacheImmediately: true,
-                    kCGImageSourceCreateThumbnailWithTransform: true
-                  ] as CFDictionary) else { throw ExportError.encode }
-            return JPEGResult(data: data, preview: preview)
+            // Full size, so the dialog's 100% view shows the real artifacts; capped to keep memory in bounds.
+            let side = min(max(image.width, image.height), 8192)
+            let preview = options.format == .pdf ? try pdfPreview(data, maxPixelSize: side) : try decodedPreview(data, maxPixelSize: side)
+            return ExportResult(data: data, preview: preview)
         }
+    }
+
+    /// `image` over the options' color, opaque, for formats without alpha.
+    private func matted(_ image: CGImage, options: ExportOptions) throws -> CGImage {
+        guard let context = CGContext(data: nil, width: image.width, height: image.height,
+            bitsPerComponent: 8, bytesPerRow: image.width * 4,
+            space: CGColorSpace(name: CGColorSpace.sRGB)!,
+            bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { throw ExportError.render }
+        context.setFillColor(CGColor(colorSpace: context.colorSpace!,
+            components: [options.red, options.green, options.blue, 1])!)
+        let bounds = CGRect(x: 0, y: 0, width: image.width, height: image.height)
+        context.fill(bounds)
+        context.draw(image, in: bounds)
+        guard let flattened = context.makeImage() else { throw ExportError.render }
+        return flattened
+    }
+
+    private func decodedPreview(_ data: Data, maxPixelSize: Int) throws -> CGImage {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let preview = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
+                kCGImageSourceShouldCacheImmediately: true,
+                kCGImageSourceCreateThumbnailWithTransform: true
+              ] as CFDictionary) else { throw ExportError.encode }
+        return preview
+    }
+
+    /// One page the document's printed size (its pixels at its resolution), holding the flattened canvas at full
+    /// resolution. Drawn by Core Graphics rather than written by ImageIO, whose PDF stores the pixels as a JPEG and
+    /// drops the transparency: here they stay lossless, and transparent areas stay transparent, as in a PNG.
+    private func pdf(_ raster: ExportRaster) throws -> Data {
+        let pointsPerPixel = 72 / (raster.resolution > 0 ? raster.resolution : 72)
+        var page = CGRect(x: 0, y: 0, width: CGFloat(raster.image.width) * pointsPerPixel,
+                          height: CGFloat(raster.image.height) * pointsPerPixel)
+        let data = NSMutableData()
+        guard let consumer = CGDataConsumer(data: data),
+              let context = CGContext(consumer: consumer, mediaBox: &page, nil) else { throw ExportError.encode }
+        context.beginPDFPage(nil)
+        context.draw(raster.image, in: page)
+        context.endPDFPage()
+        context.closePDF()
+        return data as Data
+    }
+
+    /// The PDF's page drawn back into pixels, as a viewer shows it (ImageIO can't read PDF).
+    private func pdfPreview(_ data: Data, maxPixelSize: Int) throws -> CGImage {
+        guard let provider = CGDataProvider(data: data as CFData), let document = CGPDFDocument(provider),
+              let page = document.page(at: 1) else { throw ExportError.encode }
+        let box = page.getBoxRect(.mediaBox)
+        let scale = CGFloat(maxPixelSize) / max(box.width, box.height, 1)
+        let width = max(1, Int((box.width * scale).rounded())), height = max(1, Int((box.height * scale).rounded()))
+        guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+                                      space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { throw ExportError.render }
+        context.scaleBy(x: CGFloat(width) / box.width, y: CGFloat(height) / box.height)
+        context.drawPDFPage(page)
+        guard let image = context.makeImage() else { throw ExportError.render }
+        return image
     }
 
     func exportPNG(_ snapshot: ProjectSnapshot, to url: URL) throws {
@@ -173,13 +269,17 @@ nonisolated struct ExportRaster: @unchecked Sendable {
     let image: CGImage
     var resolution: Double = 72
 }
-nonisolated struct JPEGOptions: Equatable, Sendable {
-    var quality: Double = 0.85
+nonisolated struct ExportOptions: Equatable, Sendable {
+    static let defaultQuality = 0.85
+    var format: ExportFormat
+    /// For the formats that have one (`ExportFormat.hasQuality`).
+    var quality = ExportOptions.defaultQuality
+    /// The color under transparent areas, for formats without alpha (JPEG).
     var red: CGFloat = 1
     var green: CGFloat = 1
     var blue: CGFloat = 1
 }
-nonisolated struct JPEGResult: @unchecked Sendable {
+nonisolated struct ExportResult: @unchecked Sendable {
     let data: Data
     let preview: CGImage
 }

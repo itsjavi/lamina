@@ -93,6 +93,9 @@ struct CompositorApp: App {
                     Button("Export JPEG…") { Task { await applicationDelegate.projects.exportJPEG() } }
                         .configuredKeyboardShortcut("s", modifiers: [.command, .option, .shift])
                         .disabled(session.document == nil || !applicationDelegate.projects.canStart)
+                    Button("Export As…") { Task { await applicationDelegate.projects.exportAs() } }
+                        .assignableShortcut("File › Export As…")
+                        .disabled(session.document == nil || !applicationDelegate.projects.canStart)
                     Divider()
                     Button("Close Project") {
                         if let window = applicationDelegate.projects.window {
@@ -231,6 +234,9 @@ struct CompositorApp: App {
                     Button("Clear Selection Pixels") { Task { await session.clearSelectedPixels() } }
                         .assignableShortcut("Edit › Clear Selection Pixels")
                         .disabled(session.selection == nil || !session.canEditPixels)
+                    Button("Stroke…") { Task { await applicationDelegate.projects.stroke() } }
+                        .assignableShortcut("Edit › Stroke…")
+                        .disabled(!session.canStrokeSelection)
                     Button("Content-Aware Fill…") { session.beginFilter(.contentAwareFill) }
                         .configuredKeyboardShortcut(.delete, modifiers: .shift).disabled(!session.canContentAwareFill)
                 }
@@ -306,6 +312,13 @@ struct CompositorApp: App {
                         .disabled(session.document == nil || !applicationDelegate.projects.canStart)
                     Group {
                         Divider()
+                        Menu("Image Rotation") {
+                            ForEach(CanvasRotation.allCases, id: \.self) { rotation in
+                                Button(rotation.rawValue) { Task { await session.rotateCanvas(rotation) } }
+                                    .assignableShortcut("Image › Image Rotation › \(rotation.rawValue)")
+                            }
+                        }
+                            .disabled(!session.canEditLayers)
                         Button("Flip Canvas Horizontal") { session.flipCanvas(horizontally: true) }
                             .assignableShortcut("Image › Flip Canvas Horizontal")
                             .disabled(!session.canEditLayers)
@@ -347,6 +360,9 @@ struct CompositorApp: App {
                     }
                     .configuredKeyboardShortcut("g", modifiers: [.command, .option])
                     .disabled(session.activeLayerID.map { !session.canToggleClippingMask($0) } ?? true)
+                    Button("Apply Layer Mask") { session.applyLayerMask() }
+                        .assignableShortcut("Layer › Apply Layer Mask")
+                        .disabled(!session.canApplyLayerMask)
                     Divider()
                     Button("Group Selected Layers") { session.groupSelectedLayers() }
                         .configuredKeyboardShortcut("g").disabled(!session.canEditLayers)
@@ -363,6 +379,10 @@ struct CompositorApp: App {
                     Button(session.activeLayer?.isVisible == false ? "Show Layer" : "Hide Layer") {
                         if let id = session.activeLayerID { session.toggleLayerVisibility(id) }
                     }.assignableShortcut("Layer › Show or Hide Layer").disabled(!session.canEditLayers || session.activeLayer == nil)
+                    Button(session.activeLayerID.map { session.hasOtherVisibleLayers(than: $0) } == false ? "Show All Other Layers" : "Hide All Other Layers") {
+                        if let id = session.activeLayerID { session.toggleOtherLayersVisibility(id) }
+                    }.assignableShortcut("Layer › Show or Hide All Other Layers")
+                        .disabled(!session.canToggleOtherLayers || session.activeLayer == nil)
                     Divider()
                     Button("Move Layer Up") { session.moveActiveLayer(by: 1) }
                         .configuredKeyboardShortcut("]").disabled(!session.canMoveActiveLayer(by: 1))
@@ -371,6 +391,13 @@ struct CompositorApp: App {
                     Group {
                         Button(session.mergeTitle) { session.mergeLayers() }
                             .configuredKeyboardShortcut("e").disabled(!session.canMergeLayers)
+                        // ⇧⌘E is already Export PNG's shortcut, so Merge Visible goes unbound rather than steal it.
+                        Button("Merge Visible") { session.mergeVisible() }
+                            .assignableShortcut("Layer › Merge Visible")
+                            .disabled(!session.canMergeVisible)
+                        Button("Flatten Image") { session.flattenImage() }
+                            .assignableShortcut("Layer › Flatten Image")
+                            .disabled(!session.canFlattenImage)
                         Divider()
                         Button("Flip Layer Horizontal") { session.flipLayers(horizontally: true) }
                             .assignableShortcut("Layer › Flip Layer Horizontal")
@@ -378,6 +405,31 @@ struct CompositorApp: App {
                         Button("Flip Layer Vertical") { session.flipLayers(horizontally: false) }
                             .assignableShortcut("Layer › Flip Layer Vertical")
                             .disabled(!session.canTransform)
+                        Menu("Align") {
+                            ForEach(LayerAlignment.allCases, id: \.self) { alignment in
+                                Button(alignment.rawValue) { session.alignLayers(alignment) }
+                                    .assignableShortcut("Layer › Align › \(alignment.rawValue)")
+                            }
+                        }
+                            .disabled(!session.canAlignLayers)
+                        Menu("Distribute") {
+                            ForEach(LayerDistribution.allCases, id: \.self) { distribution in
+                                Button(distribution.rawValue) { session.distributeLayers(distribution) }
+                                    .assignableShortcut("Layer › Distribute › \(distribution.rawValue)")
+                            }
+                        }
+                            .disabled(!session.canDistributeLayers)
+                    }
+                    Menu("Layer Style") {
+                        Button("Copy Layer Style") { session.copyLayerStyle() }
+                            .assignableShortcut("Layer › Layer Style › Copy Layer Style")
+                            .disabled(!session.canCopyLayerStyle)
+                        Button("Paste Layer Style") { session.pasteLayerStyle() }
+                            .assignableShortcut("Layer › Layer Style › Paste Layer Style")
+                            .disabled(!session.canPasteLayerStyle)
+                        Button("Clear Layer Style") { session.clearLayerStyle() }
+                            .assignableShortcut("Layer › Layer Style › Clear Layer Style")
+                            .disabled(!session.canClearLayerStyle)
                     }
                     Divider()
                     Button(session.selectedEffect != nil ? "Delete " + session.selectedEffect!.kind.rawValue : session.isMaskSelected && session.activeLayer?.mask != nil ? "Delete Layer Mask" : session.selectedLayerIDs.count > 1 ? "Delete Layers" : "Delete Layer") {

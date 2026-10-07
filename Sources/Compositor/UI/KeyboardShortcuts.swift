@@ -88,17 +88,24 @@ struct ShortcutDefinition: Identifiable {
     static let assignableMenuCommands: [String] = {
         var titles = [
             "Compositor › Check for Updates…", "Compositor › Hide Compositor", "Compositor › Show All",
-            "File › Open Recent › Clear Menu", "File › Import Images…",
-            "Edit › Keyboard Shortcuts…", "Edit › Clear Selection Pixels",
+            "File › Open Recent › Clear Menu", "File › Import Images…", "File › Export As…",
+            "Edit › Keyboard Shortcuts…", "Edit › Clear Selection Pixels", "Edit › Stroke…",
             "View › Pixel Grid", "View › Snap", "View › Grid Settings…", "View › Clear Guides",
             "View › Snap To › Guides", "View › Snap To › Grid", "View › Snap To › Layers", "View › Snap To › Document Bounds",
             "Select › Layer's Pixels", "Select › Color Range…", "Select › Mask's Black Areas",
             "Select › Expand…", "Select › Contract…", "Select › Feather…",
             "Image › Trim…", "Image › Flip Canvas Horizontal", "Image › Flip Canvas Vertical",
             "Layer › Edit Adjustment…", "Layer › Move Out of Folder", "Layer › Rename Layer…",
-            "Layer › Show or Hide Layer", "Layer › Flip Layer Horizontal", "Layer › Flip Layer Vertical",
+            "Layer › Show or Hide Layer", "Layer › Show or Hide All Other Layers",
+            "Layer › Apply Layer Mask", "Layer › Merge Visible", "Layer › Flatten Image",
+            "Layer › Flip Layer Horizontal", "Layer › Flip Layer Vertical",
+            "Layer › Layer Style › Copy Layer Style", "Layer › Layer Style › Paste Layer Style",
+            "Layer › Layer Style › Clear Layer Style",
             "Layer › Delete Layer",
         ]
+        titles += CanvasRotation.allCases.map { "Image › Image Rotation › \($0.rawValue)" }
+        titles += LayerAlignment.allCases.map { "Layer › Align › \($0.rawValue)" }
+        titles += LayerDistribution.allCases.map { "Layer › Distribute › \($0.rawValue)" }
         titles += [FilterKind.blackWhite, .colorBalance, .exposure, .gradientMap, .grain].map { "Image › \($0.rawValue)…" }
         titles += FilterKind.allCases.filter { $0 != .contentAwareFill && !$0.isImageAdjustment }.map { "Filter › \($0.rawValue)…" }
         titles += AdjustmentKind.allCases.map { "Layer › New Adjustment Layer › \($0.rawValue)" }

@@ -11,7 +11,7 @@ struct MCPServerTests {
         "io.modelcontextprotocol/clientInfo": ["name": "test", "version": "1"],
     ]
 
-    /// Answers like the app: documents for list-documents, a PNG for render-preview, a busy refusal for undo.
+    /// Answers like the app: documents for list-documents, a PNG for render-preview, a busy refusal for the rest.
     static func app() -> StubTransport {
         StubTransport { request in
             switch request["command"]?.stringValue {
@@ -20,9 +20,6 @@ struct MCPServerTests {
             case "render-preview":
                 return AutomationMessage.reply(.success(["document": "3f2a9c1b", "width": 2, "height": 1, "source_width": 2,
                                                          "source_height": 1, "bytes": 3, "data": .string(Data([1, 2, 3]).base64EncodedString())]))
-            case "describe-document":
-                Thread.sleep(forTimeInterval: 0.35)
-                return AutomationMessage.reply(.failure(AutomationError(.notFound, "No open document has the id 3f2a.")))
             default:
                 return AutomationMessage.reply(.failure(AutomationError(.busy, "Text is being edited.")))
             }
@@ -160,7 +157,18 @@ struct MCPServerTests {
         var meta = try #require(Self.modern.objectValue)
         meta["progressToken"] = "p1"
         params["_meta"] = .object(meta)
-        let messages = exchange(server(), ["jsonrpc": "2.0", "id": 20, "method": "tools/call", "params": .object(params)])
+        // The app answers only once a progress tick has gone out, however slow the machine.
+        let ticked = DispatchSemaphore(value: 0)
+        let slowApp = StubTransport { _ in
+            _ = ticked.wait(timeout: .now() + 10)
+            return AutomationMessage.reply(.failure(AutomationError(.notFound, "No open document has the id 3f2a.")))
+        }
+        let outbox = Outbox()
+        server(slowApp).handle(["jsonrpc": "2.0", "id": 20, "method": "tools/call", "params": .object(params)]) { message in
+            outbox.send(message)
+            if message["params"]?["progress"] == 1, message["params"]?["total"] == nil { ticked.signal() }
+        }
+        let messages = outbox.messages
         let progress = messages.filter { $0["method"] == "notifications/progress" }
         #expect(progress.count >= 3, "a start, at least one tick while waiting, and the end: \(progress.count)")
         #expect(progress.allSatisfy { $0["params"]?["progressToken"] == "p1" })
@@ -169,17 +177,22 @@ struct MCPServerTests {
         #expect(progress.last?["params"]?["total"] == progress.last?["params"]?["progress"])
         #expect(messages.last?["id"] == 20 && messages.last?["result"]?["isError"] == true, "the reply comes last")
 
-        let cancelled = server()
-        let outbox = Outbox()
+        // The app answers only after the cancellation arrived; the answer is then dropped.
+        let cancelledYet = DispatchSemaphore(value: 0)
+        let cancelled = server(StubTransport { _ in
+            _ = cancelledYet.wait(timeout: .now() + 10)
+            return AutomationMessage.reply(.success(["documents": []]))
+        })
+        let dropped = Outbox()
         let done = DispatchSemaphore(value: 0)
         DispatchQueue.global().async {
-            cancelled.handle(self.request(21, "tools/call", ["name": "describe_document", "arguments": ["document": "3f2a"]]), send: outbox.send)
+            cancelled.handle(self.request(21, "tools/call", ["name": "list_documents", "arguments": [:]]), send: dropped.send)
             done.signal()
         }
-        Thread.sleep(forTimeInterval: 0.1)
-        cancelled.handle(["jsonrpc": "2.0", "method": "notifications/cancelled", "params": ["requestId": 21]], send: outbox.send)
+        cancelled.handle(["jsonrpc": "2.0", "method": "notifications/cancelled", "params": ["requestId": 21]], send: dropped.send)
+        cancelledYet.signal()
         done.wait()
-        #expect(outbox.messages.isEmpty)
+        #expect(dropped.messages.isEmpty)
     }
 
     /// The whole exchange over pipes, as a host runs it: one JSON message per line in, one per line out, and nothing

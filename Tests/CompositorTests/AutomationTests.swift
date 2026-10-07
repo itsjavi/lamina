@@ -45,6 +45,19 @@ struct AutomationTests {
         return (ShortID.hex(f.workspace.current.id), ShortID.hex(layer))
     }
 
+    @Test func onlyThisUsersProcessesOnThisMacAreHeard() {
+        let me = Int32(bitPattern: geteuid())
+        #expect(AutomationServer.refusal(source: Int32(kAELocalProcess), senderUserID: me) == nil)
+        #expect(AutomationServer.refusal(source: Int32(kAESameProcess), senderUserID: nil) == nil)
+        #expect(AutomationServer.refusal(source: Int32(kAERemoteProcess), senderUserID: me)?.code == .transport)
+        #expect(AutomationServer.refusal(source: Int32(kAELocalProcess), senderUserID: me &+ 1)?.code == .transport)
+        // A local event as the Apple Event Manager makes it passes.
+        let event = NSAppleEventDescriptor(eventClass: AutomationEvent.eventClass, eventID: AutomationEvent.eventID,
+                                           targetDescriptor: .currentProcess(), returnID: AEReturnID(kAutoGenerateReturnID),
+                                           transactionID: AETransactionID(kAnyTransactionID))
+        #expect(AutomationServer.refusal(of: event) == nil)
+    }
+
     @Test func everyCatalogCommandHasAHandler() {
         #expect(Set(AutomationDispatcher.handlers.keys) == Set(CommandCatalog.commands.map(\.name)))
     }

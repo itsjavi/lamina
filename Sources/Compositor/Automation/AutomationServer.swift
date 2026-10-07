@@ -37,10 +37,17 @@ final class AutomationServer: NSObject {
 
     /// Events from another Mac or another user's process are refused.
     static func refusal(of event: NSAppleEventDescriptor) -> AutomationError? {
-        if event.attributeDescriptor(forKeyword: AEKeyword(keyEventSourceAttr))?.int32Value == Int32(kAERemoteProcess) {
+        refusal(source: event.attributeDescriptor(forKeyword: AEKeyword(keyEventSourceAttr))?.int32Value,
+                senderUserID: event.attributeDescriptor(forKeyword: AEKeyword(keySenderEUIDAttr))?.int32Value)
+    }
+
+    /// `source` is the event's `keyEventSourceAttr`, `senderUserID` its sender's effective user id (both read-only
+    /// attributes the Apple Event Manager fills in).
+    static func refusal(source: Int32?, senderUserID: Int32?) -> AutomationError? {
+        if source == Int32(kAERemoteProcess) {
             return AutomationError(.transport, "\(AppIdentity.displayName) doesn't take commands from other Macs.")
         }
-        if let sender = event.attributeDescriptor(forKeyword: AEKeyword(keySenderEUIDAttr))?.int32Value, uid_t(bitPattern: sender) != geteuid() {
+        if let senderUserID, uid_t(bitPattern: senderUserID) != geteuid() {
             return AutomationError(.transport, "\(AppIdentity.displayName) only takes commands from its own user's processes.")
         }
         return nil

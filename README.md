@@ -49,7 +49,10 @@ brew install --cask robbietilton-compositor
 - Content-Aware Fill, which can also extend an image past its edges
 
 ### Painting and retouching
-- Brush with size, hardness, opacity and smoothing, in Paint or Erase mode (B and E), and Shift for straight lines
+- Brush with size, hardness, opacity, flow and smoothing, in Paint, Erase (B and E), Dodge or Burn mode, and Shift for straight lines
+- Dodge and Burn lighten or darken the shadows, midtones or highlights by an exposure
+- Pen pressure for the Brush's size and opacity, on a graphics tablet
+- Brush settings and colors carry over to new documents and later launches
 - Spot Healing Brush (content-aware)
 - Clone Stamp, aligned or not, sampling one layer or all of them
 - Blur tool, on pixels or masks

@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-07 20:35'
-updated_date: '2026-10-07 21:35'
+updated_date: '2026-10-07 22:02'
 labels:
   - upstream
   - formats
@@ -77,6 +77,8 @@ Export As… after, with a lossless format (PDF): quality disabled.
 ![Export sheet PDF after](../assets/task-24/export-sheet-pdf-after.png)
 
 AC #3 says 'vendored libwebp': libwebp comes as a pinned SwiftPM package of Google's source rather than files copied into this repo, as decided for this PR (smaller diff, upstream updates through Package.resolved).
+
+Follow-up from review (2026-10-08): dragging a WebP from Brave failed with 'Some dropped items couldn’t be read'. A diagnostic drop window showed Brave hands images over as file promises of their type (org.webmproject.webp, like public.png/public.jpeg for web images), which the existing code loads; the failing case was a local file shown in the browser (file:// page): the promise points at the original file and the sandbox log showed 'deny(1) file-read-data …/0000.webp'. Images from websites read fine. ImageFileDrop now finds that file in the drag's public.url (matched by the item's name), offers an Open panel pointed at it so one click grants access, and says to drag it from Finder when the panel is cancelled. Tests: ImageFileDropTests (3) and ImageImportTests pass. Manual check: drag a local WebP shown in Brave onto the canvas, choose Open in the panel.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

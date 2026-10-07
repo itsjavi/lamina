@@ -205,6 +205,69 @@ final class ProjectWorkspace {
         Task { await copyLayers(ids, into: destination) }
         return true
     }
+
+    /// Whether the clipboard holds an image File › New from Clipboard can open, as of `refreshClipboard`.
+    private(set) var clipboardOffersImage = false
+    @ObservationIgnored private var checkedClipboardChange = -1
+    /// Nothing announces a change to the clipboard, so the app calls this when it becomes active and then every second
+    /// or so; only a new change count costs a look.
+    func refreshClipboard(_ pasteboard: NSPasteboard = .general) async {
+        let count = pasteboard.changeCount
+        guard count != checkedClipboardChange else { return }
+        checkedClipboardChange = count
+        let offers = await Self.offersImage(pasteboard)
+        if pasteboard.changeCount == count { clipboardOffersImage = offers }
+    }
+    /// Judged from the kinds of data on the pasteboard and the type of a copied file, never their contents: reading
+    /// those unasked makes macOS ask the person for permission, which a menu's enabled state mustn't do.
+    static func offersImage(_ pasteboard: NSPasteboard) async -> Bool {
+        let files = (pasteboard.pasteboardItems ?? []).filter { $0.types.contains(.fileURL) }
+        // Finder's Copy brings each file's icon as image data too: only the files themselves count.
+        guard files.isEmpty else {
+            for item in files {
+                if let type = try? await item.detectedMetadata(for: [\.contentType]).contentType, type.conforms(to: .image) { return true }
+            }
+            return false
+        }
+        return pasteboard.availableType(from: NSImage.imageTypes.map { NSPasteboard.PasteboardType($0) }) != nil
+    }
+
+    /// File › New from Clipboard: a new project exactly the size of the copied image, holding it as its only layer, as
+    /// one undo step. Pixels copied in an open project come first, as Paste takes them; image files copied in Finder
+    /// open as dropping them on the Dock icon does, a project each; otherwise an image copied in another app.
+    /// False when there's nothing to open.
+    @discardableResult
+    func newFromClipboard(_ pasteboard: NSPasteboard = .general) async -> Bool {
+        guard canSwitch else { return false }
+        let count = pasteboard.changeCount
+        if let copied = tabs.lazy.compactMap({ $0.session.pixelClipboard }).first(where: { $0.changeCount == count }) {
+            return openNewProject(with: copied.image)
+        }
+        let files = EditorSession.copiedImageFiles(pasteboard)
+        guard files.isEmpty else {
+            current.session.commitTransform()
+            await receive(files)
+            return true
+        }
+        guard !pasteboard.canReadObject(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]),
+              let image = EditorSession.pasteboardImage(pasteboard) else { return false }
+        return openNewProject(with: image)
+    }
+    private func openNewProject(with image: CGImage) -> Bool {
+        guard (1...DocumentLimits.maxSide).contains(image.width), (1...DocumentLimits.maxSide).contains(image.height),
+              image.width * image.height <= DocumentLimits.documentPixelBudget else {
+            current.session.importError = ImageImportError.tooLarge.localizedDescription
+            return true
+        }
+        current.session.commitTransform()
+        let session = addTab().session
+        session.beginEdit("New from Clipboard")
+        session.createDocument(width: image.width, height: image.height)
+        session.addPixelLayer(image, at: .zero, name: session.nextLayerName(), editName: "Paste")
+        session.endEdit()
+        return true
+    }
+
     func copyLayer(_ id: UUID, into destination: UUID?, at point: CGPoint? = nil) async {
         await copyLayers([id], into: destination, at: point)
     }

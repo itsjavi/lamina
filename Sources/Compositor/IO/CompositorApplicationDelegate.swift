@@ -47,6 +47,25 @@ final class CompositorApplicationDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [updater] in updater?.startUpdater() }
     }
 
+    /// Keeps File › New from Clipboard's enabled state current while the app is in front: the clipboard changes when
+    /// something is copied here or in another app, and nothing announces it.
+    private var clipboardTimer: Timer?
+    func applicationDidBecomeActive(_ notification: Notification) {
+        Task { await workspace.refreshClipboard() }
+        clipboardTimer?.invalidate()
+        clipboardTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let workspace = self?.workspace else { return }
+                Task { await workspace.refreshClipboard() }
+            }
+        }
+    }
+
+    func applicationDidResignActive(_ notification: Notification) {
+        clipboardTimer?.invalidate()
+        clipboardTimer = nil
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if !flag { showEditor?() }
         return true

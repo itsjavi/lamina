@@ -50,6 +50,14 @@ struct CompositorApp: App {
                         Task { await applicationDelegate.projects.newCanvas() }
                     }.configuredKeyboardShortcut("n")
                         .disabled(!applicationDelegate.projects.canStart)
+                    // As in Preview: a new project from the image on the clipboard, no size to fill in. ⌥⌘N, since
+                    // ⇧⌘V is Photoshop's Paste in Place.
+                    Button("New from Clipboard") {
+                        applicationDelegate.showEditor?()
+                        Task { if !(await applicationDelegate.workspace.newFromClipboard()) { NSSound.beep() } }
+                    }
+                        .configuredKeyboardShortcut("n", modifiers: [.command, .option])
+                        .disabled(!applicationDelegate.projects.canStart || !applicationDelegate.workspace.clipboardOffersImage)
                     Button("Open Project…") {
                         applicationDelegate.showEditor?()
                         Task { await applicationDelegate.projects.open() }

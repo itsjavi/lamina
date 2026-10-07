@@ -623,6 +623,13 @@ final class EditorSession {
         restore(snapshot)
     }
 
+    /// A click in the History panel: back or forward to the state with `position` steps applied, as that many Undos
+    /// or Redos would leave it, restored once.
+    func jumpToHistory(_ position: Int) {
+        guard canUseHistory, let snapshot = history.jump(to: position) else { return }
+        restore(snapshot)
+    }
+
     private func restore(_ snapshot: DocumentHistory.Snapshot) {
         cancelCrop()
         cancelGradient()

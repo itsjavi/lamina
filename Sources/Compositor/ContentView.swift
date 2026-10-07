@@ -109,7 +109,7 @@ struct ContentView: View {
                     }
                 }
                 PanelResizeEdge(width: $layersPanelWidth, range: LayersPanel.widths)
-                LayersPanel(session: session, width: layersPanelWidth)
+                SidePanels(session: session, width: layersPanelWidth)
             }
             Divider()
             // Keeps its own height however short the window gets; the tools scroll instead.

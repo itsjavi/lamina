@@ -76,6 +76,7 @@ brew install --cask robbietilton-compositor
 - Large documents: the memory budget scales with your Mac, and a Photoshop file too big to open has its layers cropped to the canvas instead
 - Export JPEG with a live preview (⇧⌥⌘S); Copy Merged
 - Keep working while a project saves
+- A History panel beside Layers lists every undo step by name; click one to go back or forward to it
 - Photoshop-style keyboard shortcuts throughout, remappable or removable in Edit > Keyboard Shortcuts, where any menu command can also be given one
 - Drag a number's label to scrub its value, as in Photoshop
 - Automatic updates, signed and notarized

@@ -191,6 +191,8 @@ final class EditorSession {
     @ObservationIgnored var brushAnchor: CGPoint?
     /// The pointer itself, so a smoothed stroke can catch up to it when the button is released.
     @ObservationIgnored var brushPointer: CGPoint?
+    /// The pen's latest pressure in this stroke; 1 for a mouse. Events that carry none (the release) keep it.
+    @ObservationIgnored var brushPressure: CGFloat = 1
     @ObservationIgnored var maskDistortPreviewCache: MaskDistortPreviewCache?
     /// The last rounded rectangle drawn for a transform in progress, by layer, with the size it was drawn at.
     @ObservationIgnored var shapeTransformPreviewCache: [UUID: (size: CGSize, image: CGImage)] = [:]
@@ -202,11 +204,15 @@ final class EditorSession {
     var showsTransformControls = ToolDefaults.bool("transformControls", true) { didSet { ToolDefaults.set(showsTransformControls, "transformControls") } }
     /// The copies an Option-drag made, and what was selected before it, so Escape can take them away again.
     @ObservationIgnored var transformDuplicate: (copies: [UUID], source: Set<UUID>, primary: UUID?)?
-    var brushSettings = BrushSettings() { didSet { refreshGradient() } }
+    var brushSettings = BrushSettings() { didSet { refreshGradient(); saveBrushDefaults() } }
     var spotHealingMode: SpotHealingMode = .contentAware
     var blurMode: BlurToolMode = .liquify
-    /// The Brush's two modes: Paint lays down the foreground color, Erase clears pixels away (B and E).
-    var brushMode: BrushToolMode = .paint
+    /// The Brush's modes: Paint lays down the foreground color, Erase clears pixels away (B and E), and Dodge and Burn
+    /// lighten and darken the pixels under the stroke.
+    var brushMode: BrushToolMode = .paint { didSet { saveBrushDefaults() } }
+    /// The brush's Dodge and Burn: which tones they work on, and how strongly (0–1).
+    var toneRange: ToneRange = .midtones { didSet { saveBrushDefaults() } }
+    var toneExposure: CGFloat = 0.5 { didSet { saveBrushDefaults() } }
     /// The tool rail's icon, which follows the mode a tool is in.
     func symbol(for tool: NavigationTool) -> String {
         tool == .brush && brushMode == .erase ? "eraser" : tool.symbol
@@ -221,11 +227,68 @@ final class EditorSession {
     /// soft by default, while Brush and Spot Healing share theirs.
     /// The tips of the brush families not in use: Clone Stamp and Smear each keep their own size, hardness and
     /// opacity (both starting soft); the other brushes share one.
-    @ObservationIgnored var parkedBrushTips: [Int: (diameter: CGFloat, hardness: CGFloat, opacity: CGFloat)] = [1: (40, 0, 1), 2: (40, 0, 1)]
+    @ObservationIgnored var parkedBrushTips: [Int: (diameter: CGFloat, hardness: CGFloat, opacity: CGFloat)] = [1: (40, 0, 1), 2: (40, 0, 1)] {
+        didSet { saveBrushDefaults() }
+    }
     private static func tipFamily(_ tool: NavigationTool) -> Int { tool == .cloneStamp ? 1 : tool == .blur ? 2 : 0 }
+    /// The family whose tip `brushSettings` holds. Switching tools swaps the tip in before the tool itself changes.
+    @ObservationIgnored private var activeTipFamily = 0
+    /// What was last written to `ToolDefaults`, so only changes are.
+    @ObservationIgnored private var savedBrushDefaults = BrushDefaults()
+    /// The tips, mode and colors as this document has them, to hand on to the next one.
+    var brushDefaults: BrushDefaults {
+        var result = BrushDefaults()
+        for family in result.tips.indices {
+            if family == activeTipFamily {
+                result.tips[family] = BrushDefaults.Tip(diameter: brushSettings.diameter, hardness: brushSettings.hardness, opacity: brushSettings.opacity)
+            } else if let parked = parkedBrushTips[family] {
+                result.tips[family] = BrushDefaults.Tip(diameter: parked.diameter, hardness: parked.hardness, opacity: parked.opacity)
+            }
+        }
+        result.smoothing = brushSettings.smoothing
+        result.flow = brushSettings.flow
+        result.pressureSize = brushSettings.pressureSize
+        result.pressureOpacity = brushSettings.pressureOpacity
+        result.mode = brushMode
+        result.toneRange = toneRange
+        result.toneExposure = toneExposure
+        result.foreground = foregroundColor
+        result.background = backgroundColor
+        return result
+    }
+    /// A new document starting with the tips, mode and colors the last one left.
+    func apply(_ defaults: BrushDefaults) {
+        for family in defaults.tips.indices where family != activeTipFamily {
+            let tip = defaults.tips[family]
+            parkedBrushTips[family] = (tip.diameter, tip.hardness, tip.opacity)
+        }
+        var settings = brushSettings
+        let tip = defaults.tips[activeTipFamily]
+        settings.diameter = tip.diameter
+        settings.hardness = tip.hardness
+        settings.opacity = tip.opacity
+        settings.smoothing = defaults.smoothing
+        settings.flow = defaults.flow
+        settings.pressureSize = defaults.pressureSize
+        settings.pressureOpacity = defaults.pressureOpacity
+        settings.red = defaults.foreground.red
+        settings.green = defaults.foreground.green
+        settings.blue = defaults.foreground.blue
+        brushSettings = settings
+        brushMode = defaults.mode
+        toneRange = defaults.toneRange
+        toneExposure = defaults.toneExposure
+        backgroundColor = defaults.background
+    }
+    private func saveBrushDefaults() {
+        let current = brushDefaults
+        guard current != savedBrushDefaults else { return }
+        current.save(since: savedBrushDefaults)
+        savedBrushDefaults = current
+    }
     @ObservationIgnored var cloneOffset: CGSize?
     var maskPaintWhite = false { didSet { refreshGradient() } }
-    var backgroundColor = PaletteColor.white { didSet { refreshGradient() } }
+    var backgroundColor = PaletteColor.white { didSet { refreshGradient(); saveBrushDefaults() } }
     var gradientSettings = GradientSettings() { didSet { refreshGradient() } }
     var gradientEdit: GradientEdit?
     var lassoDraft: LassoDraft?
@@ -368,6 +431,7 @@ final class EditorSession {
         let from = Self.tipFamily(tool), to = Self.tipFamily(value)
         if from != to, let parked = parkedBrushTips[to] {
             parkedBrushTips[from] = (brushSettings.diameter, brushSettings.hardness, brushSettings.opacity)
+            activeTipFamily = to
             var settings = brushSettings
             settings.diameter = parked.diameter
             settings.hardness = parked.hardness

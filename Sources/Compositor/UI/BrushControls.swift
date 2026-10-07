@@ -3,14 +3,26 @@ import SwiftUI
 struct BrushControls: View {
     @Bindable var session: EditorSession
     var body: some View {
+        // With everything the Brush has (Flow, the pressure buttons, Dodge and Burn's options) the bar is wider than
+        // many windows. Where it doesn't fit, the sliders go and their fields stay, each still scrubbable by its label,
+        // rather than the bar being cut off.
+        ViewThatFits(in: .horizontal) {
+            controls(sliders: true)
+            controls(sliders: false)
+        }
+        .padding(.horizontal, 18).toolHeaderBar().releasesFocusOnCommit(session)
+        .disabled(session.showsBusy)
+    }
+
+    private func controls(sliders: Bool) -> some View {
         HStack(spacing: 12) {
-            Text(session.tool == .spotHealing ? "Spot Healing" : session.tool == .cloneStamp ? "Clone Stamp" : session.tool == .blur ? "Smear" : session.brushMode == .erase ? "Eraser" : "Brush").font(ToolHeaderStyle.titleFont)
+            Text(session.tool == .spotHealing ? "Spot Healing" : session.tool == .cloneStamp ? "Clone Stamp" : session.tool == .blur ? "Smear" : session.brushMode == .erase ? "Eraser" : session.brushMode == .paint ? "Brush" : session.brushMode.rawValue).font(ToolHeaderStyle.titleFont)
             if session.tool == .brush {
                 Picker("Mode", selection: $session.brushMode) {
                     ForEach(BrushToolMode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                 }
                 .pickerStyle(.segmented).labelsHidden().fixedSize()
-                .help("Paint with the foreground color (B), or erase pixels away (E)")
+                .help("Paint with the foreground color (B), erase pixels away (E), or lighten (Dodge) or darken (Burn) them. Tab steps through them.")
             }
             if session.tool == .blur {
                 Picker("Mode", selection: $session.blurMode) {
@@ -47,8 +59,18 @@ struct BrushControls: View {
                     session.brushSettings.diameter = value.isFinite ? min(2000, max(1, value)) : 40
                 }
                 .unitSuffix("px")
+                // Fields keep their units whole: otherwise the bar squeezes a unit onto two lines, even with room to
+                // spare at its end.
+                .fixedSize()
+            // A pen's pressure, as Photoshop's two buttons: one beside Size, one beside Opacity.
+            if session.tool == .brush {
+                Toggle(isOn: $session.brushSettings.pressureSize) { Image(systemName: "scribble.variable") }
+                    .toggleStyle(.button)
+                    .help("Pen pressure sets the size: a light touch paints a thinner line. A mouse or trackpad always paints full size.")
+                    .accessibilityLabel("Pressure for size")
+            }
             Text("Hardness").scrubbable(sensitivity: 0.01, value: $session.brushSettings.hardness, range: 0...1)
-            Slider(value: $session.brushSettings.hardness, in: 0...1).frame(width: 100)
+            if sliders { Slider(value: $session.brushSettings.hardness, in: 0...1).frame(width: 100) }
             TextField("Hardness", value: Binding<Double>(get: { Double(session.brushSettings.hardness * 100) },
                 set: { session.brushSettings.hardness = $0.isFinite ? CGFloat(min(1, max(0, $0 / 100))) : 1 }),
                 format: .number.precision(.fractionLength(0)))
@@ -56,9 +78,10 @@ struct BrushControls: View {
                 .arrowSteps(value: { Double(session.brushSettings.hardness * 100) },
                             change: { session.brushSettings.hardness = CGFloat(min(1, max(0, $0 / 100))) })
                 .unitSuffix("%")
+                .fixedSize()
             Text(session.tool == .blur ? "Strength" : "Opacity")
                 .scrubbable(sensitivity: 0.01, value: $session.brushSettings.opacity, range: 0.01...1)
-            Slider(value: $session.brushSettings.opacity, in: 0.01...1).frame(width: 100)
+            if sliders { Slider(value: $session.brushSettings.opacity, in: 0.01...1).frame(width: 100) }
             TextField("Opacity", value: Binding<Double>(get: { Double(session.brushSettings.opacity * 100) },
                 set: { session.brushSettings.opacity = $0.isFinite ? CGFloat(min(100, max(1, $0)) / 100) : 1 }),
                 format: .number.precision(.fractionLength(0)))
@@ -67,12 +90,33 @@ struct BrushControls: View {
                             change: { session.brushSettings.opacity = CGFloat(min(100, max(1, $0)) / 100) })
                 .help("Press 1–9 for 10–90%, 0 for 100%")
                 .unitSuffix("%")
+                .fixedSize()
+            if session.tool == .brush {
+                Toggle(isOn: $session.brushSettings.pressureOpacity) { Image(systemName: "drop.halffull") }
+                    .toggleStyle(.button)
+                    .help("Pen pressure sets the opacity: a light touch paints fainter, up to the brush’s Opacity. A mouse or trackpad always paints at full opacity.")
+                    .accessibilityLabel("Pressure for opacity")
+                // Photoshop's Flow: how much each dab lays down, building up toward Opacity as the stroke goes over itself.
+                // A field without a slider, like Size, so the bar stays narrow enough with everything the Brush has.
+                Text("Flow").scrubbable(sensitivity: 0.01, value: $session.brushSettings.flow, range: 0.01...1)
+                TextField("Flow", value: Binding<Double>(get: { Double(session.brushSettings.flow * 100) },
+                    set: { session.brushSettings.flow = $0.isFinite ? CGFloat(min(100, max(1, $0)) / 100) : 1 }),
+                    format: .number.precision(.fractionLength(0)))
+                    .frame(width: 42).textFieldStyle(.roundedBorder)
+                    .arrowSteps(value: { Double(session.brushSettings.flow * 100) },
+                                change: { session.brushSettings.flow = CGFloat(min(100, max(1, $0)) / 100) })
+                    .help("How much paint each dab lays down. Going over the same place in one stroke builds it up, up to the Opacity")
+                    .unitSuffix("%")
+                    .fixedSize()
+            }
             // Blur softens by a radius of its own, apart from how strongly it lays the softening down.
             if session.tool == .blur, session.blurMode == .blur {
                 Text("Radius").scrubbable(sensitivity: 0.1, value: $session.brushSettings.blurRadius, range: 0.5...50)
                 // The slider covers everyday radii; typing or scrubbing reaches up to 50.
-                Slider(value: Binding(get: { min(20, session.brushSettings.blurRadius) },
-                                      set: { session.brushSettings.blurRadius = $0 }), in: 0.5...20).frame(width: 100)
+                if sliders {
+                    Slider(value: Binding(get: { min(20, session.brushSettings.blurRadius) },
+                                          set: { session.brushSettings.blurRadius = $0 }), in: 0.5...20).frame(width: 100)
+                }
                 TextField("Radius", value: Binding<Double>(get: { Double(session.brushSettings.blurRadius) },
                     set: { session.brushSettings.blurRadius = $0.isFinite ? CGFloat(min(50, max(0.5, $0))) : 5 }),
                     format: .number.precision(.fractionLength(0...1)))
@@ -81,12 +125,31 @@ struct BrushControls: View {
                                 change: { session.brushSettings.blurRadius = CGFloat(min(50, max(0.5, $0))) })
                     .help("How far the blur softens, in pixels")
                     .unitSuffix("px")
+                    .fixedSize()
+            }
+            // Dodge and Burn: which tones they reach, and how far they move them.
+            if session.tool == .brush, session.brushMode.toneLightens != nil {
+                Picker("Range", selection: $session.toneRange) {
+                    ForEach(ToneRange.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                }
+                .fixedSize()
+                .help("Work mostly on the dark, middle or light tones; the rest are touched less the further they are")
+                Text("Exposure").scrubbable(sensitivity: 0.01, value: $session.toneExposure, range: 0...1)
+                TextField("Exposure", value: Binding<Double>(get: { Double(session.toneExposure * 100) },
+                    set: { session.toneExposure = $0.isFinite ? CGFloat(min(100, max(0, $0)) / 100) : 0.5 }),
+                    format: .number.precision(.fractionLength(0)))
+                    .frame(width: 42).textFieldStyle(.roundedBorder)
+                    .arrowSteps(value: { Double(session.toneExposure * 100) },
+                                change: { session.toneExposure = CGFloat(min(100, max(0, $0)) / 100) })
+                    .help("How far a full-strength stroke moves the pixels toward white or black")
+                    .unitSuffix("%")
+                    .fixedSize()
             }
             // Paint and Erase only: healing, cloning and smearing have their own feel.
             if session.tool == .brush {
                 Text("Smoothing")
                     .scrubbable(sensitivity: 1, value: $session.brushSettings.smoothing, range: 0...100)
-                Slider(value: $session.brushSettings.smoothing, in: 0...100).frame(width: 100)
+                if sliders { Slider(value: $session.brushSettings.smoothing, in: 0...100).frame(width: 100) }
                 TextField("Smoothing", value: Binding<Double>(get: { Double(session.brushSettings.smoothing) },
                     set: { session.brushSettings.smoothing = $0.isFinite ? CGFloat(min(100, max(0, $0))) : 0 }),
                     format: .number.precision(.fractionLength(0)))
@@ -100,7 +163,8 @@ struct BrushControls: View {
                     Text("Black · Hide").tag(false)
                     Text("White · Reveal").tag(true)
                 }.frame(width: 180)
-            } else if session.tool != .cloneStamp, session.tool != .blur {
+            } else if session.tool != .cloneStamp, session.tool != .blur,
+                      !(session.tool == .brush && session.brushMode.toneLightens != nil) {
                 // Same foreground color and Color Picker as the tool-rail swatch.
                 HStack(spacing: 6) {
                     Text("Color")
@@ -124,8 +188,6 @@ struct BrushControls: View {
             }
             if session.isMaskSelected { Text("Mask").foregroundStyle(.secondary) }
         }
-        .padding(.horizontal, 18).toolHeaderBar().releasesFocusOnCommit(session)
-        .disabled(session.showsBusy)
     }
 }
 

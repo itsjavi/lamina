@@ -108,6 +108,23 @@ choice is in System Settings › Privacy & Security › Automation. Only your ow
 and the app's sandbox entitlements are unchanged: `lamina` itself writes the exported files. With the Dev build
 running, use `lamina --dev …` (or the copy inside `build/Compositor Dev.app`).
 
+### As an MCP server
+
+`lamina mcp` offers the same commands as MCP tools over stdio, one tool per command. Register it with your MCP host:
+
+```bash
+claude mcp add lamina -- /Applications/Compositor.app/Contents/Helpers/lamina mcp    # Claude Code
+codex mcp add lamina -- /Applications/Compositor.app/Contents/Helpers/lamina mcp     # Codex
+```
+
+For Claude's desktop app, add `"lamina": {"command": "/Applications/Compositor.app/Contents/Helpers/lamina", "args":
+["mcp"]}` under `mcpServers` in its `claude_desktop_config.json`. Add `--dev` after `mcp` to drive the Dev build.
+
+It speaks MCP 2026-07-28 (stateless, with `server/discover`) and, for hosts that still open with `initialize`,
+2025-11-25 and earlier. Checked with Claude Code 2.1.288 (2025-11-25 by default, 2026-07-28 with
+`MCP_PROTOCOL_NEGOTIATION=auto`) and Codex 0.160.0 (2025-11-25 by default, 2026-07-28 with `--enable mcp_2026_07_28`
+and `CODEX_MCP_PROTOCOL_VERSION=2026-07-28` in the server's environment).
+
 ## Requirements
 
 - macOS 26.0 or later on a Mac with Apple silicon

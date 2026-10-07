@@ -14,6 +14,7 @@ public enum Help {
 
         Commands:
         \(commands.joined(separator: "\n"))
+          \("mcp".padding(toLength: width, withPad: " ", startingAt: 0))Serve these commands as MCP tools over stdin and stdout (lamina help mcp).
 
         Options for every command:
           --json             Print the result (or the error) as JSON.
@@ -39,6 +40,29 @@ public enum Help {
         Exit status: 0 done, 1 the app refused or the command failed, 2 bad usage, 3 couldn't reach the app.
         """
     }
+
+    public static var mcp: String {
+        let tools = CommandCatalog.commands.map { "  \($0.toolName)" }.joined(separator: "\n")
+        return """
+        lamina mcp: serve lamina's commands as Model Context Protocol tools over stdin and stdout.
+
+        Usage: lamina mcp [--dev | --app <bundle-id> | --pid <pid>] [--timeout <secs>]
+
+        An MCP host (Claude Code, Codex, Claude's desktop app…) starts it; it isn't meant to be run by hand. Register it:
+          claude mcp add lamina -- \(installedPath) mcp
+          codex mcp add lamina -- \(installedPath) mcp
+
+        Tools, one per command (lamina help <command> describes each):
+        \(tools)
+
+        Protocol: MCP \(MCPServer.modernVersions.joined(separator: ", ")) (stateless, server/discover), and
+        \(MCPServer.legacyVersions.joined(separator: ", ")) for hosts that still open with initialize.
+        stdout carries only MCP messages; lamina logs to stderr. The app has to be running when a tool is called.
+        """
+    }
+
+    /// Where the release app keeps lamina, for examples.
+    static let installedPath = "/Applications/\(AppIdentity.displayName).app/Contents/Helpers/lamina"
 
     public static func command(_ spec: CommandSpec) -> String {
         let usage = spec.parameters.map { parameter in

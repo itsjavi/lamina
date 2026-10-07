@@ -151,7 +151,7 @@ public enum CommandCatalog {
             ParameterSpec("above", .id, "Put it above this layer (default: above the selected layer)."),
             expectRevision,
         ],
-        result: change, effect: .edits, kinds: EffectCatalog.adjustments)
+        result: change, effect: .adds, kinds: EffectCatalog.adjustments)
 
     static let exportDocument = CommandSpec(
         name: "export-document", title: "Export a document",
@@ -194,7 +194,7 @@ public enum CommandCatalog {
             .init("path", .string, "The file written.", required: false),
         ]),
         effect: .reads,
-        fileOutput: .init(parameter: "output", mimeTypes: ["png": "image/png"]))
+        fileOutput: .init(parameter: "output", mimeTypes: ["png": "image/png"], showsImage: true))
 
     static let undo = CommandSpec(
         name: "undo", title: "Undo",

@@ -14,6 +14,10 @@ public enum JSONValue: Sendable, Hashable {
         if case .object(let object) = self { return object[key] }
         return nil
     }
+    public subscript(index: Int) -> JSONValue? {
+        if case .array(let array) = self, array.indices.contains(index) { return array[index] }
+        return nil
+    }
     public var stringValue: String? { if case .string(let value) = self { return value }; return nil }
     public var boolValue: Bool? { if case .bool(let value) = self { return value }; return nil }
     public var doubleValue: Double? { if case .number(let value) = self { return value }; return nil }

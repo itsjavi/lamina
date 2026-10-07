@@ -31,7 +31,8 @@ let package = Package(
         // The commands the running app answers (names, parameters, results), shared by the app, `lamina` and its MCP
         // server. Foundation only, nonisolated.
         .target(name: "LaminaAutomation", path: "Sources/LaminaAutomation", swiftSettings: [.swiftLanguageMode(.v6)]),
-        // `lamina`: arguments, help, output and the Apple Event client, in a library so tests can drive it.
+        // `lamina`: arguments, help, output, the Apple Event client and the MCP server (`lamina mcp`), in a library so
+        // tests can drive it.
         .target(name: "LaminaCLI", dependencies: ["LaminaAutomation"], path: "Sources/LaminaCLI",
                 swiftSettings: [.swiftLanguageMode(.v6)]),
         .executableTarget(name: "lamina", dependencies: ["LaminaCLI"], path: "Sources/lamina",

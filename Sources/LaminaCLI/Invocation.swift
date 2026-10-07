@@ -8,6 +8,8 @@ public struct Invocation: Equatable {
         case help(command: String?)
         case version
         case run(command: String, arguments: [String: JSONValue])
+        /// `lamina mcp`: serve the commands as MCP tools over stdin and stdout.
+        case mcp
     }
 
     public var action: Action
@@ -77,6 +79,11 @@ public struct Invocation: Equatable {
         }
         guard let command else { return invocation }
         if command == "help" { return invocation }
+        if command == "mcp" {
+            guard raw.isEmpty else { throw AutomationError.invalid("lamina mcp takes only --dev, --app, --pid and --timeout.") }
+            invocation.action = helpRequested ? .help(command: "mcp") : .mcp
+            return invocation
+        }
         guard let spec = CommandCatalog.command(command) else {
             throw AutomationError(.unknownCommand, "Unknown command \(command). See lamina --help.")
         }

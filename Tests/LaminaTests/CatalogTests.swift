@@ -52,6 +52,8 @@ struct CatalogTests {
         let filter = try #require(CommandCatalog.command("apply_filter"))
         let blur = try filter.validate(["document": "3f2a", "layer": "9c1b", "kind": "gaussian-blur", "settings": ["radius": 4]])
         #expect(blur.object("settings") == ["radius": 4])
+        let quoted = try filter.validate(["document": "3f2a", "layer": "9c1b", "kind": "gaussian-blur", "settings": #"{"radius": 4}"#])
+        #expect(quoted.object("settings") == ["radius": 4], "settings sent as JSON text are taken as the object")
         do {
             _ = try filter.validate(["document": "3f2a", "layer": "9c1b", "kind": "gaussian-blur", "settings": ["radius": 400]])
             Issue.record("an out-of-range setting passed")

@@ -4,12 +4,16 @@ Adobe Photoshop costs too much and tools like GIMP don’t feel familiar enough 
 
 The goal was to create a full-featured image editor that is completely free and open source. I used to use Photoshop for compositing and post-processing, so Compositor is built around that workflow - with the tools needed to create a pixel-perfect final image.
 
-Because it’s open source, you can download the Xcode project and add, remove, or modify any feature to fit your workflow.
+Because it’s open source, you can download the source and add, remove, or modify any feature to fit your workflow.
+
+> This is a fork of [robbietilton/Compositor](https://github.com/robbietilton/Compositor), built as a Swift package
+> (no Xcode project). Its builds have their own identity (`com.itsjavi.compositor`) and update feed
+> (`downloads.itsjavi.com/compositor`), so they install and update apart from upstream's app.
 
 ## Installation
 
 ### Download
-Get Compositor from [robbietilton.com/compositor](https://robbietilton.com/compositor), or download the latest release directly from [GitHub Releases](https://github.com/robbietilton/Compositor/releases/latest).
+The upstream app: get Compositor from [robbietilton.com/compositor](https://robbietilton.com/compositor), or download the latest release directly from [GitHub Releases](https://github.com/robbietilton/Compositor/releases/latest).
 
 ### Homebrew
 
@@ -80,21 +84,48 @@ brew install --cask robbietilton-compositor
 ## Requirements
 
 - macOS 26.0 or later on a Mac with Apple silicon
-- Xcode 26 or later (to build from source)
+- Xcode 26 or later (to build from source: Swift 6.2, and actool for the icon)
 
 ## Building
 
-Open `Compositor.xcodeproj` and run the **Compositor** scheme.
+```bash
+make app        # build/Compositor.app (release, with the updater)
+make dev        # build/Compositor Dev.app (debug, its own id, sandbox container and prefs, no updater)
+make install    # copy the release app to /Applications
+make test       # unit tests (swift test)
+```
+
+The app is App Sandboxed: its preferences and recent projects live in `~/Library/Containers/com.itsjavi.compositor`
+(`….dev` for the Dev build).
 
 ## Releasing
 
-`scripts/release.sh` builds a Release version, signs it with Developer ID, notarizes and staples it, and packages it into `dist/Compositor-<version>.dmg`.
+Files go to the `compositor/` folder of the downloads bucket (downloads.itsjavi.com), like the other apps.
 
-It needs, all kept outside this repository:
+```bash
+make release                  # build/release: Compositor.app, zip, DMG, SHA256SUMS
+make appcast                  # signs the zip, writes build/appcast/appcast.xml
+make bump V=patch PUSH=1      # bump VERSION, tag vX.Y.Z on main, push → release workflow
+```
 
-- a **Developer ID Application** certificate in the login keychain
-- notarization credentials saved with `xcrun notarytool store-credentials "compositor-notary" …`
-- [`create-dmg`](https://github.com/create-dmg/create-dmg) (`brew install create-dmg`)
+`make release` signs and notarizes when `DEVELOPER_ID` and `NOTARY_PROFILE` are set (see `scripts/release.sh`);
+otherwise it builds ad-hoc and lists what's missing.
+
+Sparkle's private EdDSA key lives in the login Keychain under the account `compositor` (never in the repo); the public
+key is `Resources/SparklePublicKey.txt`. Create them once with:
+
+```bash
+swift package resolve && .build/artifacts/sparkle/Sparkle/bin/generate_keys --account compositor
+```
+
+and save the printed public key to `Resources/SparklePublicKey.txt`. Back the private key up (and export it for CI)
+with `generate_keys --account compositor -x compositor-sparkle.key`. Losing it means installed copies can't accept
+updates signed with a new key. `make appcast` refuses a key that doesn't match the app's public key. Upload the zip
+first, then `appcast.xml`.
+
+CI (`.github/workflows/`): `ci.yml` runs the tests; `release.yml` runs on `vX.Y.Z` tags and uses these optional secrets
+in a `release` environment: `DEVELOPER_ID_P12`, `DEVELOPER_ID_P12_PASSWORD`, `APPLE_ID`, `APPLE_APP_PASSWORD`,
+`APPLE_TEAM_ID`, `SPARKLE_PRIVATE_KEY`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`.
 
 ## License
 

@@ -25,15 +25,10 @@ The final Debug unit run passed **171 tests in 25 suites**. Logs for this change
 
 ## Reproduce
 
-Run performance tests alone, so other main-actor tests do not contend with the benchmark. `TEST_RUNNER_` forwards the environment variable into the Xcode test host.
+Run performance tests alone, so other main-actor tests do not contend with the benchmark.
 
 ```sh
-TEST_RUNNER_BRUSH_BENCHMARK=1 xcodebuild \
-  -project Compositor.xcodeproj -scheme Compositor -configuration Debug \
-  -derivedDataPath /tmp/CompositorBrush -destination 'platform=macOS' \
-  CODE_SIGNING_ALLOWED=NO ENABLE_DEBUG_DYLIB=NO \
-  -parallel-testing-enabled NO \
-  -only-testing:CompositorTests/BrushPerformanceTests test
+BRUSH_BENCHMARK=1 swift test --filter BrushPerformanceTests
 ```
 
 The benchmark logs `BRUSH BENCH` lines and exports `/tmp/compositor-brush-benchmark.png` for visual inspection. It exercises both blank and opaque layers. The exported example contains both benchmark passes.

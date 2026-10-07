@@ -307,6 +307,11 @@ struct CompositorApp: App {
                     }
                 }
                 CommandMenu("Filter") {
+                    Button(session.lastFilter.map { "Last Filter: " + $0.rawValue } ?? "Last Filter") {
+                        Task { await session.repeatLastFilter() }
+                    }
+                        .configuredKeyboardShortcut("f").disabled(!session.canRepeatLastFilter)
+                    Divider()
                     ForEach(FilterKind.allCases.filter { $0 != .contentAwareFill && !$0.isImageAdjustment }, id: \.self) { kind in
                         Button("\(kind.rawValue)…") { session.beginFilter(kind) }
                             .assignableShortcut("Filter › \(kind.rawValue)…")

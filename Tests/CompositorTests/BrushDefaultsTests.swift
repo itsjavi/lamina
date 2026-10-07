@@ -82,6 +82,8 @@ struct BrushDefaultsTests {
         first.brushSettings.opacity = 0.7
         first.brushSettings.smoothing = 20
         first.brushMode = .erase
+        first.toneRange = .highlights
+        first.toneExposure = 0.8
         first.foregroundColor = PaletteColor(red: 1, green: 0, blue: 0)
         first.backgroundColor = PaletteColor(red: 0, green: 0, blue: 1)
         first.selectTool(.cloneStamp)

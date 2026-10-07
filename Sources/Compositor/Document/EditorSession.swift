@@ -205,8 +205,12 @@ final class EditorSession {
     var brushSettings = BrushSettings() { didSet { refreshGradient(); saveBrushDefaults() } }
     var spotHealingMode: SpotHealingMode = .contentAware
     var blurMode: BlurToolMode = .liquify
-    /// The Brush's two modes: Paint lays down the foreground color, Erase clears pixels away (B and E).
+    /// The Brush's modes: Paint lays down the foreground color, Erase clears pixels away (B and E), and Dodge and Burn
+    /// lighten and darken the pixels under the stroke.
     var brushMode: BrushToolMode = .paint { didSet { saveBrushDefaults() } }
+    /// The brush's Dodge and Burn: which tones they work on, and how strongly (0–1).
+    var toneRange: ToneRange = .midtones { didSet { saveBrushDefaults() } }
+    var toneExposure: CGFloat = 0.5 { didSet { saveBrushDefaults() } }
     /// The tool rail's icon, which follows the mode a tool is in.
     func symbol(for tool: NavigationTool) -> String {
         tool == .brush && brushMode == .erase ? "eraser" : tool.symbol
@@ -241,6 +245,8 @@ final class EditorSession {
         }
         result.smoothing = brushSettings.smoothing
         result.mode = brushMode
+        result.toneRange = toneRange
+        result.toneExposure = toneExposure
         result.foreground = foregroundColor
         result.background = backgroundColor
         return result
@@ -262,6 +268,8 @@ final class EditorSession {
         settings.blue = defaults.foreground.blue
         brushSettings = settings
         brushMode = defaults.mode
+        toneRange = defaults.toneRange
+        toneExposure = defaults.toneExposure
         backgroundColor = defaults.background
     }
     private func saveBrushDefaults() {

@@ -1,6 +1,6 @@
 import Foundation
 
-/// The brush tips, the Brush's mode and the two colors belong to the person too (`ToolDefaults`): a new document
+/// The brush tips, the Brush's mode (with Dodge and Burn's range and exposure) and the two colors belong to the person too (`ToolDefaults`): a new document
 /// starts with them as they were last left, in any document, as Photoshop's do.
 nonisolated struct BrushDefaults: Equatable, Sendable {
     struct Tip: Equatable, Sendable {
@@ -12,6 +12,8 @@ nonisolated struct BrushDefaults: Equatable, Sendable {
     var tips = [Tip(diameter: 40, hardness: 1, opacity: 1), Tip(diameter: 40, hardness: 0, opacity: 1), Tip(diameter: 40, hardness: 0, opacity: 1)]
     var smoothing: CGFloat = 0
     var mode = BrushToolMode.paint
+    var toneRange = ToneRange.midtones
+    var toneExposure: CGFloat = 0.5
     var foreground = PaletteColor.black
     var background = PaletteColor.white
 
@@ -31,6 +33,8 @@ nonisolated struct BrushDefaults: Equatable, Sendable {
         }
         result.smoothing = number("brushSmoothing", result.smoothing, in: 0...100)
         result.mode = BrushToolMode(rawValue: ToolDefaults.string("brushMode", "", in: store)) ?? result.mode
+        result.toneRange = ToneRange(rawValue: ToolDefaults.string("toneRange", "", in: store)) ?? result.toneRange
+        result.toneExposure = number("toneExposure", result.toneExposure, in: 0...1)
         result.foreground = PaletteColor(hex: ToolDefaults.string("foregroundColor", "", in: store)) ?? result.foreground
         result.background = PaletteColor(hex: ToolDefaults.string("backgroundColor", "", in: store)) ?? result.background
         return result
@@ -45,6 +49,8 @@ nonisolated struct BrushDefaults: Equatable, Sendable {
         }
         if smoothing != old.smoothing { ToolDefaults.set(Double(smoothing), "brushSmoothing", in: store) }
         if mode != old.mode { ToolDefaults.set(mode.rawValue, "brushMode", in: store) }
+        if toneRange != old.toneRange { ToolDefaults.set(toneRange.rawValue, "toneRange", in: store) }
+        if toneExposure != old.toneExposure { ToolDefaults.set(Double(toneExposure), "toneExposure", in: store) }
         if foreground != old.foreground { ToolDefaults.set(foreground.hex, "foregroundColor", in: store) }
         if background != old.background { ToolDefaults.set(background.hex, "backgroundColor", in: store) }
     }

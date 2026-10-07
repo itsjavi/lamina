@@ -1,11 +1,11 @@
 ---
 id: TASK-11
 title: 'Harden paste, saved values and mask tracing'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-07 20:35'
-updated_date: '2026-10-07 21:36'
+updated_date: '2026-10-07 21:57'
 labels:
   - upstream
 milestone: m-1
@@ -30,10 +30,10 @@ Three robustness gaps from upstream's closed hardening PRs that still exist in t
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Pasting and duplicating pixels check the same DocumentLimits as import and save; a paste that is too large is refused with a message
-- [ ] #2 Loading a project rejects or clamps out-of-range rotation and hue values, and the inspectors format any value without trapping
-- [ ] #3 Making a selection from a mask or layer (⌘-click its thumbnail) uses the capped native tracer, so a noisy mask on a large layer can't hang the app
-- [ ] #4 Tests cover each case
+- [x] #1 Pasting and duplicating pixels check the same DocumentLimits as import and save; a paste that is too large is refused with a message
+- [x] #2 Loading a project rejects or clamps out-of-range rotation and hue values, and the inspectors format any value without trapping
+- [x] #3 Making a selection from a mask or layer (⌘-click its thumbnail) uses the capped native tracer, so a noisy mask on a large layer can't hang the app
+- [x] #4 Tests cover each case
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -54,3 +54,9 @@ Refusals use brushError, the alert Magic Wand and the other edits already use fo
 swift test --disable-keychain --filter 'DocumentAdmissionTests|AngleLoadTests|MaskSelectionTracingTests|SelectionTests|LayerMaskTests|SelectionClipboardTests|ProjectTests|ShapeToolTests|TypeToolTests|MagicWandTests|HueSaturationTests|TransformTests' -> 129 tests in 14 suites passed (the existing SelectionTests pin the traced outlines' exact edges, holes and transforms on the new tracer).
 The 2048x2048 checkerboard layer and mask (about 8.4M edges) are refused with the message and leave selection and history untouched.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Reimplemented upstream's closed PRs #12, #10 and #17. Paste, Layer via Copy, new shapes and text, and Duplicate go through one admission check over DocumentLimits (layers, image and mask pixels counted as saving counts them) and are refused with a message before anything changes; external images are admitted from their header before decoding, and PDF/vector paste still works through NSImage. Loading brings rotations and Hue/Saturation band handles within one turn, and the Transform and Hue/Saturation inspectors label any value without trapping. Mask, layer and Select Subject outlines use the Magic Wand's capped native tracer. Covered by DocumentAdmissionTests, AngleLoadTests and MaskSelectionTracingTests; with the Selection, LayerMask, SelectionClipboard, Project, ShapeTool, TypeTool, MagicWand, HueSaturation and Transform suites, 129 tests pass.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -1,11 +1,11 @@
 ---
 id: TASK-12
 title: 'New Canvas: focus Width, units and resolution'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-07 20:35'
-updated_date: '2026-10-07 21:47'
+updated_date: '2026-10-07 21:57'
 labels:
   - upstream
 milestone: m-1
@@ -30,9 +30,9 @@ New Canvas doesn't focus or select the Width field when it opens (upstream issue
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Opening New Canvas focuses the Width field with its text selected
-- [ ] #2 Width and height can be entered in px, in, cm or mm with a resolution in ppi, reusing Image Size's conversions, and the new document keeps that resolution
-- [ ] #3 Tests cover the conversions
+- [x] #1 Opening New Canvas focuses the Width field with its text selected
+- [x] #2 Width and height can be entered in px, in, cm or mm with a resolution in ppi, reusing Image Size's conversions, and the new document keeps that resolution
+- [x] #3 Tests cover the conversions
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -54,4 +54,12 @@ Focus at launch (issue #184): in the app the Width request made in onAppear was 
 Captures: open -g -n of the baseline app and of make dev's build, no document, window captured with screencapture -l.
 swift test --disable-keychain --filter 'NewCanvasTests|ImageSizeTests|CanvasEntryTests|ProjectWorkspaceTests' -> 23 tests in 4 suites passed.
 Image Size gains Millimeters as a side effect of sharing the units. Choosing a preset switches New Canvas back to pixels.
+
+Dropped the window-focus unit test (dda7f7e): it passed on main too, since the launch problem only shows in the app's own window, and SwiftUI applies focus to the key window, which other suites' windows take when tests run side by side. Rerun: swift test --disable-keychain --filter 'NewCanvasTests|...' -> NewCanvasTests' 5 conversion and resolution tests pass.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+New Canvas opens with Width focused and its number selected (it asks again once the window has set up its first responder; verified in the app at launch against main, and that the retry is what fixes it). Width and height take px, in, cm or mm with a resolution in ppi through SizeUnit, the conversions moved out of Image Size and shared (Image Size gains millimeters); changing units converts the fields and the new document keeps the resolution. NewCanvasTests cover the conversions, limits, unit changes and the resolution reaching the document; before/after captures attached. A foreground launch and a New Canvas opened from a new tab still deserve a manual look.
+<!-- SECTION:FINAL_SUMMARY:END -->

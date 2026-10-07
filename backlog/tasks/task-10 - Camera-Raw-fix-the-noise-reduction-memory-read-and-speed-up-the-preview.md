@@ -1,11 +1,11 @@
 ---
 id: TASK-10
 title: 'Camera Raw: fix the noise-reduction memory read and speed up the preview'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-07 20:35'
-updated_date: '2026-10-07 21:30'
+updated_date: '2026-10-07 21:57'
 labels:
   - upstream
   - performance
@@ -30,9 +30,9 @@ Color noise reduction in Sources/CPixels/AdjustPixels.c skips clear pixels witho
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Clear pixels get a defined chroma value, so noise reduction never reads uninitialized memory
-- [ ] #2 The preview renders the same pixels as before, pinned by tests recorded against the current kernel, and is measurably faster on a 24 MP image (timings before and after in the notes)
-- [ ] #3 Timing-sensitive tests can't make CI flaky
+- [x] #1 Clear pixels get a defined chroma value, so noise reduction never reads uninitialized memory
+- [x] #2 The preview renders the same pixels as before, pinned by tests recorded against the current kernel, and is measurably faster on a 24 MP image (timings before and after in the notes)
+- [x] #3 Timing-sensitive tests can't make CI flaky
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -58,3 +58,9 @@ Timings, CAMERA_RAW_BENCHMARK=1 swift test -c release -Xswiftc -enable-testing -
 | Light and Color on the full 24 MP image (commit) | 3447 ms | 275 ms (13x) |
 Upstream's two always-on timing tests (thresholds of 200 and 100 ms, skipped only under code coverage) are replaced by the opt-in suite, so CI never times anything.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Ported upstream PRs #178 and #179. Clear pixels now write 0 into the color-noise chroma plane (regression test included). Output hashes were recorded on the current single-threaded kernel in this build before switching (they equal upstream's), and still match after the kernels moved to all cores, a lookup table for opaque pixels, a banded column blur and scopes counted on a 512 px copy (33 Camera Raw tests pass). On a 24 MP photo (M1 Max, release build) a Light and Color preview step went from 491 to 43 ms, Effects from 313 to 32 ms, Detail from 378 to 218 ms, and Light and Color on the full image from 3447 to 275 ms. The benchmark only runs with CAMERA_RAW_BENCHMARK=1, so CI never times anything.
+<!-- SECTION:FINAL_SUMMARY:END -->

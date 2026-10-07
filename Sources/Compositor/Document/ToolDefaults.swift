@@ -8,7 +8,7 @@ import Foundation
 /// or the app the person is actually using. They run in `swift test`'s tool, never in an app bundle.
 nonisolated enum ToolDefaults {
     private static let prefix = "tool."
-    private static let isTesting = Bundle.main.bundleURL.pathExtension != "app"
+    static let isTesting = Bundle.main.bundleURL.pathExtension != "app"
 
     static func bool(_ key: String, _ fallback: Bool) -> Bool {
         guard !isTesting else { return fallback }

@@ -50,6 +50,16 @@ build never updates itself, and Check for Updates… is disabled there. `build-a
 into the entitlements (Sparkle's sandboxed installer services are reached by name). Projects are user documents
 (`.comp` folders) wherever the person saves them; tool toggles live in `UserDefaults` (`ToolDefaults`).
 
+## Dependencies
+
+Only what the system frameworks can't do. Each SwiftPM package is pinned in `Package.resolved`, and
+`scripts/acknowledgements.swift` puts its license in Credits.html (the build fails if it has none).
+
+| Package                                          | Why                                                                          |
+| ------------------------------------------------ | ---------------------------------------------------------------------------- |
+| [Sparkle](https://github.com/sparkle-project/Sparkle) | Updates (release builds only), embedded as `Sparkle.framework`          |
+| [libwebp-Xcode](https://github.com/SDWebImage/libwebp-Xcode) | WebP export: ImageIO reads WebP but can't write it. Google's libwebp (BSD-3-Clause) as a SwiftPM package, built from source and linked statically: no binaries, no network, no other dependencies. Only `IO/WebPEncoder.swift` imports it |
+
 ## Conventions
 
 - Match the surrounding code: its naming, its comment style and density.

@@ -11,6 +11,7 @@
 </p>
 
 <p align="center">
+  <a href="https://itsjavi.com/lamina/">Website</a> ·
   <a href="#features">Features</a> ·
   <a href="#works-with-ai-agents">AI agents</a> ·
   <a href="#building">Building</a> ·

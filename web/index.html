@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lamina: a simpler Photoshop and Affinity alternative for the Mac</title>
+    <meta
+      name="description"
+      content="A native macOS image editor for photo editing and compositing: layers, masks, adjustment layers, Camera Raw, brushes, healing and text, with Photoshop shortcuts. No subscription, no account, open source, agent ready and under 50 MB."
+    />
+    <link rel="canonical" href="https://itsjavi.com/lamina/" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#fbf6f0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#15100d" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/png" href="assets/favicon.png" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Lamina" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="https://itsjavi.com/lamina/" />
+    <meta property="og:title" content="Lamina: a simpler Photoshop and Affinity alternative for the Mac" />
+    <meta
+      property="og:description"
+      content="Photo editing and compositing without the bloat, the subscription or the sign-up. A native Mac app, open source, ready for agents and under 50 MB."
+    />
+    <meta property="og:image" content="https://itsjavi.com/lamina/assets/og-image.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="2400" />
+    <meta property="og:image:height" content="1260" />
+    <meta
+      property="og:image:alt"
+      content="Lamina app icon above the headline “Photo editing and compositing, without the bloat.” and the app window editing a sunset composition"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Lamina: a simpler Photoshop and Affinity alternative for the Mac" />
+    <meta
+      name="twitter:description"
+      content="Layers, masks, adjustment layers, Camera Raw, brushes and text for macOS. No subscription, no account, open source and under 50 MB."
+    />
+    <meta name="twitter:image" content="https://itsjavi.com/lamina/assets/og-image.jpg" />
+    <meta
+      name="twitter:image:alt"
+      content="Lamina app icon above the headline “Photo editing and compositing, without the bloat.” and the app window editing a sunset composition"
+    />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Lamina",
+        "applicationCategory": "DesignApplication",
+        "operatingSystem": "macOS 26",
+        "description": "A native macOS image editor for photo editing and compositing, with layers, masks, adjustment layers, Camera Raw and Photoshop shortcuts.",
+        "url": "https://itsjavi.com/lamina/",
+        "license": "https://opensource.org/licenses/MIT",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
+    </script>
+
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="./" aria-label="Lamina home">
+          <img src="assets/icon.png" width="32" height="32" alt="" />
+          <span>Lamina</span>
+        </a>
+        <nav aria-label="Main">
+          <ul class="nav-links">
+            <li><a href="#why">Why</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#get">Get it</a></li>
+            <li>
+              <a class="nav-github" href="https://github.com/itsjavi/lamina">
+                <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16">
+                  <path
+                    fill="currentColor"
+                    d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+                  />
+                </svg>
+                GitHub
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero">
+        <div class="container hero-copy">
+          <img class="hero-icon" src="assets/icon.png" width="112" height="112" alt="Lamina app icon" />
+          <p class="pill">Free &amp; open source · macOS 26 · Under 50 MB</p>
+          <h1>Photo editing and compositing, <br />without the bloat.</h1>
+          <p class="lead">
+            Lamina is a native Mac image editor with the tools you reach for every day: layers, masks, adjustment layers,
+            Camera Raw, brushes, healing and text, with the Photoshop shortcuts you already know. No subscription, no
+            account, and AI agents can work on your projects too.
+          </p>
+          <div class="actions">
+            <a class="button button-primary" href="https://github.com/itsjavi/lamina">View on GitHub</a>
+            <a class="button button-secondary" href="#get">Build it yourself</a>
+          </div>
+          <p class="fineprint">macOS 26 on Apple silicon · MIT licensed</p>
+        </div>
+        <div class="container hero-shot">
+          <a href="assets/screenshot.webp" data-lightbox>
+            <img
+              src="assets/screenshot.webp"
+              width="2400"
+              height="1457"
+              alt="The Lamina window: a sunset composition on the canvas, its text title selected with transform handles, and the Layers panel with a Curves adjustment, a folder holding a text layer with a drop shadow, a masked lake, hill layers and a sun with an outer glow."
+              fetchpriority="high"
+            />
+          </a>
+        </div>
+      </section>
+
+      <section id="why" class="section why">
+        <div class="container why-grid">
+          <div>
+            <p class="eyebrow">Why</p>
+            <h2>The image editor you reach for, minus everything you don't.</h2>
+            <p class="section-lead">
+              Most image work comes down to the same handful of things. Lamina is built for exactly those.
+            </p>
+          </div>
+          <article class="note-card" aria-label="Why Lamina">
+            <div class="note-chrome" aria-hidden="true">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="note-body">
+              <h3>Why Lamina</h3>
+              <p>
+                Retouch a photo, cut something out, put a few layers together, add some text, export. That is most of what
+                I open an image editor for, so Lamina keeps <strong>those tools</strong>, with the shortcuts and layer model
+                you already know, in a <strong>native Mac app under 50 MB</strong>.
+              </p>
+              <p>
+                Projects are <strong>plain folders</strong> of PNG layers and a manifest, so nothing is locked in, and AI
+                agents can work on them too. Vector layers are next.
+              </p>
+              <ul class="tasks">
+                <li>Layers, masks and adjustment layers</li>
+                <li>Camera Raw, brushes, healing and text</li>
+                <li>Photoshop shortcuts, remappable</li>
+                <li>Plain project folders, no lock-in</li>
+                <li>Agents via the command line or MCP</li>
+                <li>No subscription, no account</li>
+              </ul>
+              <p class="signature">Javi, author of Lamina</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="features" class="section features" aria-labelledby="features-title">
+        <div class="container">
+          <p class="eyebrow">Features</p>
+          <h2 id="features-title">Layers first. Every edit stays editable.</h2>
+
+          <div class="feature">
+            <div class="feature-copy">
+              <h3>Develop photos with Camera Raw</h3>
+              <p>
+                Light, color, curves, the color mixer, three-way color grading, detail, optics and geometry, in a panel
+                beside the canvas with a live histogram. Each section resets from its header, and settings save as named
+                presets.
+              </p>
+              <p>
+                Camera RAW files open with a develop step first, and JPEG, HEIC, WebP, TIFF, SVG and Photoshop PSD and PSB
+                files import with their layers.
+              </p>
+            </div>
+            <a class="feature-shot" data-lightbox href="assets/camera-raw.webp">
+              <img
+                src="assets/camera-raw.webp"
+                width="1600"
+                height="972"
+                loading="lazy"
+                alt="The Camera Raw filter docked beside the canvas, with its histogram, Light and Color sliders and color grading wheels."
+              />
+            </a>
+          </div>
+
+          <div class="feature">
+            <div class="feature-copy">
+              <h3>Adjustments that stay adjustable</h3>
+              <p>
+                Curves, Levels, Hue/Saturation, Exposure, Gradient Map, Black &amp; White, Color Balance, blurs and noise
+                as adjustment layers: reopen them any time, mask them, clip them to a layer or tone them down with opacity
+                and blend modes.
+              </p>
+              <p>
+                Layer effects work the same way: stroke, shadows, glows and color overlay, drawn on the GPU and editable
+                whenever you like.
+              </p>
+            </div>
+            <a class="feature-shot" data-lightbox href="assets/curves.webp">
+              <img
+                src="assets/curves.webp"
+                width="1600"
+                height="972"
+                loading="lazy"
+                alt="A Curves adjustment layer being edited in its floating panel over the canvas."
+              />
+            </a>
+          </div>
+
+          <div class="feature">
+            <div class="feature-copy">
+              <h3>Ready for agents</h3>
+              <p>
+                The <code>lamina</code> command-line tool drives the running app: list projects and layers, apply filters
+                and adjustment layers, export and render previews, each edit one undo step. <code>lamina mcp</code> offers
+                the same commands to Claude, Codex and other MCP hosts.
+              </p>
+              <p>
+                Or let an agent write a <code>.lam</code> project directly: it's a folder of PNG layers and a manifest, and
+                the open canvas updates as the files change.
+              </p>
+            </div>
+            <div class="code-block">
+              <pre><code>lamina list-documents
+lamina add-adjustment-layer --document 3f2a \
+  --kind exposure --settings exposure=0.5
+lamina export-document --document 3f2a \
+  --output ~/Desktop/poster.jpg
+
+claude mcp add lamina -- \
+  /Applications/Lamina.app/Contents/Helpers/lamina mcp</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section details" aria-labelledby="details-title">
+        <div class="container">
+          <p class="eyebrow">Details</p>
+          <h2 id="details-title">And the small things that add up.</h2>
+          <ul class="detail-grid">
+            <li>
+              <h3>Selections that think</h3>
+              <p>
+                Marquee, lasso, the Magic Wand and Object selection, Select Subject, and Content-Aware Fill that can also
+                extend an image past its edges.
+              </p>
+            </li>
+            <li>
+              <h3>Paint and retouch</h3>
+              <p>
+                Brush with flow and pen pressure, Dodge and Burn, Spot Healing, Clone Stamp, Gradient and Paint Bucket, on
+                pixels or masks.
+              </p>
+            </li>
+            <li>
+              <h3>Live text</h3>
+              <p>
+                Paragraph boxes edited right on the canvas, with per-letter colors and faces, that stay editable through
+                transforms and masks.
+              </p>
+            </li>
+            <li>
+              <h3>Non-destructive transforms</h3>
+              <p>
+                Move, scale, rotate, flip and distort without losing resolution, with snapping, rulers, guides and a layout
+                grid.
+              </p>
+            </li>
+            <li>
+              <h3>Export anything</h3>
+              <p>
+                PNG, JPEG with a live preview, HEIC, AVIF, WebP, TIFF and PDF, plus Copy Merged and tabs for several
+                projects at once.
+              </p>
+            </li>
+            <li>
+              <h3>Native and light</h3>
+              <p>
+                SwiftUI, AppKit and Metal, App Sandboxed, a History panel for every step, and Photoshop shortcuts you can
+                remap. All under 50 MB.
+              </p>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="get" class="section get" aria-labelledby="get-title">
+        <div class="container get-inner">
+          <div>
+            <p class="eyebrow">Get it</p>
+            <h2 id="get-title">Build Lamina in a minute.</h2>
+            <p class="section-lead">
+              There's no release yet. You need macOS 26 on Apple silicon and Xcode 26; <code>make install</code> builds the
+              app and copies it to <code>/Applications</code>.
+            </p>
+          </div>
+          <div class="code-block">
+            <button class="copy-button" type="button" data-copy-target="install-commands">Copy</button>
+            <pre><code id="install-commands">git clone https://github.com/itsjavi/lamina.git
+cd lamina
+make install</code></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p>
+          <img src="assets/icon.png" width="20" height="20" alt="" />
+          <span
+            >Lamina is open source under the
+            <a href="https://github.com/itsjavi/lamina/blob/main/LICENSE">MIT License</a>, and began as a fork of Robbie
+            Tilton's <a href="https://github.com/robbietilton/Compositor">Compositor</a>.</span
+          >
+        </p>
+        <ul class="footer-links">
+          <li><a href="https://github.com/itsjavi/lamina">Source</a></li>
+          <li><a href="https://github.com/itsjavi/lamina/issues">Issues</a></li>
+        </ul>
+      </div>
+    </footer>
+
+    <dialog class="lightbox" aria-label="Screenshot">
+      <button class="lightbox-close" type="button" aria-label="Close">
+        <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16">
+          <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+      </button>
+      <img alt="" />
+    </dialog>
+
+    <script>
+      // Screenshots open in an overlay instead of navigating away; the links still work without JavaScript.
+      const lightbox = document.querySelector(".lightbox");
+      const lightboxImage = lightbox.querySelector("img");
+      for (const link of document.querySelectorAll("[data-lightbox]")) {
+        link.addEventListener("click", (event) => {
+          event.preventDefault();
+          const image = link.querySelector("img");
+          lightboxImage.src = image.currentSrc || image.src;
+          lightboxImage.alt = image.alt;
+          lightbox.showModal();
+        });
+      }
+      // Any click closes it, like Quick Look; Esc works natively.
+      lightbox.addEventListener("click", () => lightbox.close());
+
+      for (const button of document.querySelectorAll("[data-copy-target]")) {
+        button.addEventListener("click", async () => {
+          const target = document.getElementById(button.dataset.copyTarget);
+          try {
+            await navigator.clipboard.writeText(target.textContent);
+            button.textContent = "Copied";
+          } catch {
+            // Clipboard unavailable: select the commands so ⌘C copies them.
+            getSelection().selectAllChildren(target);
+            button.textContent = "Press ⌘C";
+          }
+          setTimeout(() => (button.textContent = "Copy"), 2000);
+        });
+      }
+    </script>
+  </body>
+</html>

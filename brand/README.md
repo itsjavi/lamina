@@ -1,24 +1,31 @@
-# Public presentation: README and screenshots
+# Public presentation: README, website, social card and screenshots
 
 Everything people see before installing Lamina. Keep it in sync with the app: when a feature ships or the UI changes
 substantially, update the affected pieces in the same task.
 
-| What        | Where                     | Shows                                                              |
-| ----------- | ------------------------- | ------------------------------------------------------------------ |
-| README      | `README.md`               | Pitch (decision-7), why, feature list, screenshot table, building |
-| Icon        | `web/assets/icon.png`     | 512 px render of `Resources/AppIcon.icon` (`scripts/app-icon.swift`) |
-| Screenshots | `web/assets/*.webp`       | Used by the README (and the website, TASK-39)                      |
+| What        | Where                                               | Shows                                                         |
+| ----------- | --------------------------------------------------- | ------------------------------------------------------------- |
+| README      | `README.md`                                         | Pitch (decision-7), why, feature list, screenshot table, build |
+| Website     | `web/index.html`, `web/styles.css`                  | Hero, why, feature rows, details grid, build steps            |
+| Icon        | `web/assets/icon.png`, `favicon.png`, `apple-touch-icon.png` | Renders of `Resources/AppIcon.icon` (`scripts/app-icon.swift`) |
+| Screenshots | `web/assets/*.webp`                                 | Used by both the README and the website                       |
+| Social card | `scripts/og-image.html` → `web/assets/og-image.jpg` | Icon, headline, intro text and the hero screenshot            |
+| Intro video | not yet (TASK-40, after vector support)             |                                                               |
+
+The website deploys to https://itsjavi.com/lamina/ on every push to `main` that touches `web/`
+(`.github/workflows/pages.yml`, GitHub Pages built from Actions).
 
 ## What to update
 
-| Change                                   | README          | Screenshots                          |
-| ---------------------------------------- | --------------- | ------------------------------------ |
-| New user-facing feature                  | feature bullet  | add one if it is visible and notable |
-| Substantial UI change (layout, toolbar…) | if text changed | recapture affected shots             |
-| Feature removed or renamed               | remove / rename | recapture                            |
+| Change                                   | README          | Website                     | Screenshots                          |
+| ---------------------------------------- | --------------- | --------------------------- | ------------------------------------ |
+| New user-facing feature                  | feature bullet  | feature row or details card | add one if it is visible and notable |
+| Substantial UI change (layout, toolbar…) | if text changed | if text changed             | recapture affected shots             |
+| Feature removed or renamed               | remove / rename | remove / rename             | recapture                            |
+| Hero screenshot or tagline changed       | –               | hero                        | `screenshot.webp`; also the social card |
 
-Never leave published copy or screenshots showing UI that no longer exists. If a change needs none of this, say why in
-the task notes.
+Never leave published copy, screenshots or the social card showing UI that no longer exists. If a change needs none of
+this, say why in the task notes.
 
 ## Screenshots
 
@@ -60,3 +67,21 @@ Gotchas:
 - Background windows are never key, so traffic lights look inactive. Acceptable.
 - Layer effects open only from the Layers panel's effects menu, which background control can't open; take that one by
   hand if it's wanted.
+
+## Social card
+
+Edit `scripts/og-image.html` and re-render with the command in its header comment (headless Chrome at 2x, then JPEG).
+
+## Checking the website
+
+Headless Chrome renders it without opening a window. It won't go narrower than a 500 px viewport, so check phone width
+inside an iframe:
+
+```bash
+CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+"$CHROME" --headless=new --hide-scrollbars --blink-settings=preferredColorScheme=1 --window-size=1440,2600 \
+  --screenshot=/tmp/site.png "file://$PWD/web/index.html"   # preferredColorScheme=0 for dark
+echo "<iframe src=\"file://$PWD/web/index.html\" style=\"width:390px;height:2400px;border:0\"></iframe>" > /tmp/phone.html
+"$CHROME" --headless=new --hide-scrollbars --allow-file-access-from-files --window-size=500,2400 \
+  --screenshot=/tmp/phone.png "file:///tmp/phone.html"
+```

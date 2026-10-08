@@ -1,6 +1,7 @@
 import CoreGraphics
 import Foundation
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 /// Adjustment layers and layer masks read from a PSD, laid out as Photoshop writes them.

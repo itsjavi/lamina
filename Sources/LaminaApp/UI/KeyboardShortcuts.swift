@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import LaminaCore
 
 struct ShortcutChord: Codable, Equatable, Hashable {
     var key: String

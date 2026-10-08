@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import LaminaCore
 
 /// Native mouse-down selection and drag tracking, without a double-click delay.
 struct NativeLayerList: NSViewRepresentable {

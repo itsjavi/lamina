@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 /// Option-click on a mask thumbnail shows the mask by itself on the canvas, as Photoshop does.

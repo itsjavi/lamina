@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import ImageIO
+import LaminaCore
 
 /// What New Canvas's fields hold: a width and height in `unit`, and a resolution in pixels per inch, as typed.
 struct NewCanvasSize: Equatable {

@@ -2,6 +2,7 @@ import Foundation
 import CoreGraphics
 import ImageIO
 import UniformTypeIdentifiers
+import LaminaCore
 
 nonisolated enum ExportError: LocalizedError {
     case tooLarge, render, encode, webPTooLarge

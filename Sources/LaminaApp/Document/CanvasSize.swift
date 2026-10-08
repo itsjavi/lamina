@@ -1,5 +1,6 @@
 import Foundation
 import CoreGraphics
+import LaminaCore
 
 nonisolated enum CanvasUnit: String, CaseIterable, Sendable {
     case pixels = "Pixels", percent = "Percent", inches = "Inches", centimeters = "Centimeters"

@@ -1,21 +1,26 @@
 import CoreGraphics
 import Foundation
-@testable import LaminaApp
+import LaminaCore
 
 /// Builds tiny Photoshop files for reader tests. Not part of the app; Lamina does not write PSD.
-nonisolated enum PSDFixture {
-    static func data(_ document: PSDDocument, composite: CGImage, largeDocument: Bool = false,
-                     extras: [UUID: [String: Data]] = [:]) throws -> Data {
+package enum PSDFixture {
+    package static func data(_ document: PSDDocument, composite: CGImage, largeDocument: Bool = false,
+                             extras: [UUID: [String: Data]] = [:]) throws -> Data {
         try data(document, composite: composite, largeDocument: largeDocument, additionalLayerInfo: nil, extras: extras)
     }
 
-    struct AdditionalLayerInfo: Sendable {
-        let key: String
-        let payload: Data
+    package struct AdditionalLayerInfo: Sendable {
+        package let key: String
+        package let payload: Data
+
+        package init(key: String, payload: Data) {
+            self.key = key
+            self.payload = payload
+        }
     }
 
-    static func data(_ document: PSDDocument, composite: CGImage, largeDocument: Bool, additionalLayerInfo: AdditionalLayerInfo?,
-                     extras: [UUID: [String: Data]] = [:]) throws -> Data {
+    package static func data(_ document: PSDDocument, composite: CGImage, largeDocument: Bool, additionalLayerInfo: AdditionalLayerInfo?,
+                             extras: [UUID: [String: Data]] = [:]) throws -> Data {
         let width = document.width, height = document.height
         guard (1...30_000).contains(width), (1...30_000).contains(height) else { throw ImageImportError.tooLarge }
         var file = PSDBuffer()
@@ -237,16 +242,16 @@ nonisolated enum PSDFixture {
     }
 
     /// A Photoshop 6 `TySh` block. The descriptor layout matches Adobe’s type-tool object setting.
-    static func tySh(text: String, font: String = "Helvetica", fontSize: Double = 24,
-                     red: Double = 0, green: Double = 0, blue: Double = 0,
-                     justification: Int = 0, tracking: Double = 0, leading: Double? = nil,
-                     fauxBold: Bool = false, fauxItalic: Bool = false, vertical: Bool = false, warp: Bool = false,
-                     secondSize: Double? = nil, secondLeading: Double? = nil,
-                     secondHorizontalScale: Double? = nil, secondVerticalScale: Double? = nil,
-                     tx: Double = 40, ty: Double = 50,
-                     xx: Double = 1, xy: Double = 0, yx: Double = 0, yy: Double = 1,
-                     bounds: (CGFloat, CGFloat, CGFloat, CGFloat)? = nil,
-                     glyphBounds: (CGFloat, CGFloat, CGFloat, CGFloat)? = nil) -> Data {
+    package static func tySh(text: String, font: String = "Helvetica", fontSize: Double = 24,
+                             red: Double = 0, green: Double = 0, blue: Double = 0,
+                             justification: Int = 0, tracking: Double = 0, leading: Double? = nil,
+                             fauxBold: Bool = false, fauxItalic: Bool = false, vertical: Bool = false, warp: Bool = false,
+                             secondSize: Double? = nil, secondLeading: Double? = nil,
+                             secondHorizontalScale: Double? = nil, secondVerticalScale: Double? = nil,
+                             tx: Double = 40, ty: Double = 50,
+                             xx: Double = 1, xy: Double = 0, yx: Double = 0, yy: Double = 1,
+                             bounds: (CGFloat, CGFloat, CGFloat, CGFloat)? = nil,
+                             glyphBounds: (CGFloat, CGFloat, CGFloat, CGFloat)? = nil) -> Data {
         var block = PSDBuffer()
         block.u16(1)
         for value in [xx, xy, yx, yy, tx, ty] { block.f64(value) }
@@ -409,9 +414,8 @@ nonisolated enum PSDFixture {
     }
 
     private static func appendComposite(_ file: inout PSDBuffer, _ image: CGImage, width: Int, height: Int, largeDocument: Bool) throws {
-        let context = try BrushRaster.context(width: width, height: height, mask: false)
-        BrushRaster.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height), mask: false, context: context)
-        guard let flattened = context.makeImage() else { throw ExportError.render }
+        let context = try drawn(image, width: width, height: height, mask: false)
+        guard let flattened = context.makeImage() else { throw FixtureError.render }
         let planes = try planes(from: flattened)
         file.u16(1)
         var counts = Data()
@@ -452,9 +456,8 @@ nonisolated enum PSDFixture {
     /// Premultiplied RGBA, first row at the top of the image.
     private static func planes(from image: CGImage) throws -> (red: [UInt8], green: [UInt8], blue: [UInt8], alpha: [UInt8]) {
         let width = image.width, height = image.height
-        let context = try BrushRaster.context(width: width, height: height, mask: false)
-        BrushRaster.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height), mask: false, context: context)
-        guard let data = context.data?.assumingMemoryBound(to: UInt8.self) else { throw ExportError.render }
+        let context = try drawn(image, width: width, height: height, mask: false)
+        guard let data = context.data?.assumingMemoryBound(to: UInt8.self) else { throw FixtureError.render }
         var red = [UInt8](repeating: 0, count: width * height)
         var green = [UInt8](repeating: 0, count: width * height)
         var blue = [UInt8](repeating: 0, count: width * height)
@@ -480,15 +483,37 @@ nonisolated enum PSDFixture {
 
     private static func grayPlane(from image: CGImage) throws -> [UInt8] {
         let width = image.width, height = image.height
-        let context = try BrushRaster.context(width: width, height: height, mask: true)
-        BrushRaster.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height), mask: true, context: context)
-        guard let data = context.data?.assumingMemoryBound(to: UInt8.self) else { throw ExportError.render }
+        let context = try drawn(image, width: width, height: height, mask: true)
+        guard let data = context.data?.assumingMemoryBound(to: UInt8.self) else { throw FixtureError.render }
         var plane = [UInt8](repeating: 0, count: width * height)
         let stride = context.bytesPerRow
         for y in 0..<height {
             for x in 0..<width { plane[y * width + x] = data[y * stride + x] }
         }
         return plane
+    }
+
+    /// `image` drawn into a `width` × `height` context, first row at the top: premultiplied sRGB, or 8-bit gray for a
+    /// mask. The layout the app's `BrushRaster` gives layers.
+    private static func drawn(_ image: CGImage, width: Int, height: Int, mask: Bool) throws -> CGContext {
+        guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
+            bytesPerRow: width * (mask ? 1 : 4),
+            space: mask ? CGColorSpaceCreateDeviceGray() : CGColorSpace(name: CGColorSpace.sRGB)!,
+            bitmapInfo: mask ? CGImageAlphaInfo.none.rawValue : (CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue))
+        else { throw FixtureError.render }
+        let bounds = CGRect(x: 0, y: 0, width: width, height: height)
+        context.interpolationQuality = .none
+        if mask {
+            context.setFillColor(gray: 0, alpha: 1)
+            context.fill(bounds)
+            context.clip(to: bounds, mask: image)
+            context.setFillColor(gray: 1, alpha: 1)
+            context.fill(bounds)
+        } else {
+            context.setBlendMode(.copy)
+            context.draw(image, in: bounds)
+        }
+        return context
     }
 
     private static func packBits(_ row: [UInt8]) -> Data {
@@ -516,7 +541,9 @@ nonisolated enum PSDFixture {
     }
 }
 
-nonisolated private struct PSDBuffer: Sendable {
+private enum FixtureError: Error { case render }
+
+private struct PSDBuffer: Sendable {
     var data = Data()
     mutating func u8(_ value: UInt8) { data.append(value) }
     mutating func u16(_ value: UInt16) { data.appendUInt16(value) }

@@ -1,6 +1,7 @@
 import CPixels
 import Foundation
 import CoreGraphics
+import LaminaCore
 
 public enum TrimBasedOn: String, CaseIterable, Identifiable, Sendable {
     case transparentPixels = "Transparent Pixels"

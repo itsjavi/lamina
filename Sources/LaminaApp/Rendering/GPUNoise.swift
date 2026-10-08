@@ -1,6 +1,7 @@
 import CPixels
 import CoreImage
 import Metal
+import LaminaCore
 
 /// Add Noise and Grain on the GPU canvas: `NoisePixels.c`'s noise and `adjust_grain`, ported to Metal with the same
 /// hashes, so the pattern is the one the CPU makes.

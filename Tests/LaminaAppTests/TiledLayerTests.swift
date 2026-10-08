@@ -2,6 +2,7 @@ import AppKit
 import Testing
 @testable import LaminaApp
 import TestPixels
+import LaminaCore
 
 /// A painted layer (image plus replacement tiles) must look like the same pixels drawn as one image — while the
 /// stroke is live and once it's committed — so nothing shifts when painting starts or ends.

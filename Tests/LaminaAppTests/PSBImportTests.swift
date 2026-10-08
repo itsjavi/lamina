@@ -1,6 +1,8 @@
 import CoreGraphics
 import Foundation
 import Testing
+import LaminaCore
+import PSDFixtures
 @testable import LaminaApp
 
 @MainActor

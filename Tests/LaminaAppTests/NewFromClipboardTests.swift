@@ -1,6 +1,7 @@
 import AppKit
 import Testing
 import UniformTypeIdentifiers
+import LaminaCore
 @testable import LaminaApp
 
 /// File › New from Clipboard. Each test copies to a pasteboard of its own, never the person's clipboard.

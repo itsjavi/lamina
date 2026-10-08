@@ -1,4 +1,5 @@
 import SwiftUI
+import LaminaCore
 
 /// File › Export JPEG… and Export As…: the flattened canvas as it will be saved, with the format's settings.
 struct ExportSheet: View {

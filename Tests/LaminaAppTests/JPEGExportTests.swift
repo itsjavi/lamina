@@ -1,6 +1,7 @@
 import AppKit
 import ImageIO
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 @MainActor

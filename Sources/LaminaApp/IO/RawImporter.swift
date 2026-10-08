@@ -2,6 +2,7 @@ import CoreImage
 import CoreGraphics
 import ImageIO
 import UniformTypeIdentifiers
+import LaminaCore
 
 /// What a camera recorded, before anyone decided how it should look. The file holds one value per
 /// photosite at 12–14 bits; every choice a JPEG has already baked in — exposure, white balance,

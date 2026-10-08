@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import LaminaCore
 
 /// The open filter's panel: its settings, Preview, and Cancel / OK.
 struct FilterSheet: View {

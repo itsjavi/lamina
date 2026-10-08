@@ -1,4 +1,5 @@
 import SwiftUI
+import LaminaCore
 
 struct ShapeControls: View {
     @Bindable var session: EditorSession

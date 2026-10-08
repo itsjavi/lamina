@@ -1,5 +1,6 @@
 import AppKit
 import Metal
+import LaminaCore
 
 /// Layer effects on the GPU: the outline's reach and the shadow's blur are the two heavy passes, and both are
 /// separable, so each runs as a row pass and a column pass over the same pixels. Falls back to the CPU renderer

@@ -1,4 +1,5 @@
 import AppKit
+import LaminaCore
 
 extension LayerTransform {
     /// This placement mirrored across a vertical line at `axis` (or, not `horizontally`, a horizontal one): the

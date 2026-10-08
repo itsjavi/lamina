@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 /// Serialized: these show real panels and run a display pass.

@@ -1,6 +1,7 @@
 import AppKit
 import Testing
 import UniformTypeIdentifiers
+import LaminaCore
 @testable import LaminaApp
 
 @MainActor

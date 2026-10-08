@@ -39,9 +39,12 @@ let package = Package(
                 swiftSettings: [.swiftLanguageMode(.v6)]),
         .executableTarget(name: "lamina", dependencies: ["LaminaCLI"], path: "Sources/lamina",
                           swiftSettings: [.swiftLanguageMode(.v6)]),
+        // The project format (manifest, layer records and their value types; reading, writing and validating `.lam`
+        // packages) and PSD parsing, with no AppKit or SwiftUI: nonisolated, and tested without the app.
+        .target(name: "LaminaCore", path: "Sources/LaminaCore", swiftSettings: swiftSettings),
         .executableTarget(
             name: "LaminaApp",
-            dependencies: ["CPixels", "LaminaAutomation", .product(name: "Sparkle", package: "Sparkle"),
+            dependencies: ["CPixels", "LaminaAutomation", "LaminaCore", .product(name: "Sparkle", package: "Sparkle"),
                            .product(name: "libwebp", package: "libwebp-Xcode")],
             path: "Sources/LaminaApp",
             swiftSettings: swiftSettings + [.defaultIsolation(MainActor.self)],
@@ -53,7 +56,10 @@ let package = Package(
         // The rendering tests' fixture and comparison loops, optimized like CPixels: as unoptimized Swift they were most
         // of the suite's time.
         .target(name: "TestPixels", path: "Tests/TestPixels", cSettings: [.unsafeFlags(["-O3"])]),
-        .testTarget(name: "LaminaAppTests", dependencies: ["LaminaApp", "LaminaTestHost", "LaminaAutomation", "TestPixels"],
+        // Small Photoshop files written for the PSD tests.
+        .target(name: "PSDFixtures", dependencies: ["LaminaCore"], path: "Tests/PSDFixtures", swiftSettings: swiftSettings),
+        .testTarget(name: "LaminaAppTests",
+                    dependencies: ["LaminaApp", "LaminaCore", "LaminaTestHost", "LaminaAutomation", "TestPixels", "PSDFixtures"],
                     path: "Tests/LaminaAppTests", swiftSettings: swiftSettings),
         // `lamina` and the command catalog, without the app: fast, no windows.
         .testTarget(name: "LaminaTests", dependencies: ["LaminaAutomation", "LaminaCLI"], path: "Tests/LaminaTests",

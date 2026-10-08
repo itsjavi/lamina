@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import LaminaCore
 
 struct BlendModePicker: NSViewRepresentable {
     let session: EditorSession

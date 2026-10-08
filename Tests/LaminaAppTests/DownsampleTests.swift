@@ -1,5 +1,6 @@
 import AppKit
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 /// Shrinking layers by large factors must stay sharp and clean, as Photoshop's resampling does.

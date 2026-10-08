@@ -1,4 +1,5 @@
 import SwiftUI
+import LaminaCore
 
 /// One effect's controls, bound to the layer that opened the panel. Changes preview on the canvas.
 struct EffectsSheet: View {

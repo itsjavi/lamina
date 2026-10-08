@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import LaminaCore
 
 struct EditorCanvas: NSViewRepresentable {
     let session: EditorSession

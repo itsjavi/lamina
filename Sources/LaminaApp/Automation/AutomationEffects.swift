@@ -1,5 +1,6 @@
 import Foundation
 import LaminaAutomation
+import LaminaCore
 
 /// Puts a command's filter or adjustment settings (named as in `EffectCatalog`) into the app's own settings types.
 /// Settings left out keep their defaults; AutomationTests checks every setting here changes something.

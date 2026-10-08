@@ -1,5 +1,6 @@
 import AppKit
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 /// Flow as Photoshop's: each dab lays its share of the tip, a pass builds up over the few dabs that cover a point,

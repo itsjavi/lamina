@@ -2,6 +2,7 @@ import AppKit
 import CPixels
 import CoreImage
 import Observation
+import LaminaCore
 
 /// Filters from the Filter menu. Each runs on the active image layer, inside the selection if
 /// there is one, with a live preview and one undo step on OK.

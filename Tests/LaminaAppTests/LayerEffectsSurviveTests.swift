@@ -1,5 +1,6 @@
 import AppKit
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 /// A layer's effects, and a text or shape layer's live style, stay with it through the edits that rebuild the layer:

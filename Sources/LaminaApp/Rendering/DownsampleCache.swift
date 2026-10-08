@@ -2,6 +2,7 @@ import Accelerate
 import CPixels
 import CoreGraphics
 import Foundation
+import LaminaCore
 
 /// Sharp reductions of layer images. Core Graphics resamples in one step with a filter that only looks at a
 /// few neighbouring pixels, so shrinking an image 4× or 8× comes out soft or grainy at any interpolation

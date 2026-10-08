@@ -1,6 +1,7 @@
 import AppKit
 import Observation
 import UniformTypeIdentifiers
+import LaminaCore
 
 @MainActor
 final class ProjectTab: Identifiable {

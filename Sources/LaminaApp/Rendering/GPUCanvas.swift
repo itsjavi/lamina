@@ -2,6 +2,7 @@ import AppKit
 import CoreImage
 import Metal
 import QuartzCore
+import LaminaCore
 
 /// The canvas composited on the GPU. Core Graphics composites every layer on the CPU, about 5 ms for each full-size
 /// layer on a Retina screen, on every frame of a drag, pan or zoom; here the layers stay on the GPU as textures and a

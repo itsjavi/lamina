@@ -1,6 +1,7 @@
 import CoreGraphics
 import Foundation
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 /// Resizing a layer by its handles snaps the edges it drags to the canvas and the other layers, as moving does.

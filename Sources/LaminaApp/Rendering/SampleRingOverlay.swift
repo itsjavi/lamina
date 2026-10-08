@@ -1,4 +1,5 @@
 import AppKit
+import LaminaCore
 
 /// Display-only comparison: new sample above, pre-drag color below.
 final class SampleRingOverlay: NSView {

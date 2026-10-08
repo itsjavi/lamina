@@ -1,4 +1,5 @@
 import SwiftUI
+import LaminaCore
 
 /// Reads and writes the open edit's settings, so sampling from the canvas and the panel's
 /// own controls always agree.

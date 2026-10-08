@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import LaminaCore
 
 /// Rasterizes Photoshop vector masks (`vmsk`/`vsms`) and maps fill rectangles/ellipses
 /// onto live shape layers, from Adobe’s 2019 Photoshop File Formats Specification
@@ -15,6 +16,16 @@ nonisolated enum PSDVector {
         var bounds: CGRect
         var image: CGImage
         var notes: [String]
+    }
+
+    /// The reader's `PSDShapeRenderer`: a live shape layer when the vector maps onto one, otherwise, for a layer
+    /// Photoshop stored no pixels for, its vector mask drawn.
+    static func shapes(extra: [String: Data], hasPixels: Bool, canvas: CGSize, remainingPixels: Int) throws -> PSDShapePixels? {
+        if let live = try live(extra: extra, canvas: canvas, remainingPixels: remainingPixels) {
+            return PSDShapePixels(image: live.image, bounds: live.bounds, style: live.style, notes: live.notes)
+        }
+        guard !hasPixels, let raster = try raster(extra: extra, canvas: canvas, remainingPixels: remainingPixels) else { return nil }
+        return PSDShapePixels(image: raster.image, bounds: raster.bounds)
     }
 
     static func live(extra: [String: Data], canvas: CGSize, remainingPixels: Int = DocumentLimits.documentPixelBudget) throws -> Live? {

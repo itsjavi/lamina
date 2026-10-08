@@ -1,4 +1,5 @@
 import Foundation
+import LaminaCore
 
 extension EditorSession {
     func projectSnapshot() -> ProjectSnapshot? {

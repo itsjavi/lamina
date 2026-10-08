@@ -1,18 +1,25 @@
 import CoreGraphics
 import Foundation
 
-nonisolated struct PSDCrop: Sendable {
-    let x: Int
-    let y: Int
-    let width: Int
-    let height: Int
+package struct PSDCrop: Sendable {
+    package let x: Int
+    package let y: Int
+    package let width: Int
+    package let height: Int
+
+    package init(x: Int, y: Int, width: Int, height: Int) {
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+    }
 }
 
 /// Unpacks Photoshop layer channels from Adobe’s 2019 Photoshop File Formats
 /// Specification (Image Data, compression 0 raw and 1 PackBits).
-nonisolated enum PSDChannelCoder {
-    static func decode(compression: Int, width: Int, height: Int, data: Data, largeDocument: Bool = false,
-                       crop: PSDCrop? = nil) throws -> [UInt8] {
+package enum PSDChannelCoder {
+    package static func decode(compression: Int, width: Int, height: Int, data: Data, largeDocument: Bool = false,
+                               crop: PSDCrop? = nil) throws -> [UInt8] {
         guard width > 0, height > 0 else { return [] }
         guard let crop else {
             return try decodeFull(compression: compression, width: width, height: height, data: data, largeDocument: largeDocument)
@@ -55,7 +62,7 @@ nonisolated enum PSDChannelCoder {
         return plane
     }
 
-    static func rgbaImage(width: Int, height: Int, red: [UInt8], green: [UInt8], blue: [UInt8], alpha: [UInt8]) throws -> CGImage {
+    package static func rgbaImage(width: Int, height: Int, red: [UInt8], green: [UInt8], blue: [UInt8], alpha: [UInt8]) throws -> CGImage {
         var pixels = [UInt8](repeating: 0, count: width * height * 4)
         let count = width * height
         for i in 0..<count {
@@ -68,7 +75,7 @@ nonisolated enum PSDChannelCoder {
         return try image(width: width, height: height, rgba: pixels)
     }
 
-    static func image(width: Int, height: Int, rgba: [UInt8]) throws -> CGImage {
+    package static func image(width: Int, height: Int, rgba: [UInt8]) throws -> CGImage {
         let bytesPerRow = width * 4
         let data = Data(rgba)
         guard let provider = CGDataProvider(data: data as CFData),
@@ -81,7 +88,7 @@ nonisolated enum PSDChannelCoder {
         return image
     }
 
-    static func maskImage(width: Int, height: Int, gray: [UInt8]) throws -> CGImage {
+    package static func maskImage(width: Int, height: Int, gray: [UInt8]) throws -> CGImage {
         let data = Data(gray)
         guard let provider = CGDataProvider(data: data as CFData),
               let image = CGImage(

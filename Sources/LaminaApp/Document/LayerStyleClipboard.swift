@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import LaminaCore
 
 /// Copy/Paste/Clear Layer Style: Photoshop's name for a layer's `LayerEffects` (its stroke, shadow, glow…), taken
 /// as one unit rather than the single-effect copy an Option-drag in the panel already does.

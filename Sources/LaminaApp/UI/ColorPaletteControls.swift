@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import LaminaCore
 
 struct ColorPaletteControls: View {
     let session: EditorSession

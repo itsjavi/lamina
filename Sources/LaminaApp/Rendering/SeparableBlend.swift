@@ -1,5 +1,6 @@
 import CoreGraphics
 import CoreImage
+import LaminaCore
 
 /// The blend modes Core Graphics can't draw, computed by Core Image instead.
 ///

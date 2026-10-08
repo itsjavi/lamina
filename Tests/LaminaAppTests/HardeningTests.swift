@@ -2,6 +2,7 @@ import AppKit
 import ImageIO
 import UniformTypeIdentifiers
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 /// Paste and Duplicate are held to the limits import and save use, before they change anything.

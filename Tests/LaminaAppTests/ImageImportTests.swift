@@ -4,6 +4,7 @@ import ImageIO
 import UniformTypeIdentifiers
 import AppKit
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 @MainActor

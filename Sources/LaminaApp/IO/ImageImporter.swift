@@ -3,6 +3,7 @@ import CoreGraphics
 import CoreImage
 import ImageIO
 import UniformTypeIdentifiers
+import LaminaCore
 
 nonisolated struct ImportedImage: @unchecked Sendable {
     // Immutable CGImages can be shared with the main-thread renderer.
@@ -10,17 +11,6 @@ nonisolated struct ImportedImage: @unchecked Sendable {
     let thumbnail: CGImage
     let name: String
     var raster: RasterSnapshot? = nil
-}
-
-nonisolated enum ImageImportError: LocalizedError {
-    case unreadable, unsupported, tooLarge
-    var errorDescription: String? {
-        switch self {
-        case .unreadable: "The image could not be read. It may be damaged or unavailable."
-        case .unsupported: "Choose a JPEG, PNG, HEIC, WebP, TIFF, or Photoshop (PSD) file."
-        case .tooLarge: "This import exceeds the current \(DocumentLimits.documentBudgetMegapixels)-megapixel document budget or \(DocumentLimits.maxSide.formatted())-pixel side limit."
-        }
-    }
 }
 
 actor ImageImporter {
@@ -85,7 +75,7 @@ actor ImageImporter {
     }
 
     func loadPhotoshop(_ url: URL, remainingPixels: Int = DocumentLimits.documentPixelBudget) throws -> PSDDocument {
-        try PSDReader.read(from: url, remainingPixels: remainingPixels)
+        try PSDReader.read(from: url, remainingPixels: remainingPixels, shapes: PSDVector.shapes)
     }
 
     func photoshopAssets(_ document: PSDDocument) throws -> [UUID: ImportedImage] {

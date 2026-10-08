@@ -1,5 +1,6 @@
 import AppKit
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 /// Painting on a layer that has been scaled down lands in the layer's own pixels, at their

@@ -2,6 +2,8 @@ import Foundation
 import CoreGraphics
 import UniformTypeIdentifiers
 import Testing
+import LaminaCore
+import PSDFixtures
 @testable import LaminaApp
 
 @MainActor

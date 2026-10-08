@@ -1,6 +1,7 @@
 import AppKit
 import Testing
 import UniformTypeIdentifiers
+import LaminaCore
 @testable import LaminaApp
 
 /// A project that something else writes while it is open: the document follows the package on disk, and only

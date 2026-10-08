@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 /// New Canvas takes its size in pixels or a print unit at a resolution, with Image Size's conversions.

@@ -1,5 +1,17 @@
 import CoreGraphics
 import Foundation
+import LaminaCore
+
+nonisolated struct PSDConversion: Identifiable, Equatable, Sendable {
+    let id: UUID
+    let layerName: String
+    let message: String
+    init(id: UUID = UUID(), layerName: String, message: String) {
+        self.id = id
+        self.layerName = layerName
+        self.message = message
+    }
+}
 
 nonisolated struct PSDImport: @unchecked Sendable {
     let width: Int

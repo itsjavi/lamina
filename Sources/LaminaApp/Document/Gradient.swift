@@ -1,4 +1,5 @@
 import AppKit
+import LaminaCore
 
 nonisolated enum GradientStyle: String, CaseIterable, Sendable {
     case foregroundToBackground = "Foreground to Background"

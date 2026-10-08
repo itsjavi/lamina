@@ -1,6 +1,7 @@
 import CPixels
 import CoreGraphics
 import Foundation
+import LaminaCore
 
 /// The Move tool's Align and Distribute commands, as in Photoshop.
 nonisolated enum LayerAlignment: String, CaseIterable, Sendable {

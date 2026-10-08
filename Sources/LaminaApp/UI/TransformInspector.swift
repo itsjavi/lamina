@@ -1,4 +1,5 @@
 import SwiftUI
+import LaminaCore
 
 struct TransformInspector: View {
     @Bindable var session: EditorSession

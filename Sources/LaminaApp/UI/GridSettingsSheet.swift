@@ -1,4 +1,5 @@
 import SwiftUI
+import LaminaCore
 
 /// View > Grid Settings…: every change shows on the canvas at once through `preview`; Cancel puts back what was there.
 struct GridSettingsSheet: View {

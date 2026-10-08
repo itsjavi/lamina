@@ -1,6 +1,7 @@
 import AppKit
 import Testing
 @testable import LaminaApp
+import TestPixels
 
 /// A painted layer (image plus replacement tiles) must look like the same pixels drawn as one image — while the
 /// stroke is live and once it's committed — so nothing shifts when painting starts or ends.
@@ -9,15 +10,7 @@ struct TiledLayerTests {
     /// Detailed, deterministic pixels.
     private func noise(width: Int, height: Int, seed: UInt32, alpha: UInt8 = 255) throws -> CGImage {
         let context = try BrushRaster.context(width: width, height: height, mask: false)
-        let bytes = try #require(context.data).assumingMemoryBound(to: UInt8.self)
-        var state = seed
-        for i in 0..<(width * height) {
-            state = state &* 1_664_525 &+ 1_013_904_223
-            for (c, shift) in [(0, 24), (1, 16), (2, 8)] {
-                bytes[i * 4 + c] = UInt8(Int(UInt8(truncatingIfNeeded: state >> UInt32(shift))) * Int(alpha) / 255)
-            }
-            bytes[i * 4 + 3] = alpha
-        }
+        test_noise_rgba(try #require(context.data).assumingMemoryBound(to: UInt8.self), width, height, context.bytesPerRow, seed, alpha)
         return try #require(context.makeImage())
     }
     private func composite(_ base: CGImage, _ patches: [BrushPatch]) throws -> CGImage {
@@ -34,12 +27,7 @@ struct TiledLayerTests {
     }
     private func grayNoise(width: Int, height: Int, seed: UInt32) throws -> CGImage {
         let context = try BrushRaster.context(width: width, height: height, mask: true)
-        let bytes = try #require(context.data).assumingMemoryBound(to: UInt8.self)
-        var state = seed
-        for i in 0..<(width * height) {
-            state = state &* 1_664_525 &+ 1_013_904_223
-            bytes[i] = UInt8(truncatingIfNeeded: state >> 24)
-        }
+        test_noise_gray(try #require(context.data).assumingMemoryBound(to: UInt8.self), width, height, context.bytesPerRow, seed)
         return try #require(context.makeImage())
     }
     private func maskComposite(_ base: CGImage, _ patches: [BrushPatch]) throws -> CGImage {
@@ -51,18 +39,7 @@ struct TiledLayerTests {
     /// Largest channel difference over pixels fully inside the layer — judged from `reference` (default `expected`),
     /// since the layer's own outline may antialias a little differently.
     private func largestDifference(_ expected: [UInt8], _ actual: [UInt8], side: Int, inside reference: [UInt8]? = nil) -> Int {
-        let outline = reference ?? expected
-        var largest = 0
-        for y in 1..<(side - 1) {
-            for x in 1..<(side - 1) {
-                var inside = true
-                for dy in -1...1 { for dx in -1...1 where outline[((y + dy) * side + x + dx) * 4 + 3] < 255 { inside = false } }
-                guard inside else { continue }
-                let i = (y * side + x) * 4
-                for c in 0..<4 { largest = max(largest, abs(Int(expected[i + c]) - Int(actual[i + c]))) }
-            }
-        }
-        return largest
+        Int(test_largest_difference(expected, actual, reference ?? expected, side))
     }
 
     @Test(arguments: [(0.2, 0.0), (0.7, 0.0), (0.3, 25.0)])
@@ -266,18 +243,8 @@ struct TiledLayerTests {
             let perPoint = CGFloat(a.width) / view.bounds.width
             let box = CGRect(x: topLeft.x * perPoint, y: topLeft.y * perPoint,
                              width: (bottomRight.x - topLeft.x) * perPoint, height: (bottomRight.y - topLeft.y) * perPoint)
-            var largest = 0, at = (0, 0), count = 0
-            _ = (at, count)
-            for y in 0..<a.height {
-                for x in 0..<a.width where !box.contains(CGPoint(x: x, y: y)) {
-                    let i = y * a.rowBytes + x * a.samples
-                    var d = 0
-                    for c in 0..<a.samples { d = max(d, abs(Int(a.bytes[i + c]) - Int(b.bytes[i + c]))) }
-                    if d > 2 { count += 1 }
-                    if d > largest { largest = d; at = (x, y) }
-                }
-            }
-            return largest
+            return Int(test_largest_difference_outside(a.bytes, b.bytes, a.width, a.height, a.rowBytes, a.samples,
+                                                       box.minX, box.minY, box.maxX, box.maxY))
         }
 
         let before = try snapshot()

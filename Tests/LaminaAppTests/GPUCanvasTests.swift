@@ -3,19 +3,13 @@ import CoreImage
 import Metal
 import Testing
 @testable import LaminaApp
+import TestPixels
 
 /// The GPU canvas against the Core Graphics canvas, frame for frame.
 @MainActor struct GPUCanvasTests {
     private func pattern(_ w: Int, _ h: Int, seed: Int, alpha: Bool = false) throws -> CGImage {
         let context = try BrushRaster.context(width: w, height: h, mask: false)
-        let data = context.data!.assumingMemoryBound(to: UInt8.self)
-        for y in 0..<h { for x in 0..<w {
-            let i = (y * w + x) * 4
-            let a = alpha ? UInt8(min(255, (x + y) * 255 / max(1, w + h - 2) + 40)) : 255
-            func c(_ v: Int) -> UInt8 { UInt8(Int(v & 255) * Int(a) / 255) }
-            data[i] = c(x * 255 / w + seed * 40); data[i + 1] = c(y * 255 / h + seed * 25)
-            data[i + 2] = c((x / 16 + y / 16) % 2 == 0 ? 200 : 60); data[i + 3] = a
-        } }
+        test_pattern_rgba(context.data!.assumingMemoryBound(to: UInt8.self), w, h, context.bytesPerRow, Int32(seed), alpha ? 1 : 0)
         return context.makeImage()!
     }
     private func gradientMask(_ w: Int, _ h: Int) throws -> CGImage {
@@ -119,15 +113,7 @@ import Testing
 
         let reference = cpu.data!.assumingMemoryBound(to: UInt8.self)
         var total = 0.0, over = 0
-        for pixel in 0..<(width * height) {
-            var largest = 0
-            for channel in 0..<3 {
-                let difference = abs(Int(reference[pixel * 4 + channel]) - Int(gpu[pixel * 4 + channel]))
-                largest = max(largest, difference)
-                total += Double(difference)
-            }
-            if largest > 12 { over += 1 }
-        }
+        test_difference_stats(reference, gpu, width * height, 12, &total, &over)
         // Side by side for looking at: Core Graphics on the left, the GPU on the right.
         let pair = try BrushRaster.context(width: width * 2, height: height, mask: false)
         let gpuData = Data(gpu)

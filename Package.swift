@@ -50,7 +50,10 @@ let package = Package(
         ),
         // Runs AppKit's event loop with a document window in the test process, as the app did when it hosted the tests.
         .target(name: "LaminaTestHost", path: "Tests/LaminaTestHost", linkerSettings: [.linkedFramework("AppKit")]),
-        .testTarget(name: "LaminaAppTests", dependencies: ["LaminaApp", "LaminaTestHost", "LaminaAutomation"],
+        // The rendering tests' fixture and comparison loops, optimized like CPixels: as unoptimized Swift they were most
+        // of the suite's time.
+        .target(name: "TestPixels", path: "Tests/TestPixels", cSettings: [.unsafeFlags(["-O3"])]),
+        .testTarget(name: "LaminaAppTests", dependencies: ["LaminaApp", "LaminaTestHost", "LaminaAutomation", "TestPixels"],
                     path: "Tests/LaminaAppTests", swiftSettings: swiftSettings),
         // `lamina` and the command catalog, without the app: fast, no windows.
         .testTarget(name: "LaminaTests", dependencies: ["LaminaAutomation", "LaminaCLI"], path: "Tests/LaminaTests",

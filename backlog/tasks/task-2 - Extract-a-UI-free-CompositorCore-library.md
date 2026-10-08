@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-07 17:48'
-updated_date: '2026-10-08 20:52'
+updated_date: '2026-10-08 21:01'
 labels: []
 dependencies:
   - TASK-6
@@ -44,3 +44,13 @@ Test time: on 2026-10-08 `swift test` ran 709 tests in 100 suites in 118 s wall 
 - [ ] #4 docs/project-format.md and AGENTS.md name LaminaCore as the format's implementation and describe the boundary
 - [ ] #5 The suite's wall-clock time before and after is recorded in the task notes
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Measured 2026-10-08 (after the focus fix, 4713103):
+- Default run: 712 tests in 100 suites, 103 s wall clock; one test at a time (--no-parallel): 108 s, the same, because nearly every suite is @MainActor and runs one at a time on the main thread anyway.
+- Where it goes (serial durations): TiledLayerTests 52 s and GPUCanvasTests 26 s, 72% between them; then TypeToolTests 6 s, ExternalChangeTests 4 s, LargeCanvasBrushTests 3 s, MetalWarpTests 2.5 s. The format and PSD tests this task moves to LaminaCore take under a second in total.
+- Cause in TiledLayerTests: fixtures of 1600×1000 (and 3360×1812) noise built and compared with per-pixel Swift loops in an unoptimized build; noise() even allocates an array per pixel.
+- So the extraction alone won't make tests faster; asked the user how to widen or split the scope.
+<!-- SECTION:NOTES:END -->

@@ -45,33 +45,64 @@ nonisolated enum MaskTracing {
 }
 
 extension EditorSession {
+    /// The document-space outline of a layer's mask's black (hidden) areas; nil when there's nothing to trace.
+    /// Throws `MaskTracing.Failure.tooDetailed` for an outline too detailed to draw.
+    private func maskSelectionOutline(layerID: UUID) throws -> CGPath? {
+        guard let layer = document?.layers.first(where: { $0.id == layerID }), let mask = layer.mask?.asset.image,
+              let traced = try MaskTracing.darkPixels(in: mask) else { return nil }
+        var toDocument = BrushRaster.pixelToDocument(layer.maskTransform, width: mask.width, height: mask.height)
+        return traced.copy(using: &toDocument)
+    }
+    /// The document-space outline of a layer's visible (≥ 50% opaque) pixels; nil when there's nothing to trace.
+    /// Throws `MaskTracing.Failure.tooDetailed` for an outline too detailed to draw.
+    private func layerSelectionOutline(layerID: UUID) throws -> CGPath? {
+        guard let layer = document?.layers.first(where: { $0.id == layerID }), !layer.isGroup,
+              let image = layer.asset?.image, let traced = try MaskTracing.opaquePixels(in: image) else { return nil }
+        var toDocument = BrushRaster.pixelToDocument(layer.transform, width: image.width, height: image.height)
+        return traced.copy(using: &toDocument)
+    }
+
     /// Cmd-click on a mask thumbnail: the mask's black (hidden) areas become the
     /// selection. Shift adds to the current selection; Option subtracts from it.
     func loadMaskSelection(layerID: UUID, mode: SelectionMode = .replace) {
-        guard canEditSelection, let layer = document?.layers.first(where: { $0.id == layerID }),
-              let mask = layer.mask?.asset.image else { return }
-        let traced: CGPath
-        do {
-            guard let path = try MaskTracing.darkPixels(in: mask) else { NSSound.beep(); return }
-            traced = path
-        } catch { brushError = error.localizedDescription; return }
-        var toDocument = BrushRaster.pixelToDocument(layer.maskTransform, width: mask.width, height: mask.height)
-        guard let outline = traced.copy(using: &toDocument) else { return }
+        guard canEditSelection else { return }
+        let outline: CGPath?
+        do { outline = try maskSelectionOutline(layerID: layerID) } catch { brushError = error.localizedDescription; return }
+        guard let outline else { NSSound.beep(); return }
         applySelection(outline, mode: mode, name: "Load Mask Selection")
     }
 
     /// Cmd-click on a layer thumbnail: the layer's visible (≥ 50% opaque) pixels become
     /// the selection, ignoring its mask, as in Photoshop. Shift adds; Option subtracts.
     func loadLayerSelection(layerID: UUID, mode: SelectionMode = .replace) {
-        guard canEditSelection, let layer = document?.layers.first(where: { $0.id == layerID }), !layer.isGroup,
-              let image = layer.asset?.image else { NSSound.beep(); return }
-        let traced: CGPath
-        do {
-            guard let path = try MaskTracing.opaquePixels(in: image) else { NSSound.beep(); return }
-            traced = path
-        } catch { brushError = error.localizedDescription; return }
-        var toDocument = BrushRaster.pixelToDocument(layer.transform, width: image.width, height: image.height)
-        guard let outline = traced.copy(using: &toDocument) else { return }
+        guard canEditSelection else { return }
+        let outline: CGPath?
+        do { outline = try layerSelectionOutline(layerID: layerID) } catch { brushError = error.localizedDescription; return }
+        guard let outline else { NSSound.beep(); return }
         applySelection(outline, mode: mode, name: "Load Layer Selection")
+    }
+
+    /// Intersect Mask/Pixels with Selection, from the Layers panel's context menu. Not a marquee/lasso mode —
+    /// nothing there offers an intersect — so it stands apart from `SelectionMode` and combines paths directly.
+    func intersectMaskSelection(layerID: UUID) {
+        guard canEditSelection else { return }
+        do {
+            guard let outline = try maskSelectionOutline(layerID: layerID) else { return }
+            intersectSelection(with: outline, name: "Intersect Mask Selection")
+        } catch { brushError = error.localizedDescription }
+    }
+    func intersectLayerSelection(layerID: UUID) {
+        guard canEditSelection else { return }
+        do {
+            guard let outline = try layerSelectionOutline(layerID: layerID) else { return }
+            intersectSelection(with: outline, name: "Intersect Layer Selection")
+        } catch { brushError = error.localizedDescription }
+    }
+    private func intersectSelection(with outline: CGPath, name: String) {
+        guard let current = selection else { return }
+        let result = DocumentSelection(path: current.path.intersection(outline, using: .winding), antialiased: current.antialiased,
+                                       feather: current.feather)
+        // Nothing in common is no selection at all, as in Photoshop — not an invisible empty one.
+        setSelection(result.isEmpty ? nil : result, name: name)
     }
 }

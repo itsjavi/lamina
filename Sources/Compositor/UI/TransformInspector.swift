@@ -41,6 +41,27 @@ struct TransformInspector: View {
                 }.frame(width: 170)
                 Button("Flip H") { change { $0.flipX.toggle() } }
                 Button("Flip V") { change { $0.flipY.toggle() } }
+                // Align to the selection, the canvas with one thing selected, or else to each other. One pull-down
+                // rather than ten buttons: the bar already fills a laptop-width window, and buttons past its edge
+                // would be scrolled out of sight.
+                Menu {
+                    Section("Align") {
+                        ForEach(LayerAlignment.allCases, id: \.self) { alignment in
+                            Button { session.alignLayers(alignment) } label: { Label(alignment.rawValue, systemImage: alignment.symbol) }
+                        }
+                    }
+                    Section("Distribute (three or more layers)") {
+                        ForEach(LayerDistribution.allCases, id: \.self) { distribution in
+                            Button { session.distributeLayers(distribution) } label: {
+                                Label(distribution.rawValue, systemImage: distribution.symbol)
+                            }
+                            .disabled(!session.canDistributeLayers)
+                        }
+                    }
+                } label: { Image(systemName: "align.horizontal.left") }
+                    .menuStyle(.borderlessButton).fixedSize()
+                    .help("Align and distribute the selected layers").accessibilityLabel("Align and Distribute")
+                    .disabled(!session.canAlignLayers)
 
             // Numbers describe an ordinary transform; while distorted, the handles are the controls.
             }.disabled((!session.canTransform && session.transformEdit == nil) || session.transformEdit?.corners != nil)

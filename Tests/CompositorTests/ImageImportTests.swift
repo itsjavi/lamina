@@ -59,6 +59,44 @@ struct ImageImportTests {
         #expect(bytes[63 * 4 + 3] == 0)
     }
 
+    /// A lossless 8 × 4 WebP made with cwebp 1.6.0: the left half opaque red, the right half clear. ImageIO reads WebP
+    /// but can't write it, so the file is embedded rather than made by the test.
+    static let webP = Data(base64Encoded: "UklGRh4AAABXRUJQVlA4TBEAAAAvB8AAEA8Q8x/zH4w+RPQ/AAA=")!
+
+    @Test func webPOpensDropsAndPlaces() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension("webp")
+        try Self.webP.write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+        #expect(UTType.importableImages.contains(.webP))
+        let result = try await ImageImporter.shared.decode(url)
+        #expect(result.image.width == 8 && result.image.height == 4)
+        #expect(result.image.colorSpace?.name == CGColorSpace.sRGB)
+        let context = try #require(CGContext(data: nil, width: 8, height: 4, bitsPerComponent: 8,
+                                             bytesPerRow: 32, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.draw(result.image, in: CGRect(x: 0, y: 0, width: 8, height: 4))
+        let bytes = try #require(context.data).assumingMemoryBound(to: UInt8.self)
+        #expect(bytes[0] >= 250 && bytes[3] == 255)
+        #expect(bytes[7 * 4 + 3] == 0)
+
+        // Opened, it makes the canvas; placed into an open document, it lands centered on the point.
+        let session = EditorSession()
+        await session.importImages([url])
+        #expect(session.document?.size == CGSize(width: 8, height: 4))
+        session.createDocument(width: 64, height: 64)
+        await session.importImages([url], at: CGPoint(x: 20, y: 30))
+        #expect(session.document?.layers.first?.origin == CGPoint(x: 16, y: 28))
+        #expect(session.importError == nil)
+
+        // Dropped from Finder, and as image data with no file behind it (as from a browser).
+        let dropped = EditorSession()
+        let providers = [NSItemProvider(item: url as NSURL, typeIdentifier: UTType.fileURL.identifier),
+                         NSItemProvider(item: Self.webP as NSData, typeIdentifier: UTType.webP.identifier)]
+        await ImageFileDrop.importProviders(providers, into: dropped, at: nil)
+        #expect(dropped.document?.layers.count == 2)
+        #expect(dropped.importError == nil)
+    }
+
     @Test func limitsAndInvalidFiles() async throws {
         let url = try fixture(.png)
         defer { try? FileManager.default.removeItem(at: url) }

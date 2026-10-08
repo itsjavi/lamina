@@ -19,6 +19,8 @@ let package = Package(
     dependencies: [
         // App updates. build-app.sh embeds Sparkle.framework in Contents/Frameworks.
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.10.0"),
+        // WebP export (ImageIO reads WebP but can't write it): Google's libwebp, compiled from source into the app.
+        .package(url: "https://github.com/SDWebImage/libwebp-Xcode", from: "1.6.0"),
     ],
     targets: [
         // Pixel loops (brushes, healing, levels, noise, lens, content fill, adjustments, dither), always
@@ -26,7 +28,8 @@ let package = Package(
         .target(name: "CPixels", path: "Sources/CPixels", cSettings: [.unsafeFlags(["-O3"])]),
         .executableTarget(
             name: "Compositor",
-            dependencies: ["CPixels", .product(name: "Sparkle", package: "Sparkle")],
+            dependencies: ["CPixels", .product(name: "Sparkle", package: "Sparkle"),
+                           .product(name: "libwebp", package: "libwebp-Xcode")],
             path: "Sources/Compositor",
             swiftSettings: swiftSettings + [.defaultIsolation(MainActor.self)],
             // The app bundle keeps Sparkle.framework in Contents/Frameworks.

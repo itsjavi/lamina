@@ -32,7 +32,9 @@ extension EditorSession {
         return nil
     }
     /// Tiled raster edit of the active layer's pixels or mask, within the shared pixel budgets.
-    func makeRasterEdit(for layer: ImageLayer, settings: BrushSettings = BrushSettings(), growsMask: Bool = false) throws -> BrushStroke {
+    /// `clipsToSelection` false leaves the edit free of the selection, and skips drawing its coverage.
+    func makeRasterEdit(for layer: ImageLayer, settings: BrushSettings = BrushSettings(), growsMask: Bool = false,
+                        clipsToSelection: Bool = true) throws -> BrushStroke {
         guard let document else { throw ProjectError.tooLarge }
         let stroke = try BrushStroke(layer: layer, mask: isMaskSelected, settings: settings, canvas: document.size, growsMask: growsMask)
         let used = document.layers.filter { $0.id != layer.id }.reduce(0) { total, layer in
@@ -40,14 +42,15 @@ extension EditorSession {
             return total + (image.map { $0.width * $0.height } ?? 0)
         }
         stroke.pixelLimit = DocumentLimits.documentPixelBudget - used
-        stroke.selectionClip = try selection?.clip(canvas: document.size)
+        stroke.selectionClip = clipsToSelection ? try selection?.clip(canvas: document.size) : nil
         if !isMaskSelected, layer.mask != nil {
             let maskPixels = document.layers.filter { $0.id != layer.id }.reduce(0) { $0 + ($1.mask.map { $0.asset.image.width * $0.asset.image.height } ?? 0) }
             stroke.pixelLimit = min(stroke.pixelLimit, DocumentLimits.documentPixelBudget - maskPixels)
         }
         return stroke
     }
-    func beginBrush(at point: CGPoint) {
+    /// `pressure` is a pen's, 0–1; nil for a mouse or trackpad, which presses fully.
+    func beginBrush(at point: CGPoint, pressure: CGFloat? = nil) {
         // Spot Healing and Clone Stamp rework image pixels; they have nothing to do on a mask.
         if tool == .blur, blurMode != .blur { beginWarp(at: point); return }
         guard tool == .brush || tool == .blur || (tool.isBrushTool && !isMaskSelected) else { return }
@@ -65,7 +68,19 @@ extension EditorSession {
             var settings = brushSettings
             settings.healing = tool == .spotHealing
             settings.erasing = tool == .brush && brushMode == .erase && !isMaskSelected
+            if tool == .brush, let lightens = brushMode.toneLightens {
+                guard !isMaskSelected else {
+                    brushError = "Dodge and Burn lighten and darken a layer’s pixels, not its mask. Click the layer’s thumbnail to work on its pixels."
+                    return
+                }
+                guard layer.asset != nil else { brushError = "“\(layer.name)” has no pixels yet to lighten or darken."; return }
+                // At 0% nothing would change; there's no stroke to make.
+                guard toneExposure > 0 else { return }
+                settings.toning = BrushToning(lightens: lightens, range: toneRange, exposure: toneExposure)
+            }
             settings.healingMode = spotHealingMode
+            // Flow and the pressure buttons belong to the Brush; the other brush tools lay their full tip.
+            if tool != .brush { settings.flow = 1; settings.pressureSize = false; settings.pressureOpacity = false }
             if isMaskSelected { settings.red = maskPaintWhite ? 1 : 0; settings.green = settings.red; settings.blue = settings.red }
             let stroke = try makeRasterEdit(for: layer, settings: settings, growsMask: tool == .brush)
             if let offset = sourceOffset {
@@ -81,19 +96,21 @@ extension EditorSession {
             }
             stroke.isBlur = tool == .blur
             brushStroke = stroke
-            try stroke.append(point)
+            brushPressure = pressure ?? 1
+            try stroke.append(point, pressure: brushPressure)
             brushAnchor = point
             brushPointer = point
             lastBrushPoint = (point, layer.id, isMaskSelected)
             brushRevision += 1
         } catch { cancelBrush(); brushError = error.localizedDescription }
     }
-    func continueBrush(at point: CGPoint) {
+    func continueBrush(at point: CGPoint, pressure: CGFloat? = nil) {
         if let warpStroke { warpStroke.append(point); lastBrushPoint?.point = point; brushRevision += 1; return }
         guard let brushStroke else { return }
         brushPointer = point
+        if let pressure { brushPressure = pressure }
         guard let painted = smoothed(point) else { return }
-        do { try brushStroke.append(painted); lastBrushPoint?.point = painted; brushRevision += 1 }
+        do { try brushStroke.append(painted, pressure: brushPressure); lastBrushPoint?.point = painted; brushRevision += 1 }
         catch { cancelBrush(); brushError = error.localizedDescription }
     }
     /// Where the brush actually is, with Smoothing on: it trails the pointer on a string, and only
@@ -138,11 +155,11 @@ extension EditorSession {
             // Smoothing leaves the brush short of the pointer; the stroke ends where the hand did.
             if let pointer = brushPointer, let anchor = brushAnchor, pointer != anchor,
                tool == .brush, brushSettings.smoothing > 0 {
-                try stroke.append(pointer)
+                try stroke.append(pointer, pressure: brushPressure)
             }
             try stroke.flush()
             if stroke.settings.healing { try stroke.heal() }
-            if !stroke.patches.isEmpty { try commitPaintSnapshot(stroke) }
+            if !stroke.patches.isEmpty, stroke.settings.toning == nil || stroke.changesPixels { try commitPaintSnapshot(stroke) }
         } catch { brushError = error.localizedDescription }
         return true
     }
@@ -164,7 +181,7 @@ extension EditorSession {
             mask = original.replacing(ImportedImage(image: try raster.makeImage(), thumbnail: try raster.thumbnail(),
                 name: original.asset.name, raster: raster))
         }
-        beginEdit(stroke.editName ?? (stroke.isMask ? "Paint Mask" : stroke.settings.erasing ? "Erase" : stroke.isBlur ? "Blur" : stroke.clone != nil ? "Clone Stamp" : stroke.settings.healing ? "Spot Healing" : "Brush Stroke"))
+        beginEdit(stroke.editName ?? stroke.settings.toning.map { $0.lightens ? "Dodge" : "Burn" } ?? (stroke.isMask ? "Paint Mask" : stroke.settings.erasing ? "Erase" : stroke.isBlur ? "Blur" : stroke.clone != nil ? "Clone Stamp" : stroke.settings.healing ? "Spot Healing" : "Brush Stroke"))
         if stroke.isMask {
             document?.layers[index].mask = current.mask.map { mask in
                 var painted = mask.replacing(result.asset)

@@ -45,3 +45,17 @@ splitter, a Go developer toolkit, a beauty salon app and an old leaf-measurement
 - Supersedes decision-1's choice to keep the `com.compositor.*` file identifiers and its `com.itsjavi.compositor`
   bundle id and feed.
 
+## Amendment (2026-10-08)
+
+Changed by the user before any of it shipped:
+
+- The project extension is **`.lam`**, not `.lamina` (macOS doesn't claim it). The exported type
+  `com.itsjavi.lamina.project` and the manifest's `"format"` stay as above.
+- **Everything is renamed**, not just what users see: the Swift targets, folders and test host, the `com.compositor.*`
+  pasteboard and drag types, and docs file names. Only the credits to upstream Compositor and the `.comp` importer keep
+  the old name. The app target is `LaminaApp` (with `LaminaAppTests` and `LaminaTestHost`), because an executable
+  target named `Lamina` would clash with the `lamina` command-line tool on a case-insensitive file system; the bundle
+  is still `Lamina.app`.
+- The person's settings and recent projects from the Compositor builds don't carry over: the new bundle id gets a new
+  sandbox container, which the app can't read the old one from. Their `.comp` projects open as imports.
+

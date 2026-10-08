@@ -29,7 +29,7 @@
   "groups": [
     {
       "layers": [
-        { "glass": true, "image-name": "pencil.png", "name": "pencil" },
+        { "glass": true, "image-name": "brush.png", "name": "brush" },
         { "glass": true, "image-name": "sheet-top.png", "name": "sheet-top" },
         { "glass": true, "image-name": "sheet-middle.png", "name": "sheet-middle" },
         { "glass": true, "image-name": "sheet-bottom.png", "name": "sheet-bottom" }

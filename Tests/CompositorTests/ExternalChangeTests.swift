@@ -164,10 +164,10 @@ struct ExternalChangeTests {
         let active = try #require(session.document?.layers.first?.id)
         session.renameLayer(active, to: "Unsaved here")
         try await renameFirstLayerOnDisk(url, to: "Renamed elsewhere")
-        await settle()
-        // No window to ask in, so the question waits and the document keeps the unsaved edit.
+        // No window to ask in, so the question waits and the document keeps the unsaved edit. Waits for the
+        // watcher rather than a fixed delay: on a busy machine its event can take longer than one.
+        #expect(await eventually { controller.externalChanges.pending })
         #expect(controller.externalChanges.reloadCount == 0)
-        #expect(controller.externalChanges.pending)
         #expect(session.document?.layers.first?.name == "Unsaved here")
         #expect(session.isModified)
     }

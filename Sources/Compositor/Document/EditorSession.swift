@@ -316,6 +316,8 @@ final class EditorSession {
     /// The open filter (Filter menu), and the settings the next one starts from.
     var filterEdit: FilterEdit?
     var filterSettings = FilterSettings()
+    /// What Filter › Last Filter runs again.
+    var lastFilter: FilterKind?
     @ObservationIgnored var hueSaturationTask: Task<Void, Never>?
     /// The newest preview request while one is already rendering.
     @ObservationIgnored var hueSaturationPending: HueSaturationJob?
@@ -684,6 +686,13 @@ final class EditorSession {
 
     func redo() {
         guard canRedo, let snapshot = history.redo() else { return }
+        restore(snapshot)
+    }
+
+    /// A click in the History panel: back or forward to the state with `position` steps applied, as that many Undos
+    /// or Redos would leave it, restored once.
+    func jumpToHistory(_ position: Int) {
+        guard canUseHistory, let snapshot = history.jump(to: position) else { return }
         restore(snapshot)
     }
 

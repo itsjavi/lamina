@@ -5,6 +5,18 @@ struct ShortcutChord: Codable, Equatable, Hashable {
     var key: String
     var modifiers: Int
     init(_ key: String, _ modifiers: Int = 0) { self.key = key; self.modifiers = modifiers }
+    /// No key at all: a command the person has cleared, or one that ships without a shortcut.
+    static let unassigned = ShortcutChord("", 0)
+    var isNone: Bool { key.isEmpty }
+    /// What SwiftUI applies to a menu item or button: nil takes any key equivalent away.
+    var keyboardShortcut: KeyboardShortcut? {
+        // The list records Delete as U+007F, as NSEvent reports it; SwiftUI's Delete key equivalent is U+0008.
+        key.first.map { KeyboardShortcut($0 == "\u{7f}" ? .delete : KeyEquivalent($0), modifiers: eventModifiers) }
+    }
+    /// A key equivalent as the list records it: SwiftUI's `.delete` (U+0008) is the Delete key, recorded as U+007F.
+    static func recorded(_ key: KeyEquivalent) -> String {
+        key == .delete ? "\u{7f}" : String(key.character)
+    }
     // Stable stored bits: Command, Option, Control, Shift.
     init(_ event: NSEvent) {
         let flags = event.modifierFlags
@@ -42,6 +54,7 @@ struct ShortcutChord: Codable, Equatable, Hashable {
         return flags
     }
     var label: String {
+        if isNone { return "None" }
         let special = ["\u{7f}": "Delete", "\r": "Return", "\u{1b}": "Esc", "\t": "Tab", " ": "Space",
                        "\u{f702}": "←", "\u{f703}": "→", "\u{f701}": "↓", "\u{f700}": "↑"]
         return (modifiers & 4 != 0 ? "⌃" : "") + (modifiers & 2 != 0 ? "⌥" : "")
@@ -67,25 +80,58 @@ struct ShortcutDefinition: Identifiable {
     var id: String { "\(group):\(title)" }
     var isMenu: Bool { group == "Menus" }
 
+    /// Menu commands that ship without a key; the person can give them one.
+    static let moreGroup = "More Menu Commands"
+
+    /// Their titles, "Menu › Item" as the menu bar shows them. Keep in step with CompositorApp: in a Debug build a
+    /// menu item asking for a title that isn't here stops with a message saying so.
+    static let assignableMenuCommands: [String] = {
+        var titles = [
+            "Compositor › Check for Updates…", "Compositor › Hide Compositor", "Compositor › Show All",
+            "File › Open Recent › Clear Menu", "File › Import Images…", "File › Export As…",
+            "Edit › Keyboard Shortcuts…", "Edit › Clear Selection Pixels", "Edit › Stroke…",
+            "View › Pixel Grid", "View › Snap", "View › Grid Settings…", "View › Clear Guides",
+            "View › Snap To › Guides", "View › Snap To › Grid", "View › Snap To › Layers", "View › Snap To › Document Bounds",
+            "Select › Layer's Pixels", "Select › Color Range…", "Select › Mask's Black Areas",
+            "Select › Expand…", "Select › Contract…", "Select › Feather…",
+            "Image › Trim…", "Image › Flip Canvas Horizontal", "Image › Flip Canvas Vertical",
+            "Layer › Edit Adjustment…", "Layer › Move Out of Folder", "Layer › Rename Layer…",
+            "Layer › Show or Hide Layer", "Layer › Show or Hide All Other Layers",
+            "Layer › Apply Layer Mask", "Layer › Merge Visible", "Layer › Flatten Image",
+            "Layer › Flip Layer Horizontal", "Layer › Flip Layer Vertical",
+            "Layer › Layer Style › Copy Layer Style", "Layer › Layer Style › Paste Layer Style",
+            "Layer › Layer Style › Clear Layer Style",
+            "Layer › Delete Layer",
+        ]
+        titles += CanvasRotation.allCases.map { "Image › Image Rotation › \($0.rawValue)" }
+        titles += LayerAlignment.allCases.map { "Layer › Align › \($0.rawValue)" }
+        titles += LayerDistribution.allCases.map { "Layer › Distribute › \($0.rawValue)" }
+        titles += [FilterKind.blackWhite, .colorBalance, .exposure, .gradientMap, .grain].map { "Image › \($0.rawValue)…" }
+        titles += FilterKind.allCases.filter { $0 != .contentAwareFill && !$0.isImageAdjustment }.map { "Filter › \($0.rawValue)…" }
+        titles += AdjustmentKind.allCases.map { "Layer › New Adjustment Layer › \($0.rawValue)" }
+        return titles
+    }()
+
     static let all: [ShortcutDefinition] = {
         func entry(_ title: String, _ key: String, _ modifiers: Int = 0, menu: Bool = false) -> ShortcutDefinition {
             .init(title: title, group: menu ? "Menus" : "Canvas & Layers", original: ShortcutChord(key, modifiers))
         }
         var result: [ShortcutDefinition] = [
             entry("Undo", "z", 1, menu: true), entry("Redo", "z", 9, menu: true),
-            entry("New Canvas", "n", 1, menu: true), entry("Open Project", "o", 1, menu: true),
+            entry("New Canvas", "n", 1, menu: true), entry("New from Clipboard", "n", 3, menu: true),
+            entry("Open Project", "o", 1, menu: true),
             entry("Save", "s", 1, menu: true), entry("Save As", "s", 9, menu: true),
             entry("Export PNG", "e", 9, menu: true), entry("Export JPEG", "s", 11, menu: true),
             entry("Close Project", "w", 1, menu: true), entry("Fit Canvas", "0", 1, menu: true),
             entry("Actual Pixels", "1", 1, menu: true), entry("Zoom In", "=", 1, menu: true),
             entry("Zoom Out", "-", 1, menu: true), entry("Show Transform Controls", "h", 1, menu: true),
-            entry("Hide Compositor", "h", 3, menu: true), entry("Cut", "x", 1, menu: true),
+            entry("Hide Others", "h", 3, menu: true), entry("Cut", "x", 1, menu: true),
             entry("Copy", "c", 1, menu: true), entry("Copy Merged", "c", 9, menu: true),
             entry("Paste", "v", 1, menu: true), entry("Fill with Foreground", "\u{7f}", 2, menu: true),
             entry("Fill with Background", "\u{7f}", 1, menu: true), entry("Content-Aware Fill", "\u{7f}", 8, menu: true),
             entry("Select All", "a", 1, menu: true), entry("Deselect", "d", 1, menu: true),
             entry("Inverse Selection", "i", 9, menu: true), entry("Select Subject", "a", 3, menu: true),
-            entry("Curves", "m", 1, menu: true), entry("Levels", "l", 1, menu: true),
+            entry("Last Filter", "f", 1, menu: true), entry("Curves", "m", 1, menu: true), entry("Levels", "l", 1, menu: true),
             entry("Hue/Saturation", "u", 1, menu: true), entry("Invert Pixels / Mask", "i", 1, menu: true),
             entry("Canvas Size", "c", 3, menu: true), entry("Image Size", "i", 3, menu: true),
             entry("Transform Layer / Selection", "t", 1, menu: true), entry("Duplicate / Layer via Copy", "j", 1, menu: true),
@@ -123,6 +169,7 @@ struct ShortcutDefinition: Identifiable {
             result.append(.init(title: title + " by 10", group: "Text Editing", original: ShortcutChord(key, 10)))
         }
         result.append(entry("Toggle Levels preview", "p", 2))
+        result += assignableMenuCommands.map { .init(title: $0, group: moreGroup, original: .unassigned) }
         return result
     }()
 }
@@ -133,23 +180,52 @@ final class ShortcutSettings {
     private(set) var overrides: [String: ShortcutChord] = [:]
     @ObservationIgnored private let panel = FloatingPanelController(name: "keyboardShortcuts")
     private static let storageKey = "keyboardShortcuts.v1"
-    private init() {
-        if let data = UserDefaults.standard.data(forKey: Self.storageKey),
-           let saved = try? JSONDecoder().decode([String: ShortcutChord].self, from: data),
-           Self.problem(in: saved) == nil { overrides = saved }
+    /// One saved entry, nil when it can't be decoded (a hand-edited or damaged value), so the others still load.
+    private struct SavedChord: Decodable {
+        let chord: ShortcutChord?
+        init(from decoder: Decoder) throws { chord = try? ShortcutChord(from: decoder) }
+    }
+    private let defaults: UserDefaults
+    /// `defaults` is the app's own everywhere but tests, which use a throwaway suite.
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        guard let data = defaults.data(forKey: Self.storageKey),
+              let saved = try? JSONDecoder().decode([String: SavedChord].self, from: data) else { return }
+        // Take the saved overrides one at a time, keeping each that still fits: one that can't be read, one for a
+        // command that has since gone, or one a newer rule or a new default now refuses, drops alone rather than
+        // taking every other saved shortcut with it.
+        let known = Set(ShortcutDefinition.all.map(\.id))
+        var accepted: [String: ShortcutChord] = [:]
+        for (id, chord) in saved.compactMapValues(\.chord).sorted(by: { $0.key < $1.key }) where known.contains(id) {
+            var trial = accepted
+            trial[id] = chord
+            if Self.problem(in: trial) == nil { accepted = trial }
+        }
+        overrides = accepted
     }
     func chord(_ definition: ShortcutDefinition) -> ShortcutChord { overrides[definition.id] ?? definition.original }
     func menu(_ key: KeyEquivalent, modifiers: EventModifiers) -> ShortcutChord {
         let bits = (modifiers.contains(.command) ? 1 : 0) | (modifiers.contains(.option) ? 2 : 0)
             | (modifiers.contains(.control) ? 4 : 0) | (modifiers.contains(.shift) ? 8 : 0)
-        let original = ShortcutChord(String(key.character), bits)
-        guard let definition = ShortcutDefinition.all.first(where: { $0.isMenu && $0.original == original }) else { return original }
+        let original = ShortcutChord(ShortcutChord.recorded(key), bits)
+        guard let definition = ShortcutDefinition.all.first(where: { $0.isMenu && $0.original == original }) else {
+            assertionFailure("\(original.label) is used in a menu but isn't in ShortcutDefinition.all, so Keyboard Shortcuts can't show or change it.")
+            return original
+        }
+        return chord(definition)
+    }
+    /// The key the person gave a menu command that ships without one; `.unassigned` until they do.
+    func assigned(_ title: String) -> ShortcutChord {
+        guard let definition = ShortcutDefinition.all.first(where: { $0.group == ShortcutDefinition.moreGroup && $0.title == title }) else {
+            assertionFailure("“\(title)” isn't in ShortcutDefinition.assignableMenuCommands. Add it there so it appears in Keyboard Shortcuts.")
+            return .unassigned
+        }
         return chord(definition)
     }
     func native(_ key: KeyEquivalent, modifiers: EventModifiers = []) -> ShortcutChord {
         let bits = (modifiers.contains(.command) ? 1 : 0) | (modifiers.contains(.option) ? 2 : 0)
             | (modifiers.contains(.control) ? 4 : 0) | (modifiers.contains(.shift) ? 8 : 0)
-        let original = ShortcutChord(String(key.character), bits)
+        let original = ShortcutChord(ShortcutChord.recorded(key), bits)
         guard let definition = ShortcutDefinition.all.first(where: { !$0.isMenu && $0.original == original }) else { return original }
         return chord(definition)
     }
@@ -160,16 +236,23 @@ final class ShortcutSettings {
     func save(_ values: [String: ShortcutChord]) {
         guard Self.problem(in: values) == nil, let data = try? JSONEncoder().encode(values) else { return }
         overrides = values
-        UserDefaults.standard.set(data, forKey: Self.storageKey)
+        defaults.set(data, forKey: Self.storageKey)
         close()
     }
     static func problem(in values: [String: ShortcutChord]) -> String? {
         var assigned: [ShortcutChord: String] = [:]
         for definition in ShortcutDefinition.all {
             let chord = values[definition.id] ?? definition.original
+            if chord.isNone { continue }
             guard chord.key.count == 1, (0...15).contains(chord.modifiers) else { return "Choose a single key with optional modifiers." }
             if definition.group == "Text Editing", chord.modifiers & 7 == 0 {
                 return "Text-editing shortcuts need Command, Option, or Control so they do not replace normal typing."
+            }
+            // A menu key without Command, Option or Control would take that key from every text field. Defaults are
+            // exempt (Content-Aware Fill has always been Shift-Delete); only keys the person picks must follow it.
+            if definition.isMenu || definition.group == ShortcutDefinition.moreGroup,
+               let chosen = values[definition.id], chosen != definition.original, chosen.modifiers & 7 == 0 {
+                return "Menu shortcuts need Command, Option, or Control, so they don't take keys you type."
             }
             if [ShortcutChord("q", 1), ShortcutChord(",", 1), ShortcutChord("m", 3)].contains(chord) {
                 return "\(chord.label) is reserved by macOS."
@@ -183,8 +266,9 @@ final class ShortcutSettings {
     /// Translate only at the existing canvas/layer responder boundary. Native text
     /// fields and dialog controls retain their normal typing and navigation behavior.
     func canvasEvent(_ event: NSEvent) -> NSEvent? {
-        guard !overrides.isEmpty else { return event }
         let input = ShortcutChord(event)
+        // A key that types nothing (a dead key on some layouts) reads as no key, which a cleared command also is.
+        guard !overrides.isEmpty, !input.isNone else { return event }
         if let definition = ShortcutDefinition.all.first(where: { $0.group == "Canvas & Layers" && chord($0) == input }) {
             return definition.original == input ? event : definition.original.event(like: event)
         }
@@ -202,9 +286,9 @@ final class ShortcutSettings {
     }
 
     func textEvent(_ event: NSEvent) -> NSEvent? {
-        guard !overrides.isEmpty else { return event }
-        let definitions = ShortcutDefinition.all.filter { $0.group == "Text Editing" || $0.original == ShortcutChord("\u{1b}") }
         let input = ShortcutChord(event)
+        guard !overrides.isEmpty, !input.isNone else { return event }
+        let definitions = ShortcutDefinition.all.filter { $0.group == "Text Editing" || $0.original == ShortcutChord("\u{1b}") }
         if let definition = definitions.first(where: { chord($0) == input }) {
             return definition.original == input ? event : definition.original.event(like: event)
         }
@@ -215,18 +299,26 @@ final class ShortcutSettings {
 
 extension View {
     func configuredNativeShortcut(_ key: KeyEquivalent, modifiers: EventModifiers = []) -> some View {
-        let chord = ShortcutSettings.shared.native(key, modifiers: modifiers)
-        guard let first = chord.key.first else { return keyboardShortcut(key, modifiers: modifiers) }
-        return keyboardShortcut(KeyEquivalent(first), modifiers: chord.eventModifiers)
+        keyboardShortcut(ShortcutSettings.shared.native(key, modifiers: modifiers).keyboardShortcut)
     }
     func configuredKeyboardShortcut(_ key: KeyEquivalent, modifiers: EventModifiers = .command) -> some View {
-        let chord = ShortcutSettings.shared.menu(key, modifiers: modifiers)
-        guard let first = chord.key.first else { return keyboardShortcut(key, modifiers: modifiers) }
-        return keyboardShortcut(KeyEquivalent(first), modifiers: chord.eventModifiers)
+        keyboardShortcut(ShortcutSettings.shared.menu(key, modifiers: modifiers).keyboardShortcut)
+    }
+    /// For menu items without a default key: applies the one the person assigned in Keyboard Shortcuts, if any.
+    func assignableShortcut(_ title: String) -> some View {
+        keyboardShortcut(ShortcutSettings.shared.assigned(title).keyboardShortcut)
     }
 }
 
-private struct KeyboardShortcutsSheet: View {
+struct KeyboardShortcutsSheet: View {
+    /// The sections, in order. Every definition's group must be one of them (a test checks).
+    static let groups = ["Menus", ShortcutDefinition.moreGroup, "Canvas & Layers", "Text Editing"]
+    /// The draft with `id` set to no key: what ⊗ does.
+    static func clearing(_ id: String, in draft: [String: ShortcutChord]) -> [String: ShortcutChord] {
+        var draft = draft
+        draft[id] = .unassigned
+        return draft
+    }
     let settings: ShortcutSettings
     @State private var draft: [String: ShortcutChord]
     @State private var search = ""
@@ -234,12 +326,12 @@ private struct KeyboardShortcutsSheet: View {
     init(settings: ShortcutSettings) { self.settings = settings; _draft = State(initialValue: settings.overrides) }
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Click a shortcut, then press its new key combination. Changes apply when you save.")
+            Text("Click a shortcut, then press its new key combination; ⊗ removes it. Changes apply when you save.")
                 .foregroundStyle(.secondary)
             TextField("Search shortcuts", text: $search).textFieldStyle(.roundedBorder)
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 6) {
-                    ForEach(["Menus", "Canvas & Layers", "Text Editing"], id: \.self) { group in
+                    ForEach(Self.groups, id: \.self) { group in
                         Text(group).font(.headline).padding(.top, 8)
                         ForEach(ShortcutDefinition.all.filter { $0.group == group && (search.isEmpty || $0.title.localizedCaseInsensitiveContains(search)) }) { definition in
                             HStack {
@@ -253,6 +345,15 @@ private struct KeyboardShortcutsSheet: View {
                                         recording = nil
                                     })
                                     .frame(width: 150, height: 26)
+                                // Clearing frees the key for another command; Restore Defaults brings it back.
+                                Button {
+                                    recording = nil
+                                    draft = Self.clearing(definition.id, in: draft)
+                                } label: { Image(systemName: "xmark.circle.fill") }
+                                    .buttonStyle(.borderless).foregroundStyle(.secondary)
+                                    .help("No shortcut")
+                                    .accessibilityLabel("Remove the shortcut for \(definition.title)")
+                                    .disabled((draft[definition.id] ?? definition.original).isNone)
                             }
                         }
                     }

@@ -1,4 +1,5 @@
 import AppKit
+import UniformTypeIdentifiers
 
 /// Pixels copied from the canvas, with where they came from so Paste can put them back in place.
 struct PixelClipboard {
@@ -148,12 +149,24 @@ extension EditorSession {
         let pasteboard = NSPasteboard.general
         if let clip = pixelClipboard, pasteboard.changeCount == clip.changeCount {
             addPixelLayer(clip.image, at: clip.origin, name: nextLayerName(), editName: "Paste")
-        } else if let external = NSImage(pasteboard: pasteboard)?.cgImage(forProposedRect: nil, context: nil, hints: nil),
-                  let image = try? Self.sRGBCopy(of: external) {
+        } else if let image = Self.pasteboardImage(pasteboard) {
             let origin = CGPoint(x: floor((document.size.width - CGFloat(image.width)) / 2),
                                  y: floor((document.size.height - CGFloat(image.height)) / 2))
             addPixelLayer(image, at: origin, name: nextLayerName(), editName: "Paste")
         } else { NSSound.beep() }
+    }
+
+    /// An image copied in another app, in the working sRGB format; nil when the pasteboard holds none.
+    static func pasteboardImage(_ pasteboard: NSPasteboard = .general) -> CGImage? {
+        guard let external = NSImage(pasteboard: pasteboard)?.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        return try? sRGBCopy(of: external)
+    }
+
+    /// Image files copied in Finder. Finder also puts each file's icon on the pasteboard as image data, which is no
+    /// image of the file: a file that isn't an image is left out here, icon and all.
+    static func copiedImageFiles(_ pasteboard: NSPasteboard = .general) -> [URL] {
+        pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true,
+            .urlReadingContentsConformToTypes: [UTType.image.identifier]]) as? [URL] ?? []
     }
 
     /// Cmd-J (Layer via Copy): the selection's pixels become a new layer in place; with no

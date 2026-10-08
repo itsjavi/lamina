@@ -64,24 +64,27 @@ brew install --cask robbietilton-compositor
 - Eyedropper and a full color picker
 
 ### Adjustments and filters
-- Camera Raw filter: light, color, curves, color mixer, color grading, detail, optics and geometry, in a panel beside the canvas
+- Camera Raw filter: light, color, curves, color mixer, color grading, detail, optics and geometry, in a panel beside the canvas; each section resets to its defaults from its header, and settings can be saved as named presets
 - Levels (with Auto), Curves, Hue/Saturation, Exposure, Gradient Map, Grain, Black & White, Color Balance and Invert
 - Gaussian Blur and Motion Blur that spread past a layer's edges
 - Add Noise, Vignette, Bloom / Glow, Tonal Contrast, Lens Correction and Remove Background
 - Unsharp Mask (Amount, Radius, Threshold) and High Pass
 - Live previews, limited to the selection when there is one
+- Last Filter (⌘F) runs the last filter again with the same settings
 
 ### Canvas and files
 - Multiple projects in tabs
+- File > New from Clipboard (⌥⌘N) opens the copied image, or image files copied in Finder, as a new project
 - Rulers (⌘R), guides dragged from them, a layout grid with adjustable spacing and subdivisions, and Snap To for guides, grid, layers and document bounds
-- Crop with snapping, ratios including 3:4 and 9:16, and Option for symmetric cropping; with a selection, the crop starts at it
+- Crop with snapping, ratios including 3:4, 9:16 and any you type in (they are remembered), and Option for symmetric cropping; with a selection, the crop starts at it
 - Canvas Size, Image Size and Trim; Image Rotation (90° either way and 180°), which turns layer pixels losslessly
 - Sharp high-quality downsampling when zoomed out, and a pixel grid when zoomed in
 - Import JPEG, PNG, HEIC, WebP, TIFF, SVG, camera RAW (with a develop step first) and Photoshop PSD and PSB (8-bit RGB; not CMYK). Photoshop folders, masks, blend modes, fill rectangles/ellipses, and simple horizontal text stay editable; other vectors and vertical text become pixels. A conversion report is shown before anything is applied.
 - Large documents: the memory budget scales with your Mac, and a Photoshop file too big to open has its layers cropped to the canvas instead
 - Export JPEG with a live preview (⇧⌥⌘S), or PNG, JPEG, HEIC, AVIF, WebP, TIFF or PDF with File > Export As… (quality for the lossy formats; only the formats your Mac can write are listed); Copy Merged
 - Keep working while a project saves
-- Photoshop-style keyboard shortcuts throughout, remappable in Edit > Keyboard Shortcuts
+- A History panel beside Layers lists every undo step by name; click one to go back or forward to it
+- Photoshop-style keyboard shortcuts throughout, remappable or removable in Edit > Keyboard Shortcuts, where any menu command can also be given one
 - Drag a number's label to scrub its value, as in Photoshop
 - Automatic updates, signed and notarized
 

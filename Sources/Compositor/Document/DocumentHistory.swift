@@ -37,6 +37,33 @@ final class DocumentHistory {
     var redoName: String { future.last?.name ?? "" }
     var isModified: Bool { revision != savedRevision }
     var undoCount: Int { past.count }
+    /// Every step kept, oldest first, as the History panel lists them: the ones Undo goes back through, then the
+    /// ones Redo brings back.
+    var stepNames: [String] { past.map(\.name) + future.reversed().map(\.name) }
+    /// How many of `stepNames` are applied. 0 is the document as it was before the oldest step kept.
+    var position: Int { past.count }
+
+    /// Undoes or redoes as many steps as it takes to leave `position` of them applied, as one move: the snapshot to
+    /// show, or nil when there's nowhere to go. The steps after it stay for Redo until a new edit drops them.
+    func jump(to position: Int) -> Snapshot? {
+        guard depth == 0, position != past.count, (0...past.count + future.count).contains(position) else { return nil }
+        let snapshot: Snapshot
+        if position < past.count {
+            let undone = past[position...]
+            snapshot = undone.first!.before
+            future.append(contentsOf: undone.reversed())
+            past.removeSubrange(position...)
+        } else {
+            let redone = future.suffix(position - past.count).reversed()
+            snapshot = redone.last!.after
+            past.append(contentsOf: redone)
+            future.removeLast(redone.count)
+        }
+        revision = snapshot.revision
+        trim(current: snapshot.document)
+        return snapshot
+    }
+
     func markSaved() { savedRevision = revision }
     /// The document as it stands, for a save that captures it now and finishes later.
     var currentRevision: UUID { revision }

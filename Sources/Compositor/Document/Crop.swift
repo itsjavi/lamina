@@ -216,15 +216,14 @@ extension EditorSession {
         return cropRect ?? CGRect(origin: .zero, size: document.size)
     }
     var cropRatio: CGFloat? {
-        switch cropRatioChoice {
-        case "Original": return document.map { CGFloat($0.width) / CGFloat($0.height) }
-        case "1:1": return 1
-        case "4:3": return 4 / 3
-        case "3:4": return 3 / 4
-        case "16:9": return 16 / 9
-        case "9:16": return 9 / 16
-        default: return nil
-        }
+        if cropRatioChoice == "Original" { return document.map { CGFloat($0.width) / CGFloat($0.height) } }
+        return CropRatio.value(cropRatioChoice)
+    }
+    /// A ratio typed in Custom…: remembered with the others, chosen, and applied to the frame.
+    func useCustomCropRatio(width: Double, height: Double, remembering ratios: CustomCropRatios = .shared) {
+        guard let text = ratios.add(width: width, height: height) else { return }
+        cropRatioChoice = text
+        changeCropRatio()
     }
     func cancelCrop() { cropRect = nil }
     func changeCropRatio() {

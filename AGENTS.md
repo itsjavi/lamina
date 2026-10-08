@@ -44,9 +44,10 @@ load, and how to write it safely while it's open, so the person can watch the ca
 | `Tests/LaminaTests`            | The catalog, `lamina` and its MCP server, without the app (fast, no windows)                |
 | `Tests/LaminaTestHost`     | Starts AppKit's event loop with a document window in the test process (see below)           |
 | `Resources/`                   | `Info.plist`, `LaminaApp.entitlements` (sandbox), `lamina.entitlements`, `PrivacyInfo.xcprivacy`, `AppIcon.icon` (Icon Composer; compiled by actool in `scripts/build-app.sh`) |
-| `scripts/`                     | `build-app.sh` (assembles, compiles the icon, embeds Sparkle, signs), `release.sh`, `appcast.sh`, `bump-version.sh`, `acknowledgements.swift` (Credits.html) |
-| `docs/`                        | The `.lam` format (`project-format.md`, `writing-lamina-projects.md`) and performance notes |
-| `.github/workflows/`           | `ci.yml` (tests), `release.yml` (tag-driven release)                                        |
+| `scripts/`                     | `build-app.sh` (assembles, compiles the icon, embeds Sparkle, signs), `release.sh`, `appcast.sh`, `bump-version.sh`, `acknowledgements.swift` (Credits.html), `app-icon.swift` (draws the icon's layers), `demo-project.swift` and `window-screenshot.swift` (README and website screenshots), `og-image.html` (social card) |
+| `docs/`                        | The `.lam` format (`project-format.md`, `writing-lamina-projects.md`), releasing (`releasing.md`) and performance notes |
+| `web/`, `brand/`               | The website (https://itsjavi.com/lamina/) and its assets, shared with the README; `brand/README.md` says what to update when a feature ships or the UI changes, and how screenshots are taken |
+| `.github/workflows/`           | `ci.yml` (tests), `release.yml` (tag-driven release), `pages.yml` (deploys `web/`)          |
 
 ## Builds and data
 
@@ -75,6 +76,8 @@ Only what the system frameworks can't do. Each SwiftPM package is pinned in `Pac
 - Commit straight to `main` and push; no pull requests or feature branches while the project has no outside
   contributors.
 - Match the surrounding code: its naming, its comment style and density.
+- A user-facing feature or a substantial UI change updates the README, website and screenshots in the same task
+  ([brand/README.md](brand/README.md)), or says in the task notes why it needs none.
 - American spelling in code, comments and UI ("color", not "colour").
 - The project file format is described in [docs/project-format.md](docs/project-format.md) and implemented in
   LaminaCore. A change to what's saved means a format version bump there and in `ProjectManifest.current`.

@@ -1,11 +1,11 @@
 ---
 id: TASK-39
 title: Landing page at itsjavi.com/lamina
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-08 18:44'
-updated_date: '2026-10-08 21:44'
+updated_date: '2026-10-08 22:00'
 labels:
   - identity
 milestone: m-0
@@ -34,7 +34,7 @@ Like NoteMD's (github.com/itsjavi/notemd: web/index.html and styles.css, deploye
 - [x] #1 web/index.html and web/styles.css: hero with icon, tagline and the dark screenshot, why, feature rows, a details grid and build steps; works at phone width and in light and dark
 - [x] #2 .github/workflows/pages.yml deploys web/ to https://itsjavi.com/lamina/ on pushes to main that touch web/
 - [x] #3 A social card (web/assets/og-image.jpg) generated from a script in scripts/, and page metadata (title, description, Open Graph, icon)
-- [ ] #4 brand/README.md lists the README, website, screenshots, social card and video, and what to update when a feature ships or the UI changes; AGENTS.md points to it
+- [x] #4 brand/README.md lists the README, website, screenshots, social card and video, and what to update when a feature ships or the UI changes; AGENTS.md points to it
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -45,4 +45,12 @@ Like NoteMD's (github.com/itsjavi/notemd: web/index.html and styles.css, deploye
 - Social card scripts/og-image.html → web/assets/og-image.jpg (2400×1260); favicon.png and apple-touch-icon.png from the icon.
 - GitHub Pages enabled on itsjavi/lamina (built from Actions, with the user's go-ahead). pages.yml run 37848722510 succeeded; https://itsjavi.com/lamina/ and its assets return 200. The README links the site.
 - Left: AGENTS.md pointer to brand/README.md, after the LaminaCore branch (which edits AGENTS.md) is merged.
+
+AGENTS.md now lists web/ and brand/ (pointing to brand/README.md), the screenshot and social-card scripts, pages.yml, and a convention that user-facing features and UI changes update the README, website and screenshots in the same task.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Landing page live at https://itsjavi.com/lamina/: NoteMD's layout in Lamina's palette (light, dark, phone), hero and feature screenshots shared with the README, a social card (scripts/og-image.html), favicons, and pages.yml deploying web/ on pushes to main (GitHub Pages enabled with the user's go-ahead). brand/README.md and AGENTS.md say what to keep in sync. Verified with headless renders and the live site.
+<!-- SECTION:FINAL_SUMMARY:END -->

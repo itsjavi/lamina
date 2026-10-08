@@ -1,11 +1,11 @@
 ---
 id: TASK-2
 title: Extract the project format and PSD parsing into a UI-free LaminaCore
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-07 17:48'
-updated_date: '2026-10-08 21:06'
+updated_date: '2026-10-08 22:00'
 labels: []
 dependencies:
   - TASK-6
@@ -38,11 +38,11 @@ Test time: on 2026-10-08 `swift test` ran 709 tests in 100 suites in 118 s wall 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A LaminaCore target holds the project manifest and layer records, their value types, project reading, writing and validation, and PSD parsing, with no SwiftUI or AppKit imports
-- [ ] #2 The app loads, saves and watches projects and imports PSDs through LaminaCore, with no change in behavior; the full test suite passes
-- [ ] #3 Format and PSD tests live in a LaminaCoreTests target that depends only on LaminaCore and runs without LaminaTestHost
-- [ ] #4 docs/project-format.md and AGENTS.md name LaminaCore as the format's implementation and describe the boundary
-- [ ] #5 The suite's wall-clock time before and after is recorded in the task notes
+- [x] #1 A LaminaCore target holds the project manifest and layer records, their value types, project reading, writing and validation, and PSD parsing, with no SwiftUI or AppKit imports
+- [x] #2 The app loads, saves and watches projects and imports PSDs through LaminaCore, with no change in behavior; the full test suite passes
+- [x] #3 Format and PSD tests live in a LaminaCoreTests target that depends only on LaminaCore and runs without LaminaTestHost
+- [x] #4 docs/project-format.md and AGENTS.md name LaminaCore as the format's implementation and describe the boundary
+- [x] #5 The suite's wall-clock time before and after is recorded in the task notes
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -55,4 +55,17 @@ Measured 2026-10-08 (after the focus fix, 4713103):
 - So the extraction alone won't make tests faster; asked the user how to widen or split the scope.
 
 Test speed (user chose: speed up first, then LaminaCore): the rendering suites' fixture and comparison loops moved to Tests/TestPixels (C, -O3), matching the Swift byte for byte. TiledLayerTests 52 → 3.8 s, GPUCanvasTests 26 → 3.3 s. Full swift test: 712 tests, 103 s → 32 s wall clock (serial 108 → 36 s). Next slowest: TypeToolTests 5.8 s, ExternalChangeTests 4.5 s (file-watch timing), LargeCanvasBrushTests 3.6 s.
+
+Library half (agent in a worktree, merged as a merge commit after review):
+- Sources/LaminaCore: Model/ (LayerTransform, LayerBlendMode, CanvasGuide, PaletteColor, LayerTextStyle and runs, ShapeKind/LayerShapeStyle, effect records, DocumentLimits), Adjustments/ (AdjustmentKind, LayerAdjustment and every settings type with validation), Project/ (ProjectManifest, ProjectLayerRecord, ProjectError, LayerHierarchy, LiveMaskGraph, validation, ProjectPackage read/write with file coordination, path and size checks, PNG decoding, Quick Look preview, .comp 1–11 import), PSD/ (PSDReader, PSDTypes, PSDChannelCoder, PSDText parsing). Imports only Foundation, CoreGraphics, ImageIO, UniformTypeIdentifiers; package access with explicit package inits.
+- The app keeps ProjectSnapshot (ImportedImage with paint tiles) and ProjectStore as a thin adapter with the same API; drawing behavior stays as nonisolated extensions where it lived; PSDDocumentBuilder, PSDVector (passed to PSDReader as a shapes: hook), ProjectDigest/ProjectWatcher (CryptoKit) and PSD text rendering stay in the app. TypeControls writes LaminaCore.TextAlignment (SwiftUI has one too).
+- Tests: LaminaCoreTests (47: 34 moved, 13 new for packages and PSD reading) with a shared PSDFixtures target; no AppKit or test host.
+
+Validation on merged main: swift build; swift test 749 tests (22 lamina, 47 core, 680 app) pass in 31.5 s wall clock (32 s before the extraction, 103 s before the C fixtures); swift test --filter LaminaCoreTests 1.4 s; make dev builds; grep finds no AppKit/SwiftUI import in LaminaCore.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Test suite from 103 s to 31 s and out of the person's way (focus-taking tests gated behind make test-ui, transparent test host; rendering fixtures in a -O3 C target), and the project format and PSD parsing extracted into LaminaCore, a UI-free library with its own 47 tests that run in 1.4 s, behind the app's unchanged ProjectStore API. Verified by the full suite on merged main, the core suite alone, make dev and an import check.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -1,6 +1,6 @@
-// Times launches of an app bundle in the background, for the launch time on the website (brand/README.md): from the
-// launch request to the app having finished launching, and to its first document window existing. Quits it (SIGTERM,
-// then SIGKILL) between runs. Time a release-optimized Dev build, so the release app's data stays untouched:
+// Times launches of an app bundle in the background, for the numbers on the website (brand/README.md): from the
+// launch request to the app having finished launching, and to its first document window existing; then, three seconds
+// later, its memory footprint (as /usr/bin/footprint reports it). Quits it (SIGTERM, then SIGKILL) between runs. Time a release-optimized Dev build, so the release app's data stays untouched:
 //   CONFIG=release scripts/build-app.sh dev && swift scripts/launch-time.swift "build/Lamina Dev.app" 8
 import AppKit
 let app = URL(fileURLWithPath: CommandLine.arguments[1])
@@ -12,7 +12,21 @@ func window(of pid: pid_t) -> Bool {
         && (($0[kCGWindowBounds as String] as? [String: Double])?["Width"] ?? 0) > 400
         && !(($0[kCGWindowName as String] as? String) ?? "").isEmpty }
 }
-var finished: [Double] = [], windows: [Double] = []
+/// The app's physical footprint in MB, from `footprint`'s "Footprint: 68 MB" line.
+func footprint(_ pid: pid_t) -> Double {
+    let task = Process()
+    task.executableURL = URL(fileURLWithPath: "/usr/bin/footprint")
+    task.arguments = ["\(pid)"]
+    let pipe = Pipe()
+    task.standardOutput = pipe
+    task.standardError = Pipe()
+    guard (try? task.run()) != nil else { return .nan }
+    task.waitUntilExit()
+    let text = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+    guard let range = text.range(of: #"Footprint: [0-9.]+ MB"#, options: .regularExpression) else { return .nan }
+    return Double(text[range].dropFirst("Footprint: ".count).dropLast(" MB".count)) ?? .nan
+}
+var finished: [Double] = [], windows: [Double] = [], memory: [Double] = []
 for run in 1...runs {
     let configuration = NSWorkspace.OpenConfiguration()
     configuration.activates = false
@@ -31,7 +45,10 @@ for run in 1...runs {
         RunLoop.current.run(until: Date().addingTimeInterval(0.005))
     }
     finished.append(finishedAt ?? .nan); windows.append(windowAt ?? .nan)
-    print(String(format: "run %d: finished launching %.3f s, window %.3f s", run, finishedAt ?? -1, windowAt ?? -1))
+    Thread.sleep(forTimeInterval: 3)
+    memory.append(footprint(running.processIdentifier))
+    print(String(format: "run %d: finished launching %.3f s, window %.3f s, footprint %.0f MB", run, finishedAt ?? -1,
+                 windowAt ?? -1, memory.last ?? -1))
     kill(running.processIdentifier, SIGTERM)
     let quit = now()
     while !running.isTerminated && now() - quit < 5 { RunLoop.current.run(until: Date().addingTimeInterval(0.02)) }
@@ -39,4 +56,5 @@ for run in 1...runs {
     Thread.sleep(forTimeInterval: 1)
 }
 func median(_ values: [Double]) -> Double { let s = values.sorted(); return s[s.count / 2] }
-print(String(format: "median: finished launching %.3f s, window %.3f s (runs after the first: %.3f s)", median(finished), median(windows), median(Array(windows.dropFirst()))))
+print(String(format: "median: finished launching %.3f s, window %.3f s (runs after the first: %.3f s), footprint %.0f MB",
+             median(finished), median(windows), median(Array(windows.dropFirst())), median(memory)))

@@ -71,17 +71,19 @@ Gotchas:
 
 ## Numbers on the website
 
-The strip under the hero states the app's size and launch time; keep both true when the app changes (decision-7 keeps
-the size under 50 MB, which the hero badge promises):
+The cards under the hero state the app's size, launch time and memory; keep them true when the app changes
+(decision-7 keeps the size under 50 MB, which the hero badge promises):
 
-| Number          | Today   | How to measure                                                                      |
+| Card            | Today   | How to measure                                                                      |
 | --------------- | ------- | ----------------------------------------------------------------------------------- |
-| App size        | 23 MB   | `make app && du -sh build/Lamina.app`                                                |
-| Launch → window | 0.7 s   | `CONFIG=release scripts/build-app.sh dev && swift scripts/launch-time.swift "build/Lamina Dev.app" 8`: the median "window" time after the first run |
+| Tiny download   | 23 MB   | `make app && du -sh build/Lamina.app`                                                |
+| Opens instantly | 0.7 s   | `CONFIG=release scripts/build-app.sh dev && swift scripts/launch-time.swift "build/Lamina Dev.app" 8`: the median "window" time of the runs after the first |
+| Light on memory | 68 MB   | the same run: the median footprint, three seconds after the window opens, with a fresh canvas |
 
 Measured 2026-10-09 on a MacBook Pro with M1 Max and 32 GB (macOS 27): finished launching in 0.25 s, first window
-0.72 s (median of the seven runs after the first; the first, right after the build, took 1.07 s). The launches run in
-the background and don't take focus. Update the figures and the note under the strip together.
+0.72 s (the first launch after a build took 1.07 s), 68 MB with a fresh canvas (171 MB with the 8-layer Golden Hour
+demo open). The launches run in the background and don't take focus. Update the figures and the note under the cards
+together.
 
 ## Social card
 

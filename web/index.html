@@ -119,23 +119,39 @@
           </a>
         </div>
         <div class="container stats" role="group" aria-label="Lamina in numbers">
-          <ul class="stat-grid">
-            <li>
-              <p class="stat-value"><span data-count-to="23">23</span><span class="stat-unit">MB</span></p>
-              <p class="stat-label">The whole app, icon and all</p>
+          <ul class="metrics">
+            <li class="metric">
+              <span class="metric-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5z" /><path d="M3 8v8l9 5 9-5V8" /><path d="M12 13v8" /></svg>
+              </span>
+              <div>
+                <p class="metric-value"><span data-count-to="23">23</span><span class="metric-unit">MB</span></p>
+                <p class="metric-title">Tiny download</p>
+              </div>
             </li>
-            <li>
-              <p class="stat-value"><span data-count-to="0.7" data-decimals="1">0.7</span><span class="stat-unit">s</span></p>
-              <p class="stat-label">From click to an open window</p>
+            <li class="metric">
+              <span class="metric-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" /></svg>
+              </span>
+              <div>
+                <p class="metric-value"><span data-count-to="0.7" data-decimals="1">0.7</span><span class="metric-unit">s</span></p>
+                <p class="metric-title">Opens instantly</p>
+              </div>
             </li>
-            <li>
-              <p class="stat-value"><span>0</span></p>
-              <p class="stat-label">Accounts or subscriptions</p>
+            <li class="metric">
+              <span class="metric-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <rect x="5" y="5" width="14" height="14" rx="2" />
+                  <path d="M9 1v4M15 1v4M9 19v4M15 19v4M1 9h4M1 15h4M19 9h4M19 15h4" />
+                </svg>
+              </span>
+              <div>
+                <p class="metric-value"><span data-count-to="68">68</span><span class="metric-unit">MB</span></p>
+                <p class="metric-title">Light on memory</p>
+              </div>
             </li>
           </ul>
-          <p class="stat-note">
-            Launch time measured on a MacBook Pro with M1 Max: from launch to the first window, median of eight launches.
-          </p>
+          <p class="stat-note">Measured on a MacBook Pro with M1 Max.</p>
         </div>
       </section>
 

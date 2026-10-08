@@ -2151,7 +2151,7 @@ final class CanvasView: NSView {
             if event.charactersIgnoringModifiers?.lowercased() == "p", event.modifierFlags.contains(.option) {
                 session.updateLevels(edit.settings, preview: !edit.preview); return
             }
-            if event.keyCode != 49 { super.keyDown(with: event); return }
+            if event.keyCode != 49 { ignoreKey(event); return }
         }
         if session.brushStroke != nil || session.warpStroke != nil {
             if event.keyCode == 53 && !session.isProjectBusy { session.cancelBrush(); synchronizeDisplay() }
@@ -2253,9 +2253,16 @@ final class CanvasView: NSView {
             case "v": session.selectTool(.move)
             case "h": session.selectTool(.hand)
             case "z": session.selectTool(.zoom)
-            default: super.keyDown(with: event)
+            default: ignoreKey(event)
             }
-        } else { super.keyDown(with: event) }
+        } else { ignoreKey(event) }
+    }
+    /// A key the canvas has no use for. A plain key, or one with Option or Control, ends here: passed on, AppKit beeps
+    /// at it, as a text field does past its last character, and a press of Escape, a digit or an arrow with nothing to
+    /// act on is routine on a canvas. A ⌘ combination still goes up the chain, so one no menu takes beeps as it does
+    /// everywhere else on the Mac.
+    private func ignoreKey(_ event: NSEvent) {
+        if event.modifierFlags.contains(.command) { super.keyDown(with: event) }
     }
     override func keyUp(with event: NSEvent) {
         if event.keyCode == panPhysicalKey || (panPhysicalKey == nil && event.keyCode == 49) {

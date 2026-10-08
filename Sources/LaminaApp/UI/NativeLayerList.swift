@@ -847,6 +847,8 @@ final class LayerTableView: NSTableView {
                                 dy: event.keyCode == 126 ? -step : event.keyCode == 125 ? step : 0)
         } else if [51, 117].contains(event.keyCode), plain {
             session?.deleteKeyPressed()
+        } else if [53, 36, 76].contains(event.keyCode), plain {
+            // Escape or Return with nothing to cancel or apply: the table would only beep at it.
         } else { super.keyDown(with: event) }
     }
 }

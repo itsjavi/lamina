@@ -67,6 +67,8 @@ Only what the system frameworks can't do. Each SwiftPM package is pinned in `Pac
 
 ## Conventions
 
+- Commit straight to `main` and push; no pull requests or feature branches while the project has no outside
+  contributors.
 - Match the surrounding code: its naming, its comment style and density.
 - American spelling in code, comments and UI ("color", not "colour").
 - The project file format is described in [docs/project-format.md](docs/project-format.md). A change to what's saved

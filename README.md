@@ -1,10 +1,10 @@
 # Compositor
 
-Adobe Photoshop costs too much and tools like GIMP don’t feel familiar enough for me to stay in flow. That’s why I built Compositor.
+A simpler alternative to Photoshop and Affinity for the Mac: the tools you use every day for photos and compositing,
+without the bloat, the subscription or the sign-up. Native, open source and ready for agents, which can drive it from
+the command line or as an MCP server. All in an app under 50 MB.
 
-The goal was to create a full-featured image editor that is completely free and open source. I used to use Photoshop for compositing and post-processing, so Compositor is built around that workflow - with the tools needed to create a pixel-perfect final image.
-
-Because it’s open source, you can download the source and add, remove, or modify any feature to fit your workflow.
+Because it’s open source, you can add, remove or change any feature to fit your workflow.
 
 > This is a fork of [robbietilton/Compositor](https://github.com/robbietilton/Compositor), built as a Swift package
 > (no Xcode project). Its builds have their own identity (`com.itsjavi.compositor`) and update feed

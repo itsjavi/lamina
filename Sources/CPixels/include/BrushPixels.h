@@ -7,4 +7,13 @@ void brush_alpha_bounds(const uint8_t *bytes, size_t width, size_t height, size_
 void layer_extract_alpha(const uint8_t *rgba, size_t rgbaStride, uint8_t *gray, size_t grayStride, size_t width, size_t height);
 void layer_unpremultiply_opaque(uint8_t *rgba, size_t stride, size_t width, size_t height);
 void layer_restore_alpha(uint8_t *rgba, size_t stride, const uint8_t *alpha, size_t alphaStride, size_t width, size_t height);
+// Dodge (lightens) or Burn: each pixel's straight color moved toward white or black by `strength` (0–1) times a
+// smooth weight for its brightness in `range` (0 shadows, 1 midtones, 2 highlights). Alpha is left as it is, so
+// transparent pixels stay transparent. Premultiplied RGBA, in place.
+void brush_tone(uint8_t *rgba, size_t width, size_t height, size_t stride, int lightens, int range, double strength);
+// Grayscale coverage mapped through `levels`, in place: the brush tip as one flow dab lays it.
+void coverage_remap(uint8_t *gray, size_t stride, size_t width, size_t height, const uint8_t levels[256]);
+// `out` = `coverage` × `cap` / 255: a stroke shown through the firmest pen press that reached each pixel.
+void coverage_multiply(const uint8_t *coverage, size_t coverageStride, const uint8_t *cap, size_t capStride,
+                       uint8_t *out, size_t outStride, size_t width, size_t height);
 #endif

@@ -72,9 +72,9 @@ extension AutomationDispatcher {
         if format == "jpeg" {
             let raster = try await ImageExporter.shared.render(snapshot)
             let matte = arguments.color("background") ?? (1, 1, 1)
-            let options = JPEGOptions(quality: arguments.double("quality") ?? 0.85,
-                                      red: CGFloat(matte.red), green: CGFloat(matte.green), blue: CGFloat(matte.blue))
-            data = try await ImageExporter.shared.jpeg(raster, options: options).data
+            let options = ExportOptions(format: .jpeg, quality: arguments.double("quality") ?? ExportOptions.defaultQuality,
+                                        red: CGFloat(matte.red), green: CGFloat(matte.green), blue: CGFloat(matte.blue))
+            data = try await ImageExporter.shared.encode(raster, options: options).data
         } else {
             data = try await ImageExporter.shared.pngData(snapshot)
         }

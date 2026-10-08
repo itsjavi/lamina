@@ -919,6 +919,14 @@ final class BrushStroke {
         }
     }
 
+    /// Paints `color` through `coverage` (grayscale, white paints) placed over `rect` in document pixels, at
+    /// `opacity`, as the Paint Bucket does. Only the tiles under `rect` are touched.
+    func fill(_ color: CGColor, coverage: CGImage, in rect: CGRect, opacity: CGFloat) throws {
+        try paintCanvas(bounds: rect) { context in
+            BrushRaster.fill(color, coverage: coverage, in: rect, alpha: min(1, max(0, opacity)), context: context)
+        }
+    }
+
     /// Erases image pixels to transparency inside the selection, only where pixels exist.
     func clearPixels() throws {
         try paintCanvas(withinSource: true) { context in

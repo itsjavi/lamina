@@ -60,6 +60,7 @@ brew install --cask robbietilton-compositor
 - Clone Stamp, aligned or not, sampling one layer or all of them
 - Blur tool, on pixels or masks
 - Gradient tool and Shape tool (rectangles, rounded rectangles, ellipses and lines), which stay editable rather than being rasterized
+- Paint Bucket (Shift-G from the Gradient): fills similar colors by tolerance, contiguous or not, from one layer or all of them, anti-aliased, on pixels or masks
 - Type tool (T): inline multiline editing in draggable, resizable paragraph boxes; font, size, color, alignment and spacing in the tool header; transform text and use it as a clipping mask
 - Eyedropper and a full color picker
 

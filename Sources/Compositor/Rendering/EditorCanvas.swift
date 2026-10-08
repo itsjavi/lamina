@@ -88,7 +88,7 @@ final class CanvasView: NSView {
     private var displayedPicking = false
     private var displayedTargeting = false
     private var optionHeld = false
-    private var palettePicking: Bool { session.tool == .eyedropper || (optionHeld && (session.tool == .brush || session.tool == .spotHealing || session.tool == .gradient) && session.brushStroke == nil && gradientDrag == nil) }
+    private var palettePicking: Bool { session.tool == .eyedropper || (optionHeld && (session.tool == .brush || session.tool == .spotHealing || session.tool == .gradient || session.tool == .paintBucket) && session.brushStroke == nil && gradientDrag == nil) }
     private var picking: Bool {
         palettePicking || (session.colorPicker != nil && !session.pickingForDialog) || session.hueSampleMode != nil || session.levels?.sampleMode != nil
             || session.colorRange != nil
@@ -1830,6 +1830,9 @@ final class CanvasView: NSView {
             refreshLassoCursor()
         } else if session.tool == .gradient {
             beginGradientDrag(at: point)
+        } else if session.tool == .paintBucket, let document = session.document {
+            let target = session.viewport.documentPoint(from: point, documentSize: document.size)
+            Task { await session.paintBucket(at: target) }
         } else if session.tool == .type {
             beginTextGesture(at: point, event: event)
         } else if session.tool == .shape, let document = session.document {
@@ -2224,7 +2227,9 @@ final class CanvasView: NSView {
             case "j": session.selectTool(.spotHealing)
             case "s": session.selectTool(.cloneStamp)
             case "t": session.selectTool(.type)
-            case "g": session.selectTool(.gradient)
+            case "g":
+                if event.modifierFlags.contains(.shift), session.tool == .gradient || session.tool == .paintBucket { session.toggleFillTool() }
+                else { session.pressGradientKey() }
             case "u":
                 if event.modifierFlags.contains(.shift), session.tool == .shape { session.toggleShapeKind() }
                 else { session.selectTool(.shape) }

@@ -241,9 +241,9 @@ extension EditorSession {
         alsoApply?()
         endEdit()
     }
-    /// Tools where number keys set opacity: the brush or gradient opacity, or with
+    /// Tools where number keys set opacity: the brush, gradient or paint bucket opacity, or with
     /// Move/Transform the opacity of the selected layers.
-    var usesOpacityKeys: Bool { tool.isBrushTool || tool == .gradient || tool == .move }
+    var usesOpacityKeys: Bool { tool.isBrushTool || tool == .gradient || tool == .paintBucket || tool == .move }
 
     /// Photoshop-style opacity keys: 1 = 10% … 9 = 90%, 0 = 100%.
     /// Two digits typed quickly set an exact value (4 then 5 = 45%, 0 then 5 = 5%).
@@ -260,6 +260,7 @@ extension EditorSession {
         switch tool {
         case .brush, .spotHealing, .cloneStamp, .blur: brushSettings.opacity = value
         case .gradient: gradientSettings.opacity = value
+        case .paintBucket: bucketSettings.opacity = value
         default: setSelectedLayersOpacity(Double(value))
         }
     }

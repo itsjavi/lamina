@@ -17,6 +17,15 @@ long wand_mask(const uint8_t *rgba, size_t width, size_t height, size_t stride,
 long color_range_mask(const uint8_t *rgba, size_t width, size_t height, size_t stride,
                       const uint8_t *include, int includeCount, const uint8_t *exclude, int excludeCount,
                       int fuzziness, int invert, uint8_t *mask);
+// Paint Bucket: the smallest rectangle holding every nonzero pixel of `mask` (width * height bytes), as its first
+// column, first row, width and height in `box`. Returns 0 when the mask is empty, 1 otherwise.
+int bucket_bounds(const uint8_t *mask, size_t width, size_t height, size_t box[4]);
+// Paint Bucket coverage: the `boxWidth` × `boxHeight` region of `mask` starting at (`boxX`, `boxY`), written to
+// `out` as 255 where the mask is nonzero and 0 elsewhere. With `antialias`, pixels on the mask's edge are softened
+// from their 3 × 3 neighborhood (the fraction f of it in the mask): 0.5 + 0.5f inside the mask, 0.5f outside, so
+// the edge spreads a pixel either side. Grow the region by a pixel around `bucket_bounds` to keep the outer half.
+void bucket_coverage(const uint8_t *mask, size_t width, size_t height, size_t boxX, size_t boxY,
+                     size_t boxWidth, size_t boxHeight, int antialias, uint8_t *out);
 // Outline of the nonzero pixels of `mask`, along pixel edges, as closed loops of corner points
 // (x, y pairs in pixel-edge coordinates). Outer boundaries run clockwise and holes
 // counterclockwise in top-left coordinates, so the winding rule fills exactly those pixels.

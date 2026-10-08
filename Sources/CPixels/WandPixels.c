@@ -203,3 +203,49 @@ long color_range_mask(const uint8_t *rgba, size_t width, size_t height, size_t s
     }
     return count;
 }
+
+int bucket_bounds(const uint8_t *mask, size_t width, size_t height, size_t box[4]) {
+    size_t minX = width, minY = height, maxX = 0, maxY = 0;
+    for (size_t y = 0; y < height; ++y) {
+        const uint8_t *row = mask + y * width;
+        size_t first = 0;
+        while (first < width && !row[first]) ++first;
+        if (first == width) continue;
+        size_t last = width - 1;
+        while (!row[last]) --last;
+        if (first < minX) minX = first;
+        if (last > maxX) maxX = last;
+        if (minY == height) minY = y;
+        maxY = y;
+    }
+    if (minY == height) return 0;
+    box[0] = minX;
+    box[1] = minY;
+    box[2] = maxX - minX + 1;
+    box[3] = maxY - minY + 1;
+    return 1;
+}
+
+void bucket_coverage(const uint8_t *mask, size_t width, size_t height, size_t boxX, size_t boxY,
+                     size_t boxWidth, size_t boxHeight, int antialias, uint8_t *out) {
+    for (size_t y = boxY; y < boxY + boxHeight; ++y) {
+        const uint8_t *row = mask + y * width;
+        uint8_t *target = out + (y - boxY) * boxWidth;
+        for (size_t x = boxX; x < boxX + boxWidth; ++x) {
+            int inside = row[x] != 0;
+            if (!antialias) { target[x - boxX] = inside ? 255 : 0; continue; }
+            int count = 0, filled = 0;
+            for (size_t ny = y ? y - 1 : 0; ny <= y + 1 && ny < height; ++ny) {
+                const uint8_t *near = mask + ny * width;
+                for (size_t nx = x ? x - 1 : 0; nx <= x + 1 && nx < width; ++nx) {
+                    ++count;
+                    filled += near[nx] != 0;
+                }
+            }
+            // Away from the edge the whole neighborhood agrees: fully in or fully out.
+            if (filled == 0 || filled == count) { target[x - boxX] = inside ? 255 : 0; continue; }
+            int numerator = inside ? count + filled : filled;
+            target[x - boxX] = (uint8_t)((255 * numerator + count) / (2 * count));
+        }
+    }
+}

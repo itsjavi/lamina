@@ -4,7 +4,7 @@ import Testing
 @testable import LaminaApp
 
 /// Serialized: these show real panels and run a display pass.
-@MainActor @Suite(.serialized)
+@MainActor @Suite(.serialized, .showsWindows)
 struct FloatingPanelTests {
     private func sessionWithPixels() throws -> EditorSession {
         let session = EditorSession()

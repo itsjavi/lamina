@@ -128,7 +128,7 @@ struct CropTests {
 
     /// Dragging the crop frame inside the canvas must redraw only the overlay: the overlays have layers of
     /// their own, so the canvas (checkerboard and layer composite) isn't redrawn on every mouse move.
-    @Test func cropDraggingRedrawsOnlyTheOverlay() throws {
+    @Test(.showsWindows) func cropDraggingRedrawsOnlyTheOverlay() throws {
         let session = EditorSession()
         session.createDocument(width: 800, height: 600)
         let context = try BrushRaster.context(width: 400, height: 300, mask: false)

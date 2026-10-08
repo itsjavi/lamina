@@ -53,7 +53,7 @@ struct CropRatioTests {
     }
 
     /// Custom… in the picker asks for a ratio rather than being one: the frame keeps the ratio it had.
-    @Test func choosingCustomKeepsTheRatioItHad() async throws {
+    @Test(.showsWindows) func choosingCustomKeepsTheRatioItHad() async throws {
         let session = EditorSession()
         session.createDocument(width: 400, height: 300)
         session.selectTool(.crop)

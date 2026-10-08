@@ -4,7 +4,7 @@ import Testing
 
 /// The snap hook runs in AppKit before a native slider cell starts tracking a track press.
 @MainActor
-@Suite(.serialized)
+@Suite(.serialized, .showsWindows)
 struct SliderSnapTests {
     @Test func clickingTheTrackSnapsBeforeNativeTrackingBegins() throws {
         SliderSnap.install()

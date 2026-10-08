@@ -25,4 +25,5 @@ jobs:
       - name: Select Xcode
         run: ./scripts/ci-select-xcode.sh
       - name: Test
-        run: swift test --disable-keychain
+        # Every test, including those that take focus or show windows: nobody is using this Mac.
+        run: LAMINA_UI_TESTS=1 swift test --disable-keychain

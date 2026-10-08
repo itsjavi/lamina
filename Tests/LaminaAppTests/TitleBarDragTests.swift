@@ -6,7 +6,7 @@ import Testing
 /// The tab strip sits in the title bar. Empty space beside the tabs has to stay a window drag, on macOS 26
 /// where a view that claims more room than it draws into keeps the mouse-down across its whole frame.
 @MainActor
-@Suite(.serialized)
+@Suite(.serialized, .showsWindows)
 struct TitleBarDragTests {
     @Test func emptySpaceBesideOneTabIsOutsideTheDragArea() async throws {
         let workspace = ProjectWorkspace()

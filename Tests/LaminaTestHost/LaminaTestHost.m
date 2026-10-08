@@ -23,6 +23,12 @@ __attribute__((constructor)) static void LaminaStartTestHost(void) {
                                                            defer:NO];
         window.releasedWhenClosed = NO;
         window.title = @"Lamina Test Host";
+        // On screen, as tests expect, but not in the way of whoever is using the Mac: transparent and letting clicks
+        // through. LAMINA_UI_TESTS=1 (make test-ui, CI) shows it, with the tests that need it seen.
+        if (![NSProcessInfo.processInfo.environment[@"LAMINA_UI_TESTS"] isEqualToString:@"1"]) {
+            window.alphaValue = 0;
+            window.ignoresMouseEvents = YES;
+        }
         [window orderFront:nil];
         [app run];
     });

@@ -191,7 +191,7 @@ struct TypeToolTests {
         #expect(session.textDraft == nil)
     }
 
-    @Test func closeButtonShouldCloseWindowWhileEditingText() async throws {
+    @Test(.showsWindows) func closeButtonShouldCloseWindowWhileEditingText() async throws {
         let workspace = ProjectWorkspace()
         let session = workspace.current.session
         session.createDocument(width: 800, height: 600, emptyLayer: true)
@@ -231,7 +231,7 @@ struct TypeToolTests {
         #expect(session.textDraft == nil)
     }
 
-    @Test func commandQShouldTerminateWhileEditingText() async throws {
+    @Test(.showsWindows) func commandQShouldTerminateWhileEditingText() async throws {
         let delegate = LaminaApplicationDelegate()
         let session = delegate.session
         session.createDocument(width: 800, height: 600, emptyLayer: true)

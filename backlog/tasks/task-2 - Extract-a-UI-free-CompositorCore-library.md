@@ -1,10 +1,11 @@
 ---
 id: TASK-2
 title: Extract the project format and PSD parsing into a UI-free LaminaCore
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-07 17:48'
-updated_date: '2026-10-08 18:44'
+updated_date: '2026-10-08 20:52'
 labels: []
 dependencies:
   - TASK-6

@@ -15,7 +15,8 @@ load, and how to write it safely while it's open, so the person can watch the ca
 
 | Task                     | Command                                                         |
 | ------------------------ | --------------------------------------------------------------- |
-| Unit tests               | `swift test` (or `make test`)                                   |
+| Unit tests               | `swift test` (or `make test`): leaves the person's focus alone  |
+| All tests, with windows  | `make test-ui` (`LAMINA_UI_TESTS=1`; CI runs these)             |
 | Compile everything       | `swift build`                                                   |
 | Dev app bundle           | `make dev` → `build/Lamina Dev.app`                         |
 | Release app bundle       | `make app` → `build/Lamina.app`                             |
@@ -78,7 +79,9 @@ Only what the system frameworks can't do. Each SwiftPM package is pinned in `Pac
   gave them: `NSApplication.run()` (so alerts, sheets and clicks that stop a nested run loop don't end the process)
   and one visible document window (panels dock to it). `ToolDefaults` gives tests the compiled defaults because they
   never run in an `.app` bundle. A test window the app closes needs `isReleasedWhenClosed = false`.
-- Some suites show real windows and activate the test process, so a test run can take focus.
+- Tests that activate the test process or put windows in front of other apps carry the `.showsWindows` trait and run
+  only with `LAMINA_UI_TESTS=1` (`make test-ui`, CI); otherwise the test host's window is transparent and lets clicks
+  through, so `swift test` never takes the focus of whoever is using the Mac. Give any new test like that the trait.
 
 ## Driving the running app with `lamina`
 

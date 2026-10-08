@@ -1,6 +1,6 @@
 INSTALL_DIR ?= /Applications
 
-.PHONY: app dev run run-dev test install release appcast bump clean
+.PHONY: app dev run run-dev test test-ui install release appcast bump clean
 
 app: ## Build build/Lamina.app (release, with the updater)
 	scripts/build-app.sh release
@@ -14,8 +14,11 @@ run: app ## Build and open the release app
 run-dev: dev ## Build and open the dev app
 	open "build/Lamina Dev.app"
 
-test: ## Run the unit tests
+test: ## Run the unit tests, except those that take focus or show windows
 	swift test
+
+test-ui: ## Run every test, including those that take focus or show windows (CI does)
+	LAMINA_UI_TESTS=1 swift test
 
 install: app ## Copy the release app to /Applications (quits the running copy first) and open it
 	-osascript -e 'tell application id "com.itsjavi.lamina" to quit' 2>/dev/null

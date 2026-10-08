@@ -5,6 +5,7 @@ final class CompositorApplicationDelegate: NSObject, NSApplicationDelegate {
     let workspace = ProjectWorkspace()
     var session: EditorSession { workspace.current.session }
     var projects: ProjectController { workspace.current.controller }
+    private(set) lazy var automation = AutomationServer(workspace: workspace)
     var showEditor: (() -> Void)?
     /// Checks the update feed and installs new versions (Sparkle). Started only after launch: its first-run prompt,
     /// shown during launch, kept the editor window from ever opening. Only builds with a feed and a public key have
@@ -41,10 +42,31 @@ final class CompositorApplicationDelegate: NSObject, NSApplicationDelegate {
         NSApp.appearance = NSAppearance(named: .darkAqua)
         // Slider knobs snap to a click on the track instead of gliding there.
         SliderSnap.install()
+        // Commands from the `lamina` command-line tool (Apple Events).
+        automation.install()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [updater] in updater?.startUpdater() }
+    }
+
+    /// Keeps File › New from Clipboard's enabled state current while the app is in front: the clipboard changes when
+    /// something is copied here or in another app, and nothing announces it.
+    private var clipboardTimer: Timer?
+    func applicationDidBecomeActive(_ notification: Notification) {
+        Task { await workspace.refreshClipboard() }
+        clipboardTimer?.invalidate()
+        clipboardTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let workspace = self?.workspace else { return }
+                Task { await workspace.refreshClipboard() }
+            }
+        }
+    }
+
+    func applicationDidResignActive(_ notification: Notification) {
+        clipboardTimer?.invalidate()
+        clipboardTimer = nil
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

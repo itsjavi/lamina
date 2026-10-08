@@ -109,7 +109,7 @@ struct ContentView: View {
                     }
                 }
                 PanelResizeEdge(width: $layersPanelWidth, range: LayersPanel.widths)
-                LayersPanel(session: session, width: layersPanelWidth)
+                SidePanels(session: session, width: layersPanelWidth)
             }
             Divider()
             // Keeps its own height however short the window gets; the tools scroll instead.
@@ -246,7 +246,8 @@ struct ContentView: View {
                     content: SelectionAmountSheet(session: session, operation: operation))
             } else { selectionAmountPanel.close() }
         }
-        .onChange(of: session.filterEdit == nil) { _, closed in
+        // Last Filter applies without the panel.
+        .onChange(of: session.filterEdit == nil || session.filterEdit?.repeating == true) { _, closed in
             if closed { filterPanel.close() }
             else {
                 filterPanel.onClose = { session.cancelFilter() }

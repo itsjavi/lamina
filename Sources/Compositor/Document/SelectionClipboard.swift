@@ -201,6 +201,19 @@ extension EditorSession {
         return try sRGBCopy(of: drawn)
     }
 
+    /// An image copied in another app, in the working sRGB format; nil when the pasteboard holds none.
+    static func pasteboardImage(_ pasteboard: NSPasteboard = .general) -> CGImage? {
+        guard let external = NSImage(pasteboard: pasteboard)?.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        return try? sRGBCopy(of: external)
+    }
+
+    /// Image files copied in Finder. Finder also puts each file's icon on the pasteboard as image data, which is no
+    /// image of the file: a file that isn't an image is left out here, icon and all.
+    static func copiedImageFiles(_ pasteboard: NSPasteboard = .general) -> [URL] {
+        pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true,
+            .urlReadingContentsConformToTypes: [UTType.image.identifier]]) as? [URL] ?? []
+    }
+
     /// Cmd-J (Layer via Copy): the selection's pixels become a new layer in place; with no
     /// selection the whole layer is duplicated.
     func layerViaCopy() {

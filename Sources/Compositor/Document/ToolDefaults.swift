@@ -8,7 +8,7 @@ import Foundation
 /// or the app the person is actually using. They run in `swift test`'s tool, never in an app bundle.
 nonisolated enum ToolDefaults {
     private static let prefix = "tool."
-    private static let isTesting = Bundle.main.bundleURL.pathExtension != "app"
+    static let isTesting = Bundle.main.bundleURL.pathExtension != "app"
     /// Where the settings live: the app's defaults, or nowhere under `swift test`. A test that needs to see them
     /// saved and read back passes a store of its own.
     static var store: (any ToolDefaultsStore)? { isTesting ? nil : UserDefaults.standard }

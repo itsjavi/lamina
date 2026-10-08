@@ -156,4 +156,82 @@ struct HistoryTests {
         #expect(history.undoCount == 0)
         #expect(history.retainedBytes(current: doc) == 0)
     }
+
+    /// The History panel: every step by name, and a click goes straight back or forward to one.
+    @Test func historyPanelJumpsBackAndForwardToAStep() throws {
+        let session = EditorSession()
+        var states: [CanvasDocument?] = [nil]
+        session.createDocument(width: 80, height: 60); states.append(session.document)
+        session.addBlankLayer(); states.append(session.document)
+        let id = try #require(session.activeLayerID)
+        session.renameLayer(id, to: "Sky"); states.append(session.document)
+        session.toggleLayerVisibility(id); states.append(session.document)
+        let names = session.history.stepNames
+        #expect(names.count == 4 && names.first == "New Canvas" && session.history.position == 4)
+
+        session.jumpToHistory(1)
+        #expect(session.document == states[1] && session.history.position == 1)
+        #expect(session.history.stepNames == names, "the later steps stay, for Redo")
+        #expect(session.history.redoName == names[1] && session.canRedo)
+        session.jumpToHistory(3)
+        #expect(session.document == states[3] && session.history.position == 3)
+        session.jumpToHistory(0)
+        #expect(session.document == nil && !session.canUndo)
+        session.jumpToHistory(4)
+        #expect(session.document == states[4] && !session.canRedo)
+        // Undo and Redo walk the same list one step at a time.
+        session.jumpToHistory(2)
+        session.undo()
+        #expect(session.document == states[1])
+        session.redo(); session.redo()
+        #expect(session.document == states[3] && session.history.position == 3)
+        session.jumpToHistory(9)
+        #expect(session.history.position == 3, "a step that isn't there goes nowhere")
+    }
+
+    /// As in Photoshop, an edit made after going back replaces the steps that came after.
+    @Test func anEditAfterAJumpDropsTheLaterSteps() throws {
+        let session = EditorSession()
+        session.createDocument(width: 80, height: 60)
+        session.addBlankLayer()
+        let id = try #require(session.activeLayerID)
+        session.renameLayer(id, to: "Sky")
+        session.toggleLayerVisibility(id)
+        session.jumpToHistory(2)
+        let kept = Array(session.history.stepNames.prefix(2))
+        session.addBlankLayer()
+        #expect(session.history.stepNames.count == 3 && Array(session.history.stepNames.prefix(2)) == kept)
+        #expect(session.history.position == 3 && !session.canRedo)
+        session.undo()
+        #expect(session.document?.layers.count == 1 && session.document?.layers.first?.name != "Sky")
+    }
+
+    /// A jump waits, like Undo, while something open (a layer being renamed here) owns the history.
+    @Test func jumpingWaitsWhileHistoryIsBusy() throws {
+        let session = EditorSession()
+        session.createDocument(width: 80, height: 60)
+        session.addBlankLayer()
+        session.renamingLayerID = session.activeLayerID
+        session.jumpToHistory(0)
+        #expect(session.history.position == 2 && session.document != nil)
+        session.renamingLayerID = nil
+        session.jumpToHistory(0)
+        #expect(session.history.position == 0 && session.document == nil)
+    }
+
+    /// Jumping moves the same entries Undo and Redo do, so trimming to the limits still holds afterwards.
+    @Test func jumpingKeepsTheEntryLimit() {
+        let history = DocumentHistory(entryLimit: 3)
+        var doc = CanvasDocument(width: 10, height: 10)
+        for size in 11...15 {
+            history.begin("Resize \(size)", document: doc, selection: nil)
+            doc = CanvasDocument(width: size, height: size)
+            history.end(document: doc, selection: nil)
+        }
+        #expect(history.stepNames == ["Resize 13", "Resize 14", "Resize 15"] && history.position == 3)
+        #expect(history.jump(to: 0)?.document?.width == 12)
+        #expect(history.position == 0 && history.stepNames.count == 3)
+        #expect(history.jump(to: 2)?.document?.width == 14)
+        #expect(history.jump(to: 2) == nil, "already there")
+    }
 }

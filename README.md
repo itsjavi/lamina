@@ -90,6 +90,33 @@ brew install --cask robbietilton-compositor
 
 ### Works with AI agents
 - AI agents and scripts can build and edit projects directly: a `.comp` is a folder of PNG layers and a manifest, and an open project updates live as it's written. See [Writing Compositor projects](docs/writing-comp-files.md)
+- They can also drive the running app with the `lamina` command-line tool: list open projects and their layers, select layers, apply filters and adjustment layers with settings, undo, export and render previews. See [The lamina command-line tool](#the-lamina-command-line-tool)
+
+## The lamina command-line tool
+
+The app ships `lamina` in its bundle. Put it on your PATH with a symlink:
+
+```bash
+ln -s /Applications/Compositor.app/Contents/Helpers/lamina ~/.local/bin/lamina   # any folder on your PATH
+```
+
+It controls the app while it's running (it never starts it):
+
+```bash
+lamina list-documents                                     # open projects and their layers, with short ids
+lamina apply-filter --document 3f2a --layer 9c1b --kind gaussian-blur --settings radius=4
+lamina add-adjustment-layer --document 3f2a --kind exposure --settings exposure=0.5,gamma=1.1
+lamina export-document --document 3f2a --output ~/Desktop/poster.jpg --quality 0.9
+lamina undo --document 3f2a
+lamina --help                                             # every command; lamina help <command> for its options
+```
+
+Each edit is one undo step in the app, and edits are refused while you're in the middle of something there (typing
+text, a transform, an open dialog). Output is text, or JSON with `--json`. `lamina` sends the app Apple Events, so the
+first command asks whether the app you run it from (Terminal, your editor, an agent) may control Compositor; that
+choice is in System Settings › Privacy & Security › Automation. Only your own processes on this Mac can send commands,
+and the app's sandbox entitlements are unchanged: `lamina` itself writes the exported files. With the Dev build
+running, use `lamina --dev …` (or the copy inside `build/Compositor Dev.app`).
 
 ## Requirements
 

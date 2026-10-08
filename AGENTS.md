@@ -24,16 +24,21 @@ load, and how to write it safely while it's open, so the person can watch the ca
 | Update feed              | `make appcast` (Sparkle key: Keychain account `compositor`)     |
 | Version bump + tag       | `make bump V=patch [PUSH=1]` (never tag unless the user asks)   |
 | Brush benchmark          | `BRUSH_BENCHMARK=1 swift test --filter BrushPerformanceTests`   |
+| `lamina` (command line)  | `swift build --product lamina`; shipped as `Contents/Helpers/lamina` |
+| `lamina` and command tests | `swift test --filter 'LaminaTests\|AutomationTests'`          |
 
 ## Layout
 
 | Path                           | Contents                                                                                   |
 | ------------------------------ | ------------------------------------------------------------------------------------------ |
 | `Sources/CPixels`              | C pixel loops (brushes, healing, levels, noise, lens, content fill, adjustments, dither), headers in `include/`, always built `-O3`. Swift files that call them `import CPixels` |
-| `Sources/Compositor`           | The app (default MainActor isolation): `Document/` (editor session and tools), `IO/` (projects, PSD, import/export), `Rendering/` (canvas, Metal), `UI/` (panels, sheets, controls) |
+| `Sources/Compositor`           | The app (default MainActor isolation): `Automation/` (`lamina`'s commands and their Apple Event handler), `Document/` (editor session and tools), `IO/` (projects, PSD, import/export), `Rendering/` (canvas, Metal), `UI/` (panels, sheets, controls) |
+| `Sources/LaminaAutomation`     | The command catalog shared by the app and `lamina` (names, parameters, results, filter and adjustment settings), JSON values, the Apple Event codes and the bundle ids (`AppIdentity`). Foundation only, Swift 6 mode |
+| `Sources/LaminaCLI`, `Sources/lamina` | `lamina`: arguments and help built from the catalog, text/JSON output, the Apple Event client and file writing |
 | `Tests/CompositorTests`        | Swift Testing suites, `@testable import Compositor`                                         |
+| `Tests/LaminaTests`            | The catalog and `lamina`, without the app (fast, no windows)                                |
 | `Tests/CompositorTestHost`     | Starts AppKit's event loop with a document window in the test process (see below)           |
-| `Resources/`                   | `Info.plist`, `Compositor.entitlements` (sandbox), `PrivacyInfo.xcprivacy`, `AppIcon.icon` (Icon Composer; compiled by actool in `scripts/build-app.sh`) |
+| `Resources/`                   | `Info.plist`, `Compositor.entitlements` (sandbox), `lamina.entitlements`, `PrivacyInfo.xcprivacy`, `AppIcon.icon` (Icon Composer; compiled by actool in `scripts/build-app.sh`) |
 | `scripts/`                     | `build-app.sh` (assembles, compiles the icon, embeds Sparkle, signs), `release.sh`, `appcast.sh`, `bump-version.sh`, `acknowledgements.swift` (Credits.html) |
 | `docs/`                        | The `.comp` format (`project-format.md`, `writing-comp-files.md`) and performance notes     |
 | `.github/workflows/`           | `ci.yml` (tests), `release.yml` (tag-driven release)                                        |
@@ -73,9 +78,31 @@ Only what the system frameworks can't do. Each SwiftPM package is pinned in `Pac
   never run in an `.app` bundle. A test window the app closes needs `isReleasedWhenClosed = false`.
 - Some suites show real windows and activate the test process, so a test run can take focus.
 
+## Driving the running app with `lamina`
+
+`lamina` controls a running copy of the app over Apple Events (decision-4): `lamina --help` lists the commands,
+`lamina help <command>` their options; `--json` prints JSON. Put it on PATH with a symlink to the bundle's copy, e.g.
+`ln -s "$PWD/build/Compositor Dev.app/Contents/Helpers/lamina" ~/.local/bin/lamina-dev`. A copy inside an app bundle
+talks to that app; otherwise pick one with `--dev`, `--app <bundle id>`, `LAMINA_APP=dev|release|<id>`, or `--pid` when
+several copies run (agents launching their own Dev build with `open -n` should always pass `--pid`). The first command
+from a new calling app shows macOS's Automation prompt to the person.
+
+- Commands are defined once in `Sources/LaminaAutomation/CommandCatalog.swift` (filter and adjustment settings in
+  `EffectCatalog.swift`); the app implements each in `Sources/Compositor/Automation/` through the same `EditorSession`
+  and `ProjectWorkspace` methods the menus call. Adding a command: its `CommandSpec` in the catalog, its handler in
+  `AutomationDispatcher.handlers`, a test in `AutomationTests` (which also checks every result against the catalog's
+  schema). `lamina`'s flags and help follow from the catalog.
+- Edits are one undo step each and are refused (`busy`) while the person is mid-edit (`busyReason`); ids are short
+  unique prefixes (`ShortID`); edits return what they changed and accept `expect_revision`.
+- The sandboxed app never sees file paths: it returns file bytes (base64) and `lamina` writes them (`CommandClient`).
+- Entitlements: the app's are unchanged (receiving Apple Events needs none). `lamina` is signed with
+  `Resources/lamina.entitlements` (`com.apple.security.automation.apple-events`), which the hardened runtime requires to
+  send Apple Events.
+
 ## Verifying UI as an agent
 
 Build with `make dev`, launch in the background with `open -g -n "build/Compositor Dev.app"`, and capture the window
 with `screencapture -l <windowID> -o -x out.png` (window id from `CGWindowListCopyWindowInfo`, owner pid of the app).
-Quit it with `osascript -e 'tell application id "com.itsjavi.compositor.dev" to quit'`. Canvas painting, drags,
-sheets, menus and drag and drop still need a manual check.
+Quit it with `osascript -e 'tell application id "com.itsjavi.compositor.dev" to quit'`. `lamina --pid <pid>` (above) can
+put it in the state to capture (select a layer, apply a filter or adjustment) and `render-preview` saves the canvas as
+a PNG. Canvas painting, drags, sheets, menus and drag and drop still need a manual check.

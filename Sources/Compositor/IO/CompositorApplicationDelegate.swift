@@ -5,6 +5,7 @@ final class CompositorApplicationDelegate: NSObject, NSApplicationDelegate {
     let workspace = ProjectWorkspace()
     var session: EditorSession { workspace.current.session }
     var projects: ProjectController { workspace.current.controller }
+    private(set) lazy var automation = AutomationServer(workspace: workspace)
     var showEditor: (() -> Void)?
     /// Checks the update feed and installs new versions (Sparkle). Started only after launch: its first-run prompt,
     /// shown during launch, kept the editor window from ever opening. Only builds with a feed and a public key have
@@ -41,6 +42,8 @@ final class CompositorApplicationDelegate: NSObject, NSApplicationDelegate {
         NSApp.appearance = NSAppearance(named: .darkAqua)
         // Slider knobs snap to a click on the track instead of gliding there.
         SliderSnap.install()
+        // Commands from the `lamina` command-line tool (Apple Events).
+        automation.install()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {

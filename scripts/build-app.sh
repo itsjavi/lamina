@@ -26,10 +26,11 @@ BUILD="${BUILD:-$(git rev-list --count HEAD 2>/dev/null || echo 1)}"
 SWIFT_FLAGS=(-c "$CONFIG" --disable-keychain)  # never a Keychain prompt when packages download
 if [ -n "${ARCH:-}" ]; then SWIFT_FLAGS+=(--arch "$ARCH"); fi
 swift build "${SWIFT_FLAGS[@]}" --product Compositor
+swift build "${SWIFT_FLAGS[@]}" --product lamina
 BIN_DIR="$(swift build "${SWIFT_FLAGS[@]}" --show-bin-path)"
 
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Frameworks"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Frameworks" "$APP/Contents/Helpers"
 # Sparkle (updates); ditto keeps the framework's symlinks.
 ditto "$BIN_DIR/Sparkle.framework" "$APP/Contents/Frameworks/Sparkle.framework"
 # Sparkle ships universal; a one-architecture build keeps only that slice (signed again below).
@@ -40,9 +41,13 @@ if [ -n "${ARCH:-}" ]; then
   done
 fi
 cp "$BIN_DIR/Compositor" "$APP/Contents/MacOS/Compositor"
+# The lamina command-line tool, which drives the running app (README: put it on your PATH with a symlink).
+cp "$BIN_DIR/lamina" "$APP/Contents/Helpers/lamina"
 # SwiftPM also adds this checkout's build folder as an rpath; the bundle only needs @-relative ones.
-otool -l "$APP/Contents/MacOS/Compositor" | awk '/LC_RPATH/ { getline; getline; print $2 }' | { grep '^/' || true; } |
-  while read -r path; do install_name_tool -delete_rpath "$path" "$APP/Contents/MacOS/Compositor" 2>/dev/null; done
+for binary in "$APP/Contents/MacOS/Compositor" "$APP/Contents/Helpers/lamina"; do
+  otool -l "$binary" | awk '/LC_RPATH/ { getline; getline; print $2 }' | { grep '^/' || true; } |
+    while read -r path; do install_name_tool -delete_rpath "$path" "$binary" 2>/dev/null; done
+done
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp Resources/PrivacyInfo.xcprivacy "$APP/Contents/Resources/PrivacyInfo.xcprivacy"
 # Third-party license notices, shown by the standard About panel; fails if a package has no license file.
@@ -109,5 +114,8 @@ sign "${SIGN_FLAGS[@]}" --preserve-metadata=entitlements "$SPARKLE/XPCServices/D
 sign "${SIGN_FLAGS[@]}" "$SPARKLE/Autoupdate"
 sign "${SIGN_FLAGS[@]}" "$SPARKLE/Updater.app"
 sign "${SIGN_FLAGS[@]}" "$APP/Contents/Frameworks/Sparkle.framework"
+# lamina sends the app Apple Events, which the hardened runtime allows only with the automation entitlement. It isn't
+# sandboxed: it reads and writes the files the sandboxed app can't.
+sign "${SIGN_FLAGS[@]}" --identifier "$ID.lamina" --entitlements Resources/lamina.entitlements "$APP/Contents/Helpers/lamina"
 sign "${SIGN_FLAGS[@]}" --entitlements "$ENTITLEMENTS" "$APP"
 echo "✓ Built $APP ($VERSION, build $BUILD)"

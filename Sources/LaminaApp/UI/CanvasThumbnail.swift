@@ -1,4 +1,5 @@
 import AppKit
+import LaminaCore
 
 /// Layers-panel thumbnails framed by the whole canvas, as Photoshop shows them: a layer's pixels (or its
 /// mask) drawn where they sit on a canvas-shaped picture, whatever the layer's own bounds.

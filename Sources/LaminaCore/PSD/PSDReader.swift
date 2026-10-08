@@ -6,8 +6,8 @@ import Foundation
 /// Mask Information, Image Data). Original implementation of the 8BPS header,
 /// layer records, PackBits, and additional layer info. Not copied, transcribed,
 /// or adapted from GIMP, psd-tools, or any other GPL-licensed PSD reader.
-nonisolated enum PSDReader {
-    static func matches(_ url: URL) -> Bool {
+package enum PSDReader {
+    package static func matches(_ url: URL) -> Bool {
         matches(magicOf: url)
     }
 
@@ -17,16 +17,20 @@ nonisolated enum PSDReader {
         return (try? handle.read(upToCount: 4)) == Data("8BPS".utf8)
     }
 
-    static func matches(_ data: Data) -> Bool {
+    package static func matches(_ data: Data) -> Bool {
         data.count >= 4 && data.prefix(4) == Data("8BPS".utf8)
     }
 
-    static func read(from url: URL, remainingPixels: Int = DocumentLimits.documentPixelBudget) throws -> PSDDocument {
+    /// `shapes` draws the layers whose vector shapes the reader can't draw itself; without it they keep the pixels
+    /// Photoshop stored, if any.
+    package static func read(from url: URL, remainingPixels: Int = DocumentLimits.documentPixelBudget,
+                             shapes: PSDShapeRenderer? = nil) throws -> PSDDocument {
         let data = try Data(contentsOf: url, options: [.mappedIfSafe])
-        return try read(data, remainingPixels: remainingPixels)
+        return try read(data, remainingPixels: remainingPixels, shapes: shapes)
     }
 
-    static func read(_ data: Data, remainingPixels: Int = DocumentLimits.documentPixelBudget) throws -> PSDDocument {
+    package static func read(_ data: Data, remainingPixels: Int = DocumentLimits.documentPixelBudget,
+                             shapes: PSDShapeRenderer? = nil) throws -> PSDDocument {
         var cursor = PSDCursor(data: data)
         guard try cursor.string(4) == "8BPS" else { throw ImageImportError.unreadable }
         let version = try cursor.u16()
@@ -93,7 +97,7 @@ nonisolated enum PSDReader {
         cursor.offset = layerSectionEnd
         return PSDDocument(width: canvasWidth, height: canvasHeight, resolution: resolution,
                            layers: try assemble(raw, canvas: CGSize(width: canvasWidth, height: canvasHeight),
-                                                remainingPixels: remainingPixels - usedPixels))
+                                                remainingPixels: remainingPixels - usedPixels, shapes: shapes))
     }
 
     private struct RawLayer {
@@ -325,7 +329,8 @@ nonisolated enum PSDReader {
         layer.image = try PSDChannelCoder.rgbaImage(width: width, height: height, red: red, green: green, blue: blue, alpha: alpha)
     }
 
-    private static func assemble(_ raw: [RawLayer], canvas: CGSize, remainingPixels: Int) throws -> [PSDRecord] {
+    private static func assemble(_ raw: [RawLayer], canvas: CGSize, remainingPixels: Int,
+                                 shapes: PSDShapeRenderer?) throws -> [PSDRecord] {
         var result: [PSDRecord] = []
         var groups: [UUID] = []
         var remaining = max(0, remainingPixels)
@@ -358,18 +363,13 @@ nonisolated enum PSDReader {
             record.image = isGroup ? nil : layer.image
             if record.kind == .text, let text = PSDText.parse(extra: layer.extra) {
                 record.text = text
-            } else if !isGroup, let live = try PSDVector.live(extra: layer.extra, canvas: canvas, remainingPixels: remaining) {
-                record.image = live.image
-                record.bounds = live.bounds
-                record.shape = live.style
-                record.shapeNotes = live.notes
+            } else if !isGroup, let shape = try shapes?(layer.extra, record.image != nil, canvas, remaining) {
+                record.image = shape.image
+                record.bounds = shape.bounds
+                record.shape = shape.style
+                record.shapeNotes = shape.notes
                 record.kind = .vector
-                remaining = max(0, remaining - live.image.width * live.image.height)
-            } else if record.image == nil, !isGroup, let raster = try PSDVector.raster(extra: layer.extra, canvas: canvas, remainingPixels: remaining) {
-                record.image = raster.image
-                record.bounds = raster.bounds
-                record.kind = .vector
-                remaining = max(0, remaining - raster.image.width * raster.image.height)
+                remaining = max(0, remaining - shape.image.width * shape.image.height)
             }
             record.mask = layer.maskFromRender ? nil : layer.maskImage
             record.maskBounds = CGRect(x: layer.maskLeft, y: layer.maskTop,
@@ -395,7 +395,7 @@ nonisolated enum PSDReader {
         return .raster
     }
 
-    static let adjustmentKeys: Set<String> = [
+    package static let adjustmentKeys: Set<String> = [
         "levl", "curv", "hue2", "hue ", "expA", "grdm", "brit", "blnc", "nvrt",
         "thrs", "post", "mixr", "selc", "blwh", "phfl", "vibA"
     ]
@@ -405,7 +405,7 @@ nonisolated enum PSDReader {
     }
 }
 
-nonisolated private struct PSDCursor: Sendable {
+private struct PSDCursor: Sendable {
     let data: Data
     var offset = 0
 
@@ -460,8 +460,8 @@ nonisolated private struct PSDCursor: Sendable {
     }
 }
 
-nonisolated enum PSDAdjustments {
-    static func parse(_ extra: [String: Data]) -> LayerAdjustment? {
+package enum PSDAdjustments {
+    package static func parse(_ extra: [String: Data]) -> LayerAdjustment? {
         if let data = extra["levl"] { return levels(data) }
         if let data = extra["curv"] { return curves(data) }
         if let data = extra["hue2"] ?? extra["hue "] { return hue(data) }
@@ -470,7 +470,7 @@ nonisolated enum PSDAdjustments {
 
     /// Photoshop's 'levl': a version, then records of input black, input white, output black, output white and gamma
     /// in hundredths (100 is 1.00), for RGB, then red, green and blue.
-    static func levels(_ data: Data) -> LayerAdjustment? {
+    package static func levels(_ data: Data) -> LayerAdjustment? {
         guard data.count >= 292 else { return nil }
         var settings = LevelsSettings()
         for channel in 0..<4 {
@@ -524,7 +524,7 @@ nonisolated enum PSDAdjustments {
     /// Photoshop's 'hue2': a version, the Colorize switch and a pad byte, the Colorize hue, saturation and lightness,
     /// the Master's, then for Reds through Magentas the band (where the range fades in, is full, and fades out, in
     /// degrees) and its hue, saturation and lightness.
-    static func hue(_ data: Data) -> LayerAdjustment? {
+    package static func hue(_ data: Data) -> LayerAdjustment? {
         guard data.count >= 16 else { return nil }
         let colorize = data[2] != 0
         var settings = HueSaturationSettings(colorize: colorize)

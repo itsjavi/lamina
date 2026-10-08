@@ -1,4 +1,5 @@
 import AppKit
+import LaminaCore
 
 extension EditorSession {
     /// An explicitly empty selection leaves nothing paintable, so painting never starts.

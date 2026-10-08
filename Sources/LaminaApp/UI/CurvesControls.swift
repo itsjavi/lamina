@@ -1,4 +1,5 @@
 import SwiftUI
+import LaminaCore
 
 struct CurvesControls: View {
     @Binding var settings: CurvesSettings

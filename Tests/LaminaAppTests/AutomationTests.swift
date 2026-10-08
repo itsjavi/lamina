@@ -2,6 +2,7 @@ import AppKit
 import ImageIO
 import LaminaAutomation
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 /// `lamina`'s commands, run through the dispatcher with JSON as the Apple Event handler runs them, without the

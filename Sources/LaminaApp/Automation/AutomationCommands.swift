@@ -2,6 +2,7 @@ import AppKit
 import ImageIO
 import LaminaAutomation
 import UniformTypeIdentifiers
+import LaminaCore
 
 /// The commands themselves. Results follow the schemas in `CommandCatalog`; AutomationTests checks them against it.
 extension AutomationDispatcher {

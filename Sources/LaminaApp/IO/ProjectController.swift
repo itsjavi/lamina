@@ -1,6 +1,7 @@
 import AppKit
 import UniformTypeIdentifiers
 import SwiftUI
+import LaminaCore
 
 @MainActor
 final class ProjectController {

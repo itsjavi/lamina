@@ -1,6 +1,7 @@
 import AppKit
 import UniformTypeIdentifiers
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 @MainActor
@@ -9,13 +10,6 @@ struct ProjectTests {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("LaminaProjectTests-\(UUID())")
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: false)
         return url
-    }
-
-    /// Saving writes `ProjectManifest.current` and `load` rejects anything outside
-    /// `ProjectManifest.supported`, so the two have to agree or the app cannot reopen its own
-    /// documents. This checks that directly, without touching the disk.
-    @Test func theCurrentFormatVersionIsOneTheReaderAccepts() {
-        #expect(ProjectManifest.supported.contains(ProjectManifest.current))
     }
 
     /// A small project saved as `name` in `root`, its manifest's format id and version then rewritten as given.

@@ -1,4 +1,5 @@
 import SwiftUI
+import LaminaCore
 
 struct ImageSizeSheet: View {
     let document: CanvasDocument

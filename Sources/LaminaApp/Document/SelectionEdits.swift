@@ -1,4 +1,5 @@
 import AppKit
+import LaminaCore
 
 /// Carries a CGImage out of a detached task.
 nonisolated private struct Box: @unchecked Sendable {

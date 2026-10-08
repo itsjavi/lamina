@@ -1,4 +1,5 @@
 import CoreGraphics
+import LaminaCore
 
 /// Draws into a top-left coordinate system, shared by the canvas and export.
 nonisolated enum LayerRenderer {

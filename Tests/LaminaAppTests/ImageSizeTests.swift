@@ -2,6 +2,7 @@ import AppKit
 import ImageIO
 import UniformTypeIdentifiers
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 @MainActor

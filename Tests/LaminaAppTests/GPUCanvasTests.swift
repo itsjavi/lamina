@@ -4,6 +4,7 @@ import Metal
 import Testing
 @testable import LaminaApp
 import TestPixels
+import LaminaCore
 
 /// The GPU canvas against the Core Graphics canvas, frame for frame.
 @MainActor struct GPUCanvasTests {

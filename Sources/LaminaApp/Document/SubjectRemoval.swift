@@ -1,6 +1,7 @@
 import AppKit
 import Vision
 import CoreImage
+import LaminaCore
 
 nonisolated enum SubjectRemoval {
     enum Failure: LocalizedError {

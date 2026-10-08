@@ -1,4 +1,5 @@
 import AppKit
+import LaminaCore
 
 extension EditorSession {
     /// What ⌘E merges, in stacking order, and where the result goes; nil when there is nothing to merge.

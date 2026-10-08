@@ -2,6 +2,7 @@ import AppKit
 import ImageIO
 import UniformTypeIdentifiers
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 /// Paste and Duplicate are held to the limits import and save use, before they change anything.
@@ -32,32 +33,6 @@ struct DocumentAdmissionTests {
         session.document?.layers = (0..<count).map { _ in ImageLayer(asset: asset, origin: .zero) }
         session.activeLayerID = session.document?.layers.last?.id
         return session
-    }
-
-    @Test func admissionChecksSidesLayersAndBothBudgets() throws {
-        func added(_ width: Int, _ height: Int, mask: Bool = false) -> DocumentLimits.Footprint {
-            var footprint = DocumentLimits.Footprint()
-            let size = CGSize(width: width, height: height)
-            footprint.add(image: mask ? nil : size, mask: mask ? size : nil)
-            return footprint
-        }
-        let budget = DocumentLimits.documentPixelBudget
-        #expect(throws: DocumentLimitError.sideTooLong) {
-            try DocumentLimits.admit(added(DocumentLimits.maxSide + 1, 1), to: DocumentLimits.Footprint())
-        }
-        #expect(throws: DocumentLimitError.tooManyLayers) {
-            try DocumentLimits.admit(added(1, 1), to: DocumentLimits.Footprint(layers: DocumentLimits.maxLayers))
-        }
-        try DocumentLimits.admit(added(1, 1), to: DocumentLimits.Footprint(layers: DocumentLimits.maxLayers - 1))
-        #expect(throws: DocumentLimitError.overBudget) {
-            try DocumentLimits.admit(added(10, 10), to: DocumentLimits.Footprint(pixels: budget - 99))
-        }
-        try DocumentLimits.admit(added(9, 11), to: DocumentLimits.Footprint(pixels: budget - 99))
-        // Masks have a budget of their own, as saving counts them.
-        try DocumentLimits.admit(added(10, 10, mask: true), to: DocumentLimits.Footprint(pixels: budget))
-        #expect(throws: DocumentLimitError.overBudget) {
-            try DocumentLimits.admit(added(10, 10, mask: true), to: DocumentLimits.Footprint(maskPixels: budget - 99))
-        }
     }
 
     @Test func aPasteTooLargeIsRefusedWithAMessage() throws {

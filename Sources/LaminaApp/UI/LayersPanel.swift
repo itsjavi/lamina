@@ -1,4 +1,5 @@
 import SwiftUI
+import LaminaCore
 
 struct LayersPanel: View {
     @Bindable var session: EditorSession

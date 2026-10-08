@@ -1,5 +1,6 @@
 import AppKit
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 /// With the Move tool a press drags the active layer wherever it lands, not only inside its bounds.

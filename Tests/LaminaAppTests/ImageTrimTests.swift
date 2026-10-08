@@ -1,6 +1,7 @@
 import Testing
 import CoreGraphics
 import AppKit
+import LaminaCore
 @testable import LaminaApp
 
 @MainActor

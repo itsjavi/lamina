@@ -1,5 +1,6 @@
 import Foundation
 import CoreGraphics
+import LaminaCore
 
 actor CanvasResizer {
     static let shared = CanvasResizer()

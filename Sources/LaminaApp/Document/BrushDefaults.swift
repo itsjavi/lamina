@@ -1,4 +1,5 @@
 import Foundation
+import LaminaCore
 
 /// The brush tips, the Brush's flow, pressure buttons and mode (with Dodge and Burn's range and exposure) and the two
 /// colors belong to the person too (`ToolDefaults`): a new document

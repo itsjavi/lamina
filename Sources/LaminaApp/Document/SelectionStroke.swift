@@ -1,4 +1,5 @@
 import AppKit
+import LaminaCore
 
 /// Where Edit › Stroke draws against the selection's outline, as in Photoshop.
 nonisolated enum StrokeLocation: String, CaseIterable, Sendable {

@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import LaminaCore
 
 struct ContentView: View {
     /// The Layers panel's width, remembered across launches.

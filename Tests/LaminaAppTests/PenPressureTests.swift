@@ -1,5 +1,6 @@
 import AppKit
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 /// Pen pressure, simulated: what a tablet's events would carry. A real tablet still needs checking by hand.

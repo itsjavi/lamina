@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import LaminaCore
 
 /// Draws a layer held as an unchanged image plus replacement tiles — a painted layer's raster snapshot, or a
 /// brush stroke in progress — so it looks the same as those pixels drawn as one image by `LayerRenderer`.

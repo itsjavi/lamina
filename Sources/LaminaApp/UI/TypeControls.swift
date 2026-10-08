@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import LaminaCore
 
 struct TypeControls: View {
     @Bindable var session: EditorSession
@@ -50,7 +51,7 @@ struct TypeControls: View {
                     }
                     .buttonStyle(.plain).help("Text color").accessibilityLabel("Text color")
                     HStack(spacing: 2) {
-                        ForEach(TextAlignment.allCases, id: \.self) { alignment in
+                        ForEach(LaminaCore.TextAlignment.allCases, id: \.self) { alignment in
                             let selected = session.currentTextStyle.alignment == alignment
                             Button {
                                 session.changeTextStyle { $0.alignment = alignment }

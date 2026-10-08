@@ -1,5 +1,6 @@
 import Foundation
 import CoreGraphics
+import LaminaCore
 
 /// Immutable, normalized layer-local coverage. Regular grayscale images use white
 /// for reveal, black for hide, and intermediate gray for soft coverage.
@@ -20,10 +21,7 @@ nonisolated struct LayerMask: Equatable, @unchecked Sendable {
     func replacing(_ asset: ImportedImage) -> LayerMask {
         LayerMask(asset: asset, isEnabled: isEnabled, placement: placement, isLinked: isLinked)
     }
-    static func isValid(_ image: CGImage) -> Bool {
-        !image.isMask && image.colorSpace?.model == .monochrome
-            && image.bitsPerComponent == 8 && image.alphaInfo == .none
-    }
+    static func isValid(_ image: CGImage) -> Bool { ProjectImage.isMask(image) }
     static func solid(revealing: Bool) -> LayerMask? {
         let data = Data([revealing ? UInt8(255) : UInt8(0)])
         guard let provider = CGDataProvider(data: data as CFData),

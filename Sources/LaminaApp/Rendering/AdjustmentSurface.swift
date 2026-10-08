@@ -1,4 +1,5 @@
 import CoreGraphics
+import LaminaCore
 
 nonisolated enum AdjustmentSurface {
     static func draw(in context: CGContext, padding: CGFloat = 0, body: (CGContext) -> Void) {

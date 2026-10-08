@@ -1,5 +1,6 @@
 import AppKit
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 /// Serialized: every test shares the one system pasteboard.

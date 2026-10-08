@@ -2,6 +2,7 @@ import AppKit
 import CPixels
 import CoreImage
 import CoreText
+import LaminaCore
 
 /// Filter › Dither's looks, grouped as the panel's menu lists them. The order matches `DitherPixels.h`.
 nonisolated enum DitherStyle: String, CaseIterable, Sendable {

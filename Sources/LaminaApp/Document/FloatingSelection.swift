@@ -1,4 +1,5 @@
 import AppKit
+import LaminaCore
 
 /// Cmd-T with a selection: the selected pixels float on a temporary layer, edited with the
 /// normal transform handles, then merge back into their layer. The whole thing is one

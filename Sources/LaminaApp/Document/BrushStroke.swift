@@ -1,5 +1,6 @@
 import AppKit
 import CPixels
+import LaminaCore
 
 nonisolated enum SpotHealingMode: String, CaseIterable, Sendable, Hashable {
     case contentAware = "Content-Aware"
@@ -156,11 +157,7 @@ nonisolated enum BrushRaster {
         return max(0, (exp(-k * u * u) - exp(-k)) / (1 - exp(-k)))
     }
     static func pixelToDocument(_ transform: LayerTransform, width: Int, height: Int) -> CGAffineTransform {
-        CGAffineTransform(translationX: transform.center.x, y: transform.center.y)
-            .rotated(by: transform.radians)
-            .scaledBy(x: transform.size.width / CGFloat(width) * (transform.flipX ? -1 : 1),
-                      y: transform.size.height / CGFloat(height) * (transform.flipY ? -1 : 1))
-            .translatedBy(x: -CGFloat(width) / 2, y: -CGFloat(height) / 2)
+        transform.pixelToDocument(width: width, height: height)
     }
 }
 

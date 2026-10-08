@@ -1,5 +1,6 @@
 import Foundation
 import CoreGraphics
+import LaminaCore
 
 nonisolated struct ImageSizeOptions: Sendable {
     var width: Int

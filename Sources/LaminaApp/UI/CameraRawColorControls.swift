@@ -1,4 +1,5 @@
 import SwiftUI
+import LaminaCore
 
 struct CameraRawCurveControls: View {
     @Bindable var session: EditorSession

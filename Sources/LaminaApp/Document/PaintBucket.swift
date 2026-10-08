@@ -1,5 +1,6 @@
 import AppKit
 import CPixels
+import LaminaCore
 
 /// The Paint Bucket's options-bar settings.
 nonisolated struct BucketSettings: Equatable, Sendable {

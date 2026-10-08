@@ -1,5 +1,6 @@
 import Testing
 import AppKit
+import LaminaCore
 @testable import LaminaApp
 
 /// Feather softens the selection itself, so everything clipped by it fades at the edge.

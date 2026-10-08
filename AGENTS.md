@@ -27,16 +27,20 @@ load, and how to write it safely while it's open, so the person can watch the ca
 | Brush benchmark          | `BRUSH_BENCHMARK=1 swift test --filter BrushPerformanceTests`   |
 | `lamina` (command line)  | `swift build --product lamina`; shipped as `Contents/Helpers/lamina` |
 | `lamina` and command tests | `swift test --filter 'LaminaTests\|AutomationTests'`          |
+| Format and PSD tests     | `swift test --filter LaminaCoreTests` (no app, no windows)      |
 
 ## Layout
 
 | Path                           | Contents                                                                                   |
 | ------------------------------ | ------------------------------------------------------------------------------------------ |
 | `Sources/CPixels`              | C pixel loops (brushes, healing, levels, noise, lens, content fill, adjustments, dither), headers in `include/`, always built `-O3`. Swift files that call them `import CPixels` |
-| `Sources/LaminaApp`           | The app (default MainActor isolation): `Automation/` (`lamina`'s commands and their Apple Event handler), `Document/` (editor session and tools), `IO/` (projects, PSD, import/export), `Rendering/` (canvas, Metal), `UI/` (panels, sheets, controls) |
+| `Sources/LaminaApp`           | The app (default MainActor isolation): `Automation/` (`lamina`'s commands and their Apple Event handler), `Document/` (editor session and tools), `IO/` (opening and saving projects and importing PSDs through LaminaCore, import/export), `Rendering/` (canvas, Metal), `UI/` (panels, sheets, controls) |
+| `Sources/LaminaCore`           | The project format and PSD parsing, with no AppKit or SwiftUI (Foundation, CoreGraphics, ImageIO, UniformTypeIdentifiers), nonisolated: `Model/` and `Adjustments/` (the manifest's value types and their validation), `Project/` (`ProjectManifest`, `ProjectLayerRecord`, `ProjectPackage`: reading, writing and validating `.lam` packages, importing `.comp`), `PSD/` (reader, channel coder, type layers). The app sees it through `package` access; drawing, filters and effects stay in the app as extensions of its types |
 | `Sources/LaminaAutomation`     | The command catalog shared by the app and `lamina` (names, parameters, results, filter and adjustment settings), JSON values, the Apple Event codes and the bundle ids (`AppIdentity`). Foundation only, Swift 6 mode |
 | `Sources/LaminaCLI`, `Sources/lamina` | `lamina`: arguments and help built from the catalog, text/JSON output, the Apple Event client, file writing and the MCP server (`lamina mcp`) |
 | `Tests/LaminaAppTests`        | Swift Testing suites, `@testable import LaminaApp`                                         |
+| `Tests/LaminaCoreTests`        | The format and PSD parsing against LaminaCore alone: no AppKit, no test host, off the main actor |
+| `Tests/PSDFixtures`            | Writes the small Photoshop files both test targets read                                     |
 | `Tests/LaminaTests`            | The catalog, `lamina` and its MCP server, without the app (fast, no windows)                |
 | `Tests/LaminaTestHost`     | Starts AppKit's event loop with a document window in the test process (see below)           |
 | `Resources/`                   | `Info.plist`, `LaminaApp.entitlements` (sandbox), `lamina.entitlements`, `PrivacyInfo.xcprivacy`, `AppIcon.icon` (Icon Composer; compiled by actool in `scripts/build-app.sh`) |
@@ -72,8 +76,13 @@ Only what the system frameworks can't do. Each SwiftPM package is pinned in `Pac
   contributors.
 - Match the surrounding code: its naming, its comment style and density.
 - American spelling in code, comments and UI ("color", not "colour").
-- The project file format is described in [docs/project-format.md](docs/project-format.md). A change to what's saved
-  means a format version bump there and in `ProjectManifest.current`.
+- The project file format is described in [docs/project-format.md](docs/project-format.md) and implemented in
+  LaminaCore. A change to what's saved means a format version bump there and in `ProjectManifest.current`.
+- LaminaCore stays free of AppKit, SwiftUI and Core Image. Behavior that needs them (drawing text, filters, effects)
+  goes in the app as a `nonisolated extension` of the core type, nonisolated like the type's own members (an
+  extension in the app otherwise takes its default MainActor isolation). App files that use core types
+  `import LaminaCore` (MemberImportVisibility), and construct them through explicit `package init`s: synthesized
+  memberwise initializers are internal.
 - Code that needs the C loops goes through `CPixels`; keep its functions plain C (no AppKit, no Objective-C).
 - Tests run in `swift test`'s Swift Testing runner, not in the app. `LaminaTestHost` recreates what the app host
   gave them: `NSApplication.run()` (so alerts, sheets and clicks that stop a nested run loop don't end the process)

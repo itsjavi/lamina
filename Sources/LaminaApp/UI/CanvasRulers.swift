@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import LaminaCore
 
 enum CanvasRuler {
     static let thickness: CGFloat = 18

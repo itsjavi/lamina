@@ -1,5 +1,6 @@
 import SwiftUI
 import Sparkle
+import LaminaCore
 
 @main
 struct LaminaMain: App {

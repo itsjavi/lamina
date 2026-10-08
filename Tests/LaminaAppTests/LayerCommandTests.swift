@@ -1,5 +1,6 @@
 import AppKit
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 /// The Layers panel's commands with folders, selections and masks around them.

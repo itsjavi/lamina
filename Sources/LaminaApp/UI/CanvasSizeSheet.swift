@@ -1,4 +1,5 @@
 import SwiftUI
+import LaminaCore
 
 struct CanvasSizeSheet: View {
     let foreground: PaletteColor

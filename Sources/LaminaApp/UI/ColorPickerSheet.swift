@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import LaminaCore
 
 /// Photoshop-style picker: saturation/brightness field, vertical hue strip,
 /// new/current preview, RGB and hex entry. Lives in a movable floating panel so

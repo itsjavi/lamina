@@ -2,6 +2,7 @@ import CPixels
 import Foundation
 import CoreGraphics
 import CoreImage
+import LaminaCore
 
 /// Per-render dependency cache. Coverage uses source alpha including its own masks,
 /// independent of source visibility and color. Only the current clipped region is allocated.

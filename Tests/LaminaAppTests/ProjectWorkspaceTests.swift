@@ -1,6 +1,7 @@
 import AppKit
 import UniformTypeIdentifiers
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 @MainActor struct ProjectWorkspaceTests {

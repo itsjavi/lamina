@@ -1,5 +1,6 @@
 import AppKit
 import CPixels
+import LaminaCore
 
 nonisolated enum CameraRawCurvePage: String, CaseIterable, Sendable { case parametric = "Parametric", point = "Point" }
 nonisolated enum CameraRawPointChannel: String, CaseIterable, Sendable { case rgb = "RGB", red = "Red", green = "Green", blue = "Blue" }

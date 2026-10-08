@@ -1,6 +1,7 @@
 import Accelerate
 import CoreGraphics
 import Foundation
+import LaminaCore
 
 /// Image › Image Rotation's quarter turns.
 nonisolated enum CanvasRotation: String, CaseIterable, Sendable {

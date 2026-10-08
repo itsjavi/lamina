@@ -1,5 +1,6 @@
 import AppKit
 import CoreImage
+import LaminaCore
 
 extension EditorSession {
 

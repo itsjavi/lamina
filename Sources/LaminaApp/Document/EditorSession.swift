@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import LaminaCore
 
 struct ImageLayer: Identifiable, Equatable {
     static func == (lhs: Self, rhs: Self) -> Bool {

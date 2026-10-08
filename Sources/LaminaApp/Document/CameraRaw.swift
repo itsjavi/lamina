@@ -1,5 +1,6 @@
 import AppKit
 import CPixels
+import LaminaCore
 
 /// White balance on an already-rendered layer. Raw lighting presets are absent: temperature and tint
 /// are relative offsets, not kelvin.

@@ -1,5 +1,6 @@
 import AppKit
 import Testing
+import LaminaCore
 @testable import LaminaApp
 
 /// Color Overlay recolors the layer's own pixels and keeps their alpha, on the GPU (canvas, and export when Metal is

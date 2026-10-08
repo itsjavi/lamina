@@ -1,4 +1,5 @@
 import AppKit
+import LaminaCore
 
 struct TransformOverlayGeometry: Equatable {
     let handles: [CGPoint]

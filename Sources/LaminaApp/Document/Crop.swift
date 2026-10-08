@@ -1,5 +1,6 @@
 import Foundation
 import CoreGraphics
+import LaminaCore
 
 nonisolated enum CropGeometry {
     static func snapped(_ rect: CGRect) -> CGRect {

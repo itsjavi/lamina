@@ -4,7 +4,7 @@ title: Pen tool and path editing
 status: To Do
 assignee: []
 created_date: '2026-10-07 20:36'
-updated_date: '2026-10-08 15:09'
+updated_date: '2026-10-08 23:25'
 labels:
   - vector
 milestone: m-2
@@ -21,6 +21,12 @@ references:
   - >-
     backlog/docs/research/doc-2 -
     Vector-graphics-and-the-Paint-Bucket-research.md
+  - >-
+    https://github.com/storytold/vectorcraft/blob/99a5318/crates/tools/src/pen.rs
+  - >-
+    https://github.com/storytold/vectorcraft/blob/99a5318/crates/tools/src/direct.rs
+  - >-
+    https://github.com/storytold/vectorcraft/blob/99a5318/crates/geom/src/path.rs
 priority: medium
 type: feature
 ordinal: 28000

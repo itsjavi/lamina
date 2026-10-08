@@ -4,6 +4,7 @@ title: 'Path operations, stroke options and Release to Layers'
 status: To Do
 assignee: []
 created_date: '2026-10-08 15:10'
+updated_date: '2026-10-08 23:25'
 labels:
   - vector
 milestone: m-2
@@ -16,6 +17,14 @@ references:
   - >-
     backlog/docs/research/doc-2 -
     Vector-graphics-and-the-Paint-Bucket-research.md
+  - >-
+    https://github.com/storytold/vectorcraft/blob/99a5318/crates/pathops/src/boolean.rs
+  - >-
+    https://github.com/storytold/vectorcraft/blob/99a5318/crates/pathops/src/edit.rs
+  - >-
+    https://github.com/storytold/vectorcraft/blob/99a5318/crates/effects/src/stroke.rs
+  - >-
+    https://github.com/storytold/photocraft/blob/e5e3e39/crates/vector/src/trace.rs
 priority: medium
 type: feature
 ordinal: 34000

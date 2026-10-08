@@ -4,6 +4,7 @@ title: Gradients with stops for vectors and the Gradient tool
 status: To Do
 assignee: []
 created_date: '2026-10-08 15:10'
+updated_date: '2026-10-08 23:25'
 labels:
   - vector
 milestone: m-2
@@ -16,6 +17,12 @@ references:
   - >-
     backlog/docs/research/doc-2 -
     Vector-graphics-and-the-Paint-Bucket-research.md
+  - >-
+    https://github.com/storytold/vectorcraft/blob/99a5318/crates/color/src/gradient.rs
+  - >-
+    https://github.com/storytold/vectorcraft/blob/99a5318/crates/tools/src/xform/gradient.rs
+  - >-
+    https://github.com/storytold/photocraft/blob/e5e3e39/crates/compose/src/gradient_fill.rs
 priority: medium
 type: feature
 ordinal: 33000

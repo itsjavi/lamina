@@ -4,7 +4,7 @@ title: Editable vector layers
 status: To Do
 assignee: []
 created_date: '2026-10-08 15:09'
-updated_date: '2026-10-08 21:46'
+updated_date: '2026-10-08 23:25'
 labels:
   - vector
 milestone: m-2
@@ -17,6 +17,16 @@ references:
   - >-
     backlog/docs/research/doc-2 -
     Vector-graphics-and-the-Paint-Bucket-research.md
+  - 'https://github.com/storytold/vectorcraft/blob/99a5318/crates/doc/src/node.rs'
+  - >-
+    https://github.com/storytold/vectorcraft/blob/99a5318/crates/doc/src/appearance.rs
+  - 'https://github.com/storytold/vectorcraft/blob/99a5318/crates/doc/src/hit.rs'
+  - >-
+    https://github.com/storytold/vectorcraft/blob/99a5318/crates/geom/src/path.rs
+  - >-
+    https://github.com/storytold/vectorcraft/blob/99a5318/crates/svg/src/export.rs
+  - >-
+    https://github.com/storytold/photocraft/blob/e5e3e39/crates/vector/src/tests.rs
 priority: medium
 type: feature
 ordinal: 32000

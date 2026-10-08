@@ -25,6 +25,7 @@ load, and how to write it safely while it's open, so the person can watch the ca
 | Update feed              | `make appcast` (Sparkle key: Keychain account `lamina`)     |
 | Version bump + tag       | `make bump V=patch [PUSH=1]` (never tag unless the user asks)   |
 | Brush benchmark          | `BRUSH_BENCHMARK=1 swift test --filter BrushPerformanceTests`   |
+| Size, launch, memory     | `make metrics` (records and compares, `brand/metrics.json`); `make metrics-web` puts them on the website |
 | `lamina` (command line)  | `swift build --product lamina`; shipped as `Contents/Helpers/lamina` |
 | `lamina` and command tests | `swift test --filter 'LaminaTests\|AutomationTests'`          |
 | Format and PSD tests     | `swift test --filter LaminaCoreTests` (no app, no windows)      |
@@ -44,7 +45,7 @@ load, and how to write it safely while it's open, so the person can watch the ca
 | `Tests/LaminaTests`            | The catalog, `lamina` and its MCP server, without the app (fast, no windows)                |
 | `Tests/LaminaTestHost`     | Starts AppKit's event loop with a document window in the test process (see below)           |
 | `Resources/`                   | `Info.plist`, `LaminaApp.entitlements` (sandbox), `lamina.entitlements`, `PrivacyInfo.xcprivacy`, `AppIcon.icon` (Icon Composer; compiled by actool in `scripts/build-app.sh`) |
-| `scripts/`                     | `build-app.sh` (assembles, compiles the icon, embeds Sparkle, signs), `release.sh`, `appcast.sh`, `bump-version.sh`, `acknowledgements.swift` (Credits.html), `app-icon.swift` (draws the icon's layers), `demo-project.swift` and `window-screenshot.swift` (README and website screenshots), `og-image.html` (social card) |
+| `scripts/`                     | `build-app.sh` (assembles, compiles the icon, embeds Sparkle, signs), `release.sh`, `appcast.sh`, `bump-version.sh`, `acknowledgements.swift` (Credits.html), `app-icon.swift` (draws the icon's layers), `demo-project.swift` and `window-screenshot.swift` (README and website screenshots), `og-image.html` (social card), `metrics.swift` (`make metrics`) |
 | `docs/`                        | The `.lam` format (`project-format.md`, `writing-lamina-projects.md`), releasing (`releasing.md`) and performance notes |
 | `web/`, `brand/`               | The website (https://itsjavi.com/lamina/) and its assets, shared with the README; `brand/README.md` says what to update when a feature ships or the UI changes, and how screenshots are taken |
 | `.github/workflows/`           | `ci.yml` (tests), `release.yml` (tag-driven release), `pages.yml` (deploys `web/`)          |

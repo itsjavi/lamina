@@ -71,19 +71,29 @@ Gotchas:
 
 ## Numbers on the website
 
-The cards under the hero state the app's size, launch time and memory; keep them true when the app changes
-(decision-7 keeps the size under 50 MB, which the hero badge promises):
+The cards under the hero state the app's size, how fast it opens and its memory with a fresh canvas (decision-7 keeps
+the size under 50 MB, which the hero badge promises). Keep them true, and watch them, with two commands:
 
-| Card            | Today   | How to measure                                                                      |
-| --------------- | ------- | ----------------------------------------------------------------------------------- |
-| Tiny download   | 23 MB   | `make app && du -sh build/Lamina.app`                                                |
-| Opens instantly | 0.7 s   | `CONFIG=release scripts/build-app.sh dev && swift scripts/launch-time.swift "build/Lamina Dev.app" 8`: the median "window" time of the runs after the first |
-| Light on memory | 68 MB   | the same run: the median footprint, three seconds after the window opens, with a fresh canvas |
+```bash
+make metrics       # build, measure, record in brand/metrics.json, compare with the record before
+make metrics-web   # write the latest record into the cards and the "Measured on" note, then review, commit, push
+```
 
-Measured 2026-10-09 on a MacBook Pro with M1 Max and 32 GB (macOS 27): finished launching in 0.25 s, first window
-0.72 s (the first launch after a build took 1.07 s), 68 MB with a fresh canvas (171 MB with the 8-layer Golden Hour
-demo open). The launches run in the background and don't take focus. Update the figures and the note under the cards
-together.
+`make metrics` (`scripts/metrics.swift`, about two minutes) builds the release app for its size and launches a
+release-optimized Dev build in the background, so it never takes focus or touches the release app's data: ten launches
+with a fresh canvas and eight with the Golden Hour demo, leaving out each first, cold one. It records the medians with
+the commit, version and machine, and prints the change from the record before, marking anything that got worse past
+its tolerance (5% for size, 15% for opening a project, 10% for the rest). Run it after big features and before
+publishing new numbers; compare only records from the same machine (the comparison warns when they differ).
+
+| Card            | From the record                                   | Shown as             |
+| --------------- | ------------------------------------------------- | -------------------- |
+| Tiny download   | `appSizeMB` (`du` of `build/Lamina.app`)          | whole MB             |
+| Opens instantly | `windowSeconds`: launch to a full-size window     | tenths of a second   |
+| Light on memory | `idleMemoryMB`: footprint 3 s after the window    | whole MB             |
+
+The record also keeps `finishedLaunchingSeconds`, `projectOpenSeconds` and `projectMemoryMB` (the demo project open),
+which the website doesn't show but are worth watching.
 
 ## Social card
 

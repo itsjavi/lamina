@@ -1,0 +1,22 @@
+[
+  {
+    "commit" : "892a68d",
+    "date" : "2026-10-09T01:49:43+0200",
+    "machine" : {
+      "chip" : "Apple M1 Max",
+      "macOS" : "27.0",
+      "memory" : "32 GB",
+      "model" : "MacBook Pro"
+    },
+    "metrics" : {
+      "appSizeMB" : 23.4,
+      "finishedLaunchingSeconds" : 0.252,
+      "idleMemoryMB" : 69,
+      "projectMemoryMB" : 184,
+      "projectOpenSeconds" : 0.895,
+      "windowSeconds" : 0.734
+    },
+    "uncommittedChanges" : true,
+    "version" : "1.4.5"
+  }
+]

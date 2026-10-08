@@ -154,7 +154,7 @@ struct SpectrumEditor: View {
             spectrum(after: false)
             handles
             spectrum(after: true)
-            Text(settings.band.handles.map { "\(Int($0.rounded()))°" }.joined(separator: "   "))
+            Text(settings.band.handles.map { "\(NumberLabel.whole($0))°" }.joined(separator: "   "))
                 .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
         }
     }

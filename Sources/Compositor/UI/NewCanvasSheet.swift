@@ -2,17 +2,66 @@ import SwiftUI
 import AppKit
 import ImageIO
 
+/// What New Canvas's fields hold: a width and height in `unit`, and a resolution in pixels per inch, as typed.
+struct NewCanvasSize: Equatable {
+    var width = "1920"
+    var height = "1080"
+    var unit = SizeUnit.pixels
+    var resolution = "72"
+    /// The units a new canvas can be measured in: Percent has nothing to be a percentage of.
+    static let units: [SizeUnit] = [.pixels, .inches, .centimeters, .millimeters]
+
+    /// A typed number, with either decimal separator.
+    static func number(_ text: String) -> Double? {
+        Double(text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: ".")).flatMap { $0.isFinite ? $0 : nil }
+    }
+    /// Pixels per inch, when the field holds one in 1…9,600.
+    var pixelsPerInch: Double? { Self.number(resolution).flatMap { (1...9600).contains($0) ? $0 : nil } }
+    /// The pixels a field's text comes to: whole numbers in pixels, any positive size in a print unit.
+    func pixels(_ text: String) -> Int? {
+        guard let pixelsPerInch else { return nil }
+        if unit == .pixels { return CanvasDocument.validDimension(text) }
+        guard let value = Self.number(text), value > 0 else { return nil }
+        let pixels = unit.pixels(value, resolution: pixelsPerInch).rounded()
+        return (1...Double(DocumentLimits.maxSide)).contains(pixels) ? Int(pixels) : nil
+    }
+    var pixelWidth: Int? { pixels(width) }
+    var pixelHeight: Int? { pixels(height) }
+    var isValid: Bool { pixelWidth != nil && pixelHeight != nil }
+
+    /// The same size shown in `newUnit`; a field that doesn't hold a size is left as it is.
+    mutating func convert(to newUnit: SizeUnit) {
+        guard newUnit != unit, let pixelsPerInch else { unit = newUnit; return }
+        func converted(_ text: String) -> String {
+            guard let value = Self.number(text), value > 0 else { return text }
+            let pixels = unit.pixels(value, resolution: pixelsPerInch)
+            if newUnit == .pixels { return String(Int(min(pixels.rounded(), Double(DocumentLimits.maxSide) * 1000))) }
+            return newUnit.value(ofPixels: pixels, resolution: pixelsPerInch)
+                .formatted(.number.precision(.fractionLength(0...3)).grouping(.never))
+        }
+        width = converted(width)
+        height = converted(height)
+        unit = newUnit
+    }
+}
+
 struct NewCanvasSheet: View {
     let session: EditorSession
-    var onCreate: ((Int, Int) -> Void)? = nil
+    var onCreate: (((width: Int, height: Int, resolution: Double)) -> Void)? = nil
     var onOpen: (() -> Void)? = nil
-    @State private var width = "1920"
-    @State private var height = "1080"
+    @State private var size = NewCanvasSize()
     @State private var suggestedClipboardSize = false
     @FocusState private var focusedField: Field?
-    private enum Field { case width, height }
-    private var valid: Bool {
-        CanvasDocument.validDimension(width) != nil && CanvasDocument.validDimension(height) != nil
+    private enum Field { case width, height, resolution }
+    private var valid: Bool { size.isValid }
+    private var message: String {
+        if size.pixelsPerInch == nil { return "Enter a resolution from 1 to 9,600 pixels/inch." }
+        if size.unit == .pixels { return "Enter whole numbers from 1 to \(DocumentLimits.maxSide.formatted()) pixels." }
+        return "Enter a size that comes to 1 to \(DocumentLimits.maxSide.formatted()) pixels on each side."
+    }
+    private var summary: String {
+        guard size.unit != .pixels, let width = size.pixelWidth, let height = size.pixelHeight else { return "Transparent canvas · sRGB" }
+        return "\(width) × \(height) px · Transparent canvas · sRGB"
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -46,22 +95,29 @@ struct NewCanvasSheet: View {
                     .accessibilityLabel("Preset sizes")
                 }
             }
-            HStack(spacing: 16) {
-                dimension("Width", text: $width, field: .width)
-                Image(systemName: "multiply").foregroundStyle(.tertiary).padding(.top, 20)
-                dimension("Height", text: $height, field: .height)
+            VStack(spacing: 14) {
+                HStack(spacing: 16) {
+                    dimension("Width", text: $size.width, field: .width, suffix: size.unit.abbreviation)
+                    Image(systemName: "multiply").foregroundStyle(.tertiary).padding(.top, 20)
+                    dimension("Height", text: $size.height, field: .height, suffix: size.unit.abbreviation)
+                }
+                HStack(spacing: 16) {
+                    unitMenu
+                    // Keeps the columns lined up with the fields above.
+                    Image(systemName: "multiply").hidden()
+                    dimension("Resolution", text: $size.resolution, field: .resolution, suffix: "ppi")
+                }
             }
-            Text(valid ? "Transparent canvas · sRGB" : "Enter whole numbers from 1 to \(DocumentLimits.maxSide.formatted()) pixels.")
+            Text(valid ? summary : message)
                 .font(.callout).foregroundStyle(valid ? Color.secondary : Color.orange)
             HStack(spacing: 10) {
                 Button("Open project") { onOpen?() }.buttonStyle(.bordered)
                 Button("Import image") { session.showsImporter = true }.buttonStyle(.bordered)
                 Spacer()
                 Button("Create canvas") {
-                    guard let w = CanvasDocument.validDimension(width),
-                          let h = CanvasDocument.validDimension(height) else { return }
-                    if let onCreate { onCreate(w, h) }
-                    else { session.createDocument(width: w, height: h, emptyLayer: true) }
+                    guard let w = size.pixelWidth, let h = size.pixelHeight, let ppi = size.pixelsPerInch else { return }
+                    if let onCreate { onCreate((w, h, ppi)) }
+                    else { session.createDocument(width: w, height: h, emptyLayer: true, resolution: ppi) }
                 }
                 .configuredNativeShortcut(.return).buttonStyle(.borderedProminent)
                 .disabled(!valid).accessibilityIdentifier("createCanvas")
@@ -74,18 +130,52 @@ struct NewCanvasSheet: View {
                 suggestedClipboardSize = true
                 if session.skipsInitialClipboardCanvasSize {
                     session.skipsInitialClipboardCanvasSize = false
-                } else if let size = Self.clipboardDimensions() {
-                    width = String(size.width)
-                    height = String(size.height)
+                } else if let clipboard = Self.clipboardDimensions() {
+                    size.unit = .pixels
+                    size.width = String(clipboard.width)
+                    size.height = String(clipboard.height)
                 }
             }
             focusedField = .width
         }
+        // Shown with the window, the view appears before the window sets up its first responder, which can take the
+        // focus back; ask again once it has, so Width is ready to type over.
+        .task {
+            await Task.yield()
+            if focusedField == nil { focusedField = .width }
+        }
     }
-    /// The preset the fields match, or nil (Custom); choosing one fills them in.
+    /// The preset the fields match, or nil (Custom); choosing one fills them in, in pixels.
     private var preset: Binding<CanvasPreset?> {
-        Binding(get: { CanvasPreset.all.first { String($0.width) == width && String($0.height) == height } },
-                set: { if let chosen = $0 { width = String(chosen.width); height = String(chosen.height) } })
+        Binding(get: { CanvasPreset.all.first { $0.width == size.pixelWidth && $0.height == size.pixelHeight } },
+                set: {
+                    guard let chosen = $0 else { return }
+                    size.unit = .pixels
+                    size.width = String(chosen.width)
+                    size.height = String(chosen.height)
+                })
+    }
+    /// Pixels, inches, centimeters or millimeters, for both sides; changing it converts what the fields hold.
+    private var unitMenu: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Units").font(.callout.weight(.medium))
+            Menu {
+                Picker("Units", selection: Binding(get: { size.unit }, set: { size.convert(to: $0) })) {
+                    ForEach(NewCanvasSize.units) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.inline).labelsHidden()
+            } label: {
+                HStack {
+                    Text(size.unit.rawValue).foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: "chevron.up.chevron.down").font(.caption).foregroundStyle(.secondary)
+                }
+                .padding(12).contentShape(Rectangle())
+                .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 7))
+            }
+            .menuStyle(.button).buttonStyle(.plain).menuIndicator(.hidden)
+            .accessibilityLabel("Units")
+        }
     }
 
     static func clipboardDimensions(_ pasteboard: NSPasteboard = .general) -> (width: Int, height: Int)? {
@@ -104,14 +194,14 @@ struct NewCanvasSheet: View {
         }
         return nil
     }
-    private func dimension(_ title: String, text: Binding<String>, field: Field) -> some View {
+    private func dimension(_ title: String, text: Binding<String>, field: Field, suffix: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title).font(.callout.weight(.medium))
             HStack {
                 TextField(title, text: text).textFieldStyle(.plain)
                     .focused($focusedField, equals: field)
                     .accessibilityIdentifier(title.lowercased() + "Input")
-                Text("px").foregroundStyle(.secondary)
+                Text(suffix).foregroundStyle(.secondary)
             }
             .padding(12).background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 7))
         }

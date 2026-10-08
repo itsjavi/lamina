@@ -321,7 +321,7 @@ struct ContentView: View {
     }
     private var welcome: some View {
         NewCanvasSheet(session: session,
-            onCreate: { session.createNewProject(width: $0, height: $1) },
+            onCreate: { session.createNewProject(width: $0.width, height: $0.height, resolution: $0.resolution) },
             onOpen: { Task { await applicationDelegate?.projects.open() } })
     }
     private var statusBar: some View {

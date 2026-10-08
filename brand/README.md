@@ -49,6 +49,7 @@ Current shots (window 1440×874 points):
 | `screenshot.webp` | The demo as it opens: the "Golden hour" title selected with the Move tool    |
 | `camera-raw.webp` | Sky layer selected, Filter › Camera Raw Filter…, `--panels`                  |
 | `curves.webp`     | Warm grade selected, Layer › Edit Adjustment…, `--panels`                    |
+| `oil-painting.webp` | `scripts/oil-painting-project.swift`'s seascape as it opens, 2400 wide. Showcases agent painting (strokes are generated outside the app until the agent painting milestone lands) |
 
 Selecting layers and choosing menu commands in the background takes an agent with background app control (clicks on
 the Layers panel, menu commands by title). Convert and size them like the existing files:
@@ -67,6 +68,20 @@ Gotchas:
 - Background windows are never key, so traffic lights look inactive. Acceptable.
 - Layer effects open only from the Layers panel's effects menu, which background control can't open; take that one by
   hand if it's wanted.
+
+## Numbers on the website
+
+The strip under the hero states the app's size and launch time; keep both true when the app changes (decision-7 keeps
+the size under 50 MB, which the hero badge promises):
+
+| Number          | Today   | How to measure                                                                      |
+| --------------- | ------- | ----------------------------------------------------------------------------------- |
+| App size        | 23 MB   | `make app && du -sh build/Lamina.app`                                                |
+| Launch → window | 0.7 s   | `CONFIG=release scripts/build-app.sh dev && swift scripts/launch-time.swift "build/Lamina Dev.app" 8`: the median "window" time after the first run |
+
+Measured 2026-10-09 on a MacBook Pro with M1 Max and 32 GB (macOS 27): finished launching in 0.25 s, first window
+0.72 s (median of the seven runs after the first; the first, right after the build, took 1.07 s). The launches run in
+the background and don't take focus. Update the figures and the note under the strip together.
 
 ## Social card
 

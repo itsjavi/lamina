@@ -108,15 +108,34 @@
           <p class="fineprint">macOS 26 on Apple silicon · MIT licensed</p>
         </div>
         <div class="container hero-shot">
-          <a href="assets/screenshot.webp" data-lightbox>
+          <a href="assets/oil-painting.webp" data-lightbox>
             <img
-              src="assets/screenshot.webp"
+              src="assets/oil-painting.webp"
               width="2400"
               height="1457"
-              alt="The Lamina window: a sunset composition on the canvas, its text title selected with transform handles, and the Layers panel with a Curves adjustment, a folder holding a text layer with a drop shadow, a masked lake, hill layers and a sun with an outer glow."
+              alt="The Lamina window: an oil-painted seascape at sunset on the canvas, and the Layers panel with a Warm varnish adjustment, a Sun glow layer, a Surface folder with varnish sheen, impasto relief and canvas weave, and a Paint folder with accents, detail strokes and body strokes."
               fetchpriority="high"
             />
           </a>
+        </div>
+        <div class="container stats" role="group" aria-label="Lamina in numbers">
+          <ul class="stat-grid">
+            <li>
+              <p class="stat-value"><span data-count-to="23">23</span><span class="stat-unit">MB</span></p>
+              <p class="stat-label">The whole app, icon and all</p>
+            </li>
+            <li>
+              <p class="stat-value"><span data-count-to="0.7" data-decimals="1">0.7</span><span class="stat-unit">s</span></p>
+              <p class="stat-label">From click to an open window</p>
+            </li>
+            <li>
+              <p class="stat-value"><span>0</span></p>
+              <p class="stat-label">Accounts or subscriptions</p>
+            </li>
+          </ul>
+          <p class="stat-note">
+            Launch time measured on a MacBook Pro with M1 Max: from launch to the first window, median of eight launches.
+          </p>
         </div>
       </section>
 
@@ -350,6 +369,31 @@ make install</code></pre>
       }
       // Any click closes it, like Quick Look; Esc works natively.
       lightbox.addEventListener("click", () => lightbox.close());
+
+      // The numbers count up once, as they come into view, in about the 0.7 s the app takes to open. The markup already
+      // holds the final values, so without JavaScript, or with reduced motion, they simply show.
+      const counters = document.querySelectorAll("[data-count-to]");
+      if (counters.length && !matchMedia("(prefers-reduced-motion: reduce)").matches && "IntersectionObserver" in window) {
+        const observer = new IntersectionObserver((entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            observer.unobserve(entry.target);
+            const element = entry.target;
+            const target = Number(element.dataset.countTo);
+            const decimals = Number(element.dataset.decimals || 0);
+            const start = performance.now();
+            const step = (time) => {
+              const progress = Math.min(1, (time - start) / 700);
+              const eased = 1 - Math.pow(1 - progress, 3);
+              element.textContent = (target * eased).toFixed(decimals);
+              if (progress < 1) requestAnimationFrame(step);
+            };
+            element.textContent = (0).toFixed(decimals);
+            requestAnimationFrame(step);
+          }
+        }, { threshold: 0.6 });
+        for (const counter of counters) observer.observe(counter);
+      }
 
       for (const button of document.querySelectorAll("[data-copy-target]")) {
         button.addEventListener("click", async () => {

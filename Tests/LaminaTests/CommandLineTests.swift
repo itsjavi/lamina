@@ -58,6 +58,11 @@ struct CommandLineTests {
         #expect(try Invocation.parse(["help", "undo"]).action == .help(command: "undo"))
         #expect(try Invocation.parse(["undo", "-h"]).action == .help(command: "undo"))
         #expect(try Invocation.parse(["--version"]).action == .version)
+        let mcp = try Invocation.parse(["mcp", "--dev", "--timeout", "60"])
+        #expect(mcp.action == .mcp && mcp.dev && mcp.timeout == 60)
+        #expect(try Invocation.parse(["mcp", "--help"]).action == .help(command: "mcp"))
+        #expect(throws: AutomationError.self) { try Invocation.parse(["mcp", "--layer", "x"]) }
+        #expect(Help.overview.contains("mcp") && Help.mcp.contains("claude mcp add lamina"))
         #expect(throws: AutomationError.self) { try Invocation.parse(["frobnicate"]) }
         #expect(throws: AutomationError.self) { try Invocation.parse(["undo", "--layer", "x"]) }
         #expect(throws: AutomationError.self) { try Invocation.parse(["undo", "--document"]) }

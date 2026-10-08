@@ -118,8 +118,10 @@ public struct ParameterSpec: Sendable {
             guard let text = value.stringValue, Self.rgb(text) != nil else { throw fail("must be a color written #rrggbb") }
             return .string(text.lowercased())
         case .settings:
-            guard value.objectValue != nil else { throw fail("must be an object") }
-            return value
+            if value.objectValue != nil { return value }
+            // Models often send an object as JSON text; take it when that's what it is.
+            if let text = value.stringValue, let decoded = try? JSONValue.decode(text), decoded.objectValue != nil { return decoded }
+            throw fail("must be an object")
         }
     }
 
@@ -138,6 +140,8 @@ public struct CommandSpec: Sendable {
         case reads
         /// Changes a document: one undo step in the app.
         case edits
+        /// Adds to a document without changing what's there: one undo step in the app.
+        case adds
         /// Changes what's selected or shown, not the document: no undo step, as in the app.
         case selects
     }
@@ -146,6 +150,13 @@ public struct CommandSpec: Sendable {
     public struct FileOutput: Sendable {
         public let parameter: String
         public let mimeTypes: [String: String]
+        /// The file is an image to show the model as well (an MCP image result), not only a file to write.
+        public let showsImage: Bool
+        public init(parameter: String, mimeTypes: [String: String], showsImage: Bool = false) {
+            self.parameter = parameter
+            self.mimeTypes = mimeTypes
+            self.showsImage = showsImage
+        }
     }
 
     public let name: String

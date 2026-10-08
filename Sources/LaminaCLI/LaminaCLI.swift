@@ -31,7 +31,9 @@ public enum Lamina {
             console.standardOutput("lamina \(version)")
             return succeeded
         case .help(let name):
-            if let name {
+            if name == "mcp" {
+                console.standardOutput(Help.mcp)
+            } else if let name {
                 guard let spec = CommandCatalog.command(name) else {
                     return report(AutomationError(.unknownCommand, "Unknown command \(name). See lamina --help."), json: invocation.json, console: console)
                 }
@@ -39,6 +41,15 @@ public enum Lamina {
             } else {
                 console.standardOutput(Help.overview)
             }
+            return succeeded
+        case .mcp:
+            // stdout carries only MCP messages; a host that hangs up mustn't kill the process mid-write.
+            signal(SIGPIPE, SIG_IGN)
+            let target = target(invocation, environment)
+            let channel = transport?(invocation) ?? AppleEventTransport(target: target, timeout: invocation.timeout)
+            let server = MCPServer(client: CommandClient(transport: channel), version: shortVersion, log: { console.standardError("lamina mcp: \($0)") })
+            console.standardError("lamina mcp: serving \(target) over stdio (MCP \((MCPServer.modernVersions + MCPServer.legacyVersions).joined(separator: ", ")))")
+            server.serve(input: .standardInput, output: .standardOutput)
             return succeeded
         case .run(let name, let values):
             guard let spec = CommandCatalog.command(name) else { return usage }
@@ -60,13 +71,18 @@ public enum Lamina {
                           executable: Bundle.main.executableURL)
     }
 
-    /// The version of the app bundle lamina ships in, or "development" for a `swift build` copy.
+    /// The version of the app bundle lamina ships in and its bundle id, or "development" for a `swift build` copy.
     static var version: String {
-        guard let executable = Bundle.main.executableURL?.resolvingSymlinksInPath() else { return "development" }
-        let app = executable.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        guard app.pathExtension == "app", let bundle = Bundle(url: app),
-              let short = bundle.infoDictionary?["CFBundleShortVersionString"] as? String else { return "development" }
+        guard let bundle = enclosingApp, let short = bundle.infoDictionary?["CFBundleShortVersionString"] as? String else { return "development" }
         return "\(short) (\(bundle.bundleIdentifier ?? AppIdentity.releaseBundleID))"
+    }
+
+    static var shortVersion: String { enclosingApp?.infoDictionary?["CFBundleShortVersionString"] as? String ?? "development" }
+
+    static var enclosingApp: Bundle? {
+        guard let executable = Bundle.main.executableURL?.resolvingSymlinksInPath() else { return nil }
+        let app = executable.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        return app.pathExtension == "app" ? Bundle(url: app) : nil
     }
 
     @discardableResult

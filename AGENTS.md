@@ -34,9 +34,9 @@ load, and how to write it safely while it's open, so the person can watch the ca
 | `Sources/CPixels`              | C pixel loops (brushes, healing, levels, noise, lens, content fill, adjustments, dither), headers in `include/`, always built `-O3`. Swift files that call them `import CPixels` |
 | `Sources/Compositor`           | The app (default MainActor isolation): `Automation/` (`lamina`'s commands and their Apple Event handler), `Document/` (editor session and tools), `IO/` (projects, PSD, import/export), `Rendering/` (canvas, Metal), `UI/` (panels, sheets, controls) |
 | `Sources/LaminaAutomation`     | The command catalog shared by the app and `lamina` (names, parameters, results, filter and adjustment settings), JSON values, the Apple Event codes and the bundle ids (`AppIdentity`). Foundation only, Swift 6 mode |
-| `Sources/LaminaCLI`, `Sources/lamina` | `lamina`: arguments and help built from the catalog, text/JSON output, the Apple Event client and file writing |
+| `Sources/LaminaCLI`, `Sources/lamina` | `lamina`: arguments and help built from the catalog, text/JSON output, the Apple Event client, file writing and the MCP server (`lamina mcp`) |
 | `Tests/CompositorTests`        | Swift Testing suites, `@testable import Compositor`                                         |
-| `Tests/LaminaTests`            | The catalog and `lamina`, without the app (fast, no windows)                                |
+| `Tests/LaminaTests`            | The catalog, `lamina` and its MCP server, without the app (fast, no windows)                |
 | `Tests/CompositorTestHost`     | Starts AppKit's event loop with a document window in the test process (see below)           |
 | `Resources/`                   | `Info.plist`, `Compositor.entitlements` (sandbox), `lamina.entitlements`, `PrivacyInfo.xcprivacy`, `AppIcon.icon` (Icon Composer; compiled by actool in `scripts/build-app.sh`) |
 | `scripts/`                     | `build-app.sh` (assembles, compiles the icon, embeds Sparkle, signs), `release.sh`, `appcast.sh`, `bump-version.sh`, `acknowledgements.swift` (Credits.html) |
@@ -95,6 +95,12 @@ from a new calling app shows macOS's Automation prompt to the person.
 - Edits are one undo step each and are refused (`busy`) while the person is mid-edit (`busyReason`); ids are short
   unique prefixes (`ShortID`); edits return what they changed and accept `expect_revision`.
 - The sandboxed app never sees file paths: it returns file bytes (base64) and `lamina` writes them (`CommandClient`).
+- `lamina mcp` is a stdio MCP server (`Sources/LaminaCLI/MCPServer.swift`) whose tools `MCPTools` makes from the catalog
+  (tool name `apply_filter` for `apply-filter`, schemas, annotations from the command's `effect`), so a new command is a
+  new tool with no MCP code. It serves MCP 2026-07-28 statelessly and the `initialize` era (2025-11-25 and earlier),
+  logs only to stderr, and reports command failures as `isError` results. `MCPServerTests` drive it over pipes against
+  a stub transport. Register it with `claude mcp add lamina -- <app>/Contents/Helpers/lamina mcp [--dev]` or
+  `codex mcp add lamina -- …`.
 - Entitlements: the app's are unchanged (receiving Apple Events needs none). `lamina` is signed with
   `Resources/lamina.entitlements` (`com.apple.security.automation.apple-events`), which the hardened runtime requires to
   send Apple Events.

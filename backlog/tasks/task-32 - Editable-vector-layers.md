@@ -4,6 +4,7 @@ title: Editable vector layers
 status: To Do
 assignee: []
 created_date: '2026-10-08 15:09'
+updated_date: '2026-10-08 21:46'
 labels:
   - vector
 milestone: m-2
@@ -37,3 +38,9 @@ The core of m-2: layers that hold editable vector objects instead of pixels, as 
 - [ ] #6 Vector layers save as the SVG subset decision-5 describes, documented in docs/project-format.md and in the guide for writing projects, so an agent can write one by hand
 - [ ] #7 Tests cover the SVG round trip, NSImage drawing of the saved SVG matching Lamina's own drawing, geometry checks (circle area, rotated rectangle), and rejection of SVG outside the subset
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+After TASK-2, the vector object model and the SVG subset reader/writer belong in LaminaCore, tested without AppKit; drawing and tools stay in the app.
+<!-- SECTION:NOTES:END -->

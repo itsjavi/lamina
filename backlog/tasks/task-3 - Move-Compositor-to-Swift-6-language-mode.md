@@ -1,9 +1,10 @@
 ---
 id: TASK-3
-title: Move Compositor to Swift 6 language mode
+title: Move Lamina to Swift 6 language mode
 status: To Do
 assignee: []
 created_date: '2026-10-07 17:48'
+updated_date: '2026-10-08 21:45'
 labels: []
 dependencies: []
 references:
@@ -17,7 +18,7 @@ ordinal: 3000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-The package builds in Swift 5 language mode with approachable concurrency, as the Xcode project did (decision-1). The sibling apps use Swift 6 mode, which turns data-race diagnostics into errors.
+LaminaApp, LaminaCore and the app tests build in Swift 5 language mode with approachable concurrency, as the Xcode project did (decision-1); LaminaAutomation, LaminaCLI and lamina already use Swift 6 mode. The sibling apps use Swift 6 mode, which turns data-race diagnostics into errors.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

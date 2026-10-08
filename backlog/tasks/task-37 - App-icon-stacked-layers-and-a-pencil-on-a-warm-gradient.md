@@ -1,11 +1,11 @@
 ---
 id: TASK-37
-title: 'App icon: stacked layers and a pencil on a warm gradient'
+title: 'App icon: a brush painting on stacked layers, on a warm gradient'
 status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-08 18:44'
-updated_date: '2026-10-08 20:26'
+updated_date: '2026-10-08 21:45'
 labels:
   - identity
 milestone: m-0
@@ -24,7 +24,7 @@ Lamina still ships upstream Compositor's icon. It needs its own, sitting well in
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Resources/AppIcon.icon (Icon Composer) has the new design with light and dark appearances, compiled by scripts/build-app.sh for both builds
-- [x] #2 The background is a peach-to-golden gradient; the foreground is stacked layers with a pencil, drawn as simple vector shapes with no blue, purple or green
+- [x] #2 The background is a peach-to-golden gradient; the foreground is stacked layers with a brush painting a red doodle on the top one, drawn as simple vector shapes with no blue, purple or green
 - [x] #3 It reads clearly at Dock and Finder sizes down to 16 pt, checked in the built app next to system icons
 - [x] #4 A PNG export for the README and website lives in web/assets/icon.png
 <!-- AC:END -->

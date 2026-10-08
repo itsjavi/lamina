@@ -4,7 +4,7 @@ title: Create the Sparkle key and publish Lamina's first release
 status: To Do
 assignee: []
 created_date: '2026-10-07 17:48'
-updated_date: '2026-10-07 21:06'
+updated_date: '2026-10-08 21:46'
 labels: []
 milestone: m-0
 dependencies:
@@ -25,7 +25,7 @@ ordinal: 1000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-The fork has its own update feed (decision-1, renamed to Lamina in decision-2, hosted on GitHub Releases per decision-3), but no Sparkle EdDSA key yet: release builds warn that they can't update themselves, and nothing has been published. The first release comes after the rename, the .lamina format and the GitHub release flow, so no build ships under the old name, format or feed. Creating the key writes to the login Keychain, so the user does it.
+The fork has its own update feed (decision-1, renamed to Lamina in decision-2, hosted on GitHub Releases per decision-3), but no Sparkle EdDSA key yet: release builds warn that they can't update themselves, and nothing has been published. The first release comes after the rename, the .lam format and the GitHub release flow, so no build ships under the old name, format or feed. Creating the key writes to the login Keychain, so the user does it.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

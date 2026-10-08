@@ -4,11 +4,13 @@ title: Place SVG files as layers
 status: To Do
 assignee: []
 created_date: '2026-10-08 15:09'
+updated_date: '2026-10-08 21:46'
 labels:
   - vector
 milestone: m-2
 dependencies:
   - TASK-7
+  - TASK-2
 references:
   - >-
     backlog/decisions/decision-6 -
@@ -39,3 +41,9 @@ Logos and icons usually arrive as SVG files, and today Lamina can only take them
 - [ ] #5 The project format version is bumped and documented in docs/project-format.md; builds before it refuse such projects instead of dropping data
 - [ ] #6 Tests cover save and reopen, stale-PNG redraw, rejection of unsafe or oversized SVG files, and correct drawing of the SVG features doc-2 lists
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+The format code lives in LaminaCore after TASK-2: the SVG file handling and the format version bump go there.
+<!-- SECTION:NOTES:END -->

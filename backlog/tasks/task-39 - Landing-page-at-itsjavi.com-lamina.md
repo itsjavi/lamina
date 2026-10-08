@@ -1,10 +1,11 @@
 ---
 id: TASK-39
 title: Landing page at itsjavi.com/lamina
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-08 18:44'
-updated_date: '2026-10-08 18:44'
+updated_date: '2026-10-08 21:44'
 labels:
   - identity
 milestone: m-0
@@ -30,8 +31,18 @@ Like NoteMD's (github.com/itsjavi/notemd: web/index.html and styles.css, deploye
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 web/index.html and web/styles.css: hero with icon, tagline and the dark screenshot, why, feature rows, a details grid and build steps; works at phone width and in light and dark
-- [ ] #2 .github/workflows/pages.yml deploys web/ to https://itsjavi.com/lamina/ on pushes to main that touch web/
-- [ ] #3 A social card (web/assets/og-image.jpg) generated from a script in scripts/, and page metadata (title, description, Open Graph, icon)
+- [x] #1 web/index.html and web/styles.css: hero with icon, tagline and the dark screenshot, why, feature rows, a details grid and build steps; works at phone width and in light and dark
+- [x] #2 .github/workflows/pages.yml deploys web/ to https://itsjavi.com/lamina/ on pushes to main that touch web/
+- [x] #3 A social card (web/assets/og-image.jpg) generated from a script in scripts/, and page metadata (title, description, Open Graph, icon)
 - [ ] #4 brand/README.md lists the README, website, screenshots, social card and video, and what to update when a feature ships or the UI changes; AGENTS.md points to it
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+- web/index.html + styles.css adapted from NoteMD's (the user's own, MIT): Lamina palette (light #fbf6f0 / dark #15100d; primary buttons rust #8a3b1c / #6e3119 with white text, ≥4.5:1 including hover), hero with the dark app screenshot, a Why card, feature rows (Camera Raw, adjustment layers, agents with a command block), a details grid, build steps, footer crediting Compositor. No video section until TASK-40.
+- Checked with headless Chrome in light and dark at 1440 px and at 390 px (inside an iframe: headless Chrome's viewport won't go below 500 px).
+- Social card scripts/og-image.html → web/assets/og-image.jpg (2400×1260); favicon.png and apple-touch-icon.png from the icon.
+- GitHub Pages enabled on itsjavi/lamina (built from Actions, with the user's go-ahead). pages.yml run 37848722510 succeeded; https://itsjavi.com/lamina/ and its assets return 200. The README links the site.
+- Left: AGENTS.md pointer to brand/README.md, after the LaminaCore branch (which edits AGENTS.md) is merged.
+<!-- SECTION:NOTES:END -->

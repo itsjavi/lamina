@@ -4,6 +4,7 @@ title: Export layered PSD
 status: To Do
 assignee: []
 created_date: '2026-10-07 20:36'
+updated_date: '2026-10-08 21:45'
 labels:
   - upstream
   - psd
@@ -24,7 +25,7 @@ ordinal: 27000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Decided in doc-1: PSD export if it's lossless and MIT-compatible. Write our own layered writer in CompositorCore (closed upstream PR #48's PSDLayeredWriter as the base, an MIT contribution; no third-party code). ImageIO only writes flat PSDs. Upstream deferred PSD export because users expect everything to stay editable, so the export must say what doesn't.
+Decided in doc-1: PSD export if it's lossless and MIT-compatible. Write our own layered writer in LaminaCore, next to the PSD reader (TASK-2), with closed upstream PR #48's PSDLayeredWriter as the base (an MIT contribution; no third-party code). ImageIO only writes flat PSDs. Upstream deferred PSD export because users expect everything to stay editable, so the export must say what doesn't.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

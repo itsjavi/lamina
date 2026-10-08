@@ -56,11 +56,14 @@ let package = Package(
         // The rendering tests' fixture and comparison loops, optimized like CPixels: as unoptimized Swift they were most
         // of the suite's time.
         .target(name: "TestPixels", path: "Tests/TestPixels", cSettings: [.unsafeFlags(["-O3"])]),
-        // Small Photoshop files written for the PSD tests.
+        // Small Photoshop files written for the PSD tests, shared by the app's and the core's.
         .target(name: "PSDFixtures", dependencies: ["LaminaCore"], path: "Tests/PSDFixtures", swiftSettings: swiftSettings),
         .testTarget(name: "LaminaAppTests",
                     dependencies: ["LaminaApp", "LaminaCore", "LaminaTestHost", "LaminaAutomation", "TestPixels", "PSDFixtures"],
                     path: "Tests/LaminaAppTests", swiftSettings: swiftSettings),
+        // The project format and PSD parsing, without the app: no AppKit, no windows, off the main actor.
+        .testTarget(name: "LaminaCoreTests", dependencies: ["LaminaCore", "PSDFixtures"], path: "Tests/LaminaCoreTests",
+                    swiftSettings: swiftSettings),
         // `lamina` and the command catalog, without the app: fast, no windows.
         .testTarget(name: "LaminaTests", dependencies: ["LaminaAutomation", "LaminaCLI"], path: "Tests/LaminaTests",
                     swiftSettings: [.swiftLanguageMode(.v6)]),

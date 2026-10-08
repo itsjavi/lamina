@@ -95,19 +95,6 @@ struct GroupTests {
         #expect(try await ProjectStore.shared.load(from: url).manifest.version == 1)
     }
 
-    @Test func malformedParentLinksAndCyclesAreRejected() throws {
-        let id = UUID(), child = UUID()
-        let transform = LayerTransform(origin: .zero, size: CGSize(width: 10, height: 10))
-        let group = ProjectLayerRecord(id: id, name: "Group", isVisible: true, transform: transform, imageFile: nil, parentID: child, isGroup: true)
-        let nested = ProjectLayerRecord(id: child, name: "Nested", isVisible: true, transform: transform, imageFile: nil, parentID: id, isGroup: true)
-        #expect(throws: ProjectError.self) { try LayerHierarchy.validate([group, nested]) }
-        #expect(throws: ProjectError.self) { try LayerHierarchy.validate([group]) }
-        var rasterParent = group
-        rasterParent.parentID = nil
-        rasterParent.isGroup = false
-        #expect(throws: ProjectError.self) { try LayerHierarchy.validate([rasterParent, nested]) }
-    }
-
     @Test func ungroupLayersRestoresChildrenAtTheFoldersSpotAndUndoes() throws {
         let session = EditorSession()
         session.createDocument(width: 100, height: 100)

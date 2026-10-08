@@ -4,39 +4,9 @@ import Testing
 import LaminaCore
 @testable import LaminaApp
 
-/// Adjustment layers and layer masks read from a PSD, laid out as Photoshop writes them.
+/// Layer masks read from a PSD, laid out as Photoshop writes them. Reading adjustment layers is tested in
+/// LaminaCoreTests (PSDReaderTests).
 struct PSDAdjustmentTests {
-    private func shorts(_ values: [Int]) -> Data {
-        values.reduce(into: Data()) { data, value in
-            let bits = UInt16(bitPattern: Int16(value))
-            data.append(contentsOf: [UInt8(bits >> 8), UInt8(bits & 0xFF)])
-        }
-    }
-
-    @Test func levelsGammaIsInHundredths() throws {
-        // RGB: input 2–254, gamma 1.00 (stored as 100); red, green and blue untouched; padded to Photoshop's 29 records.
-        var data = shorts([2, 2, 254, 0, 255, 100] + Array(repeating: [0, 255, 0, 255, 100], count: 3).flatMap { $0 })
-        data.append(Data(count: 292 - data.count))
-        let levels = try #require(PSDAdjustments.levels(data)?.levels)
-        #expect(levels.ranges[0] == LevelRange(black: 2, gamma: 1, white: 254, outputBlack: 0, outputWhite: 255))
-        #expect(levels.ranges[1...3].allSatisfy { $0.gamma == 1 })
-    }
-
-    @Test func hueSaturationReadsMasterAndEachRange() throws {
-        // Version 2, Colorize off; Colorize values (ignored), Master +5/+4/0; Reds' band and −30 saturation, +10 light.
-        var data = shorts([2]) + Data([0, 0]) + shorts([23, 25, 0, 5, 4, 0, 315, 345, 15, 45, 0, -30, 10])
-        data += shorts(Array(repeating: 0, count: 7 * 5))
-        let settings = try #require(PSDAdjustments.hue(data)?.hsvSettings)
-        #expect(!settings.colorize)
-        #expect(settings.adjustments[.master] == RangeAdjustment(hue: 5, saturation: 4, lightness: 0))
-        #expect(settings.adjustments[.reds] == RangeAdjustment(hue: 0, saturation: -30, lightness: 10))
-        #expect(settings.bands[.reds] == HueBand(falloffStart: 315, rangeStart: 345, rangeEnd: 15, falloffEnd: 45))
-
-        data[2] = 1  // Colorize on: its own values apply.
-        let colorized = try #require(PSDAdjustments.hue(data)?.hsvSettings)
-        #expect(colorized.colorize && colorized.adjustments[.master] == RangeAdjustment(hue: 23, saturation: 25, lightness: 0))
-    }
-
     @Test func maskPatchSitsWhereItIsOnTheCanvas() throws {
         // A 2 × 2 white patch at (3, 1) on a 6 × 4 canvas, black everywhere else, on an adjustment layer (no pixels of its
         // own, so it covers the canvas): the patch must land at (3, 1), not stretch over the whole layer.

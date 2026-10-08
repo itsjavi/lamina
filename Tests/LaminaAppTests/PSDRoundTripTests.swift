@@ -27,28 +27,6 @@ struct PSDRoundTripTests {
         return try #require(context.makeImage())
     }
 
-    private func header(version: UInt16 = 1, width: UInt32 = 8, height: UInt32 = 8, depth: UInt16 = 8, mode: UInt16 = 3) -> Data {
-        var data = Data("8BPS".utf8)
-        func append(_ value: UInt16) {
-            data.append(UInt8(truncatingIfNeeded: value >> 8))
-            data.append(UInt8(truncatingIfNeeded: value))
-        }
-        func append32(_ value: UInt32) {
-            data.append(UInt8(truncatingIfNeeded: value >> 24))
-            data.append(UInt8(truncatingIfNeeded: value >> 16))
-            data.append(UInt8(truncatingIfNeeded: value >> 8))
-            data.append(UInt8(truncatingIfNeeded: value))
-        }
-        append(version)
-        data.append(Data(count: 6))
-        append(3)
-        append32(height)
-        append32(width)
-        append(depth)
-        append(mode)
-        return data
-    }
-
     @Test func roundTripLayersOrderVisibilityOpacityAndBlend() throws {
         let red = try colorImage(width: 2, height: 2, red: 1, green: 0, blue: 0)
         let blue = try colorImage(width: 2, height: 2, red: 0, green: 0, blue: 1)
@@ -127,61 +105,6 @@ struct PSDRoundTripTests {
         #expect(imported.layers.first { $0.name == "Base" }?.parentID == folder.id)
     }
 
-    @Test func oversizedLayerBoundsAreRejected() throws {
-        #expect(throws: ImageImportError.tooLarge) {
-            try PSDReader.read(oversizedLayerFile(width: 8, height: 8, layerWidth: 30_000, layerHeight: 30_000), remainingPixels: 50)
-        }
-        let fill = try colorImage(width: 20, height: 20, red: 1, green: 0, blue: 0)
-        var layer = PSDRecord(id: UUID(), name: "Huge")
-        layer.bounds = CGRect(x: 0, y: 0, width: 20, height: 20)
-        layer.image = fill
-        let data = try PSDFixture.data(PSDDocument(width: 20, height: 20, resolution: 72, layers: [layer]), composite: fill)
-        #expect(throws: ImageImportError.tooLarge) {
-            try PSDReader.read(data, remainingPixels: 50)
-        }
-    }
-
-    @Test func unusedSpotChannelsAreSkippedBeforeDecode() throws {
-        let pixels = Data(repeating: 255, count: 4)
-        var channels: [(id: Int16, payload: Data)] = []
-        for id: Int16 in [-1, 0, 1, 2] {
-            channels.append((id, rawChannel(pixels)))
-        }
-        // Compression 99 would throw if these planes were unpacked. 52 extras fill the 56-channel cap.
-        let bogus = Data([0, 99, 0, 0])
-        for id in Int16(3)...Int16(54) {
-            channels.append((id, bogus))
-        }
-        let document = try PSDReader.read(layerFile(layerWidth: 2, layerHeight: 2, channels: channels))
-        #expect(document.layers.count == 1)
-        #expect(document.layers[0].image?.width == 2)
-        #expect(document.layers[0].image?.height == 2)
-    }
-
-    @Test func unsupportedCompressionOnColorChannelsIsStillRejected() {
-        let pixels = Data(repeating: 255, count: 4)
-        let channels: [(id: Int16, payload: Data)] = [
-            (-1, rawChannel(pixels)),
-            (0, Data([0, 99, 0, 0])),
-            (1, rawChannel(pixels)),
-            (2, rawChannel(pixels)),
-        ]
-        #expect(throws: PSDError.unsupportedCompression) {
-            try PSDReader.read(layerFile(layerWidth: 2, layerHeight: 2, channels: channels))
-        }
-    }
-
-    @Test func matchesRequiresPhotoshopMagic() throws {
-        let jpeg = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).psd")
-        try Data([0xFF, 0xD8, 0xFF, 0xE0]).write(to: jpeg)
-        defer { try? FileManager.default.removeItem(at: jpeg) }
-        #expect(!PSDReader.matches(jpeg))
-        let psd = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).bin")
-        try Data("8BPS".utf8).write(to: psd)
-        defer { try? FileManager.default.removeItem(at: psd) }
-        #expect(PSDReader.matches(psd))
-    }
-
     /// Was unknownBlendProducesConversionReport with "vLit". Vivid Light is supported now, so an
     /// unsupported key has to be one Photoshop has and Lamina doesn't: Dissolve scatters pixels
     /// by opacity rather than blending, and comes in as Normal.
@@ -227,13 +150,6 @@ struct PSDRoundTripTests {
         // Photoshop stores opacity in one byte, so a half-opaque group comes back as 128/255.
         #expect(abs(folder.opacity - 0.5) < 0.01)
         #expect(!imported.conversions.contains { $0.layerName == "Stack" && $0.message.contains("opacity") })
-    }
-
-    @Test func unsupportedHeadersAreRejected() throws {
-        #expect(throws: PSDError.unsupportedVersion) { try PSDReader.read(header(version: 3)) }
-        #expect(throws: PSDError.unsupportedColorMode) { try PSDReader.read(header(mode: 4)) }
-        #expect(throws: PSDError.unsupportedDepth) { try PSDReader.read(header(depth: 16)) }
-        #expect(throws: ImageImportError.tooLarge) { try PSDReader.read(header(width: 30_001, height: 10)) }
     }
 
     @Test func importCreatesDocumentAndExistingCanvasGetsAGroup() async throws {
@@ -504,82 +420,6 @@ struct PSDRoundTripTests {
         return types
     }
 
-    private func rawChannel(_ plane: Data) -> Data {
-        var data = Data([0, 0])
-        data.append(plane)
-        return data
-    }
-
-    private func oversizedLayerFile(width: UInt32, height: UInt32, layerWidth: Int32, layerHeight: Int32) -> Data {
-        layerFile(canvasWidth: width, canvasHeight: height, layerWidth: layerWidth, layerHeight: layerHeight, channels: [
-            (-1, Data([0, 0])), (0, Data([0, 0])), (1, Data([0, 0])), (2, Data([0, 0])),
-        ])
-    }
-
-    private func layerFile(
-        canvasWidth: UInt32 = 8,
-        canvasHeight: UInt32 = 8,
-        layerWidth: Int32,
-        layerHeight: Int32,
-        channels: [(id: Int16, payload: Data)]
-    ) -> Data {
-        var data = header(width: canvasWidth, height: canvasHeight)
-        func append32(_ value: UInt32) {
-            data.append(UInt8(truncatingIfNeeded: value >> 24))
-            data.append(UInt8(truncatingIfNeeded: value >> 16))
-            data.append(UInt8(truncatingIfNeeded: value >> 8))
-            data.append(UInt8(truncatingIfNeeded: value))
-        }
-        append32(0)
-        append32(0)
-        var records = Data()
-        func rec16(_ value: UInt16) {
-            records.append(UInt8(truncatingIfNeeded: value >> 8))
-            records.append(UInt8(truncatingIfNeeded: value))
-        }
-        func rec32(_ value: UInt32) {
-            records.append(UInt8(truncatingIfNeeded: value >> 24))
-            records.append(UInt8(truncatingIfNeeded: value >> 16))
-            records.append(UInt8(truncatingIfNeeded: value >> 8))
-            records.append(UInt8(truncatingIfNeeded: value))
-        }
-        func recI16(_ value: Int16) { rec16(UInt16(bitPattern: value)) }
-        func recI32(_ value: Int32) { rec32(UInt32(bitPattern: value)) }
-        recI16(1)
-        recI32(0)
-        recI32(0)
-        recI32(layerHeight)
-        recI32(layerWidth)
-        rec16(UInt16(channels.count))
-        var payloads = Data()
-        for channel in channels {
-            recI16(channel.id)
-            rec32(UInt32(channel.payload.count))
-            payloads.append(channel.payload)
-        }
-        records.append(contentsOf: Array("8BIMnorm".utf8))
-        records.append(contentsOf: [255, 0, 0, 0])
-        rec32(12)
-        rec32(0)
-        rec32(0)
-        records.append(3)
-        records.append(contentsOf: Array("Big".utf8))
-        var info = Data()
-        func info32(_ value: UInt32) {
-            info.append(UInt8(truncatingIfNeeded: value >> 24))
-            info.append(UInt8(truncatingIfNeeded: value >> 16))
-            info.append(UInt8(truncatingIfNeeded: value >> 8))
-            info.append(UInt8(truncatingIfNeeded: value))
-        }
-        info32(UInt32(records.count + payloads.count))
-        info.append(records)
-        info.append(payloads)
-        info32(0)
-        append32(UInt32(info.count))
-        data.append(info)
-        return data
-    }
-
     @Test func photoshopPointTextImportsAsEditableText() throws {
         let parsed = try #require(PSDText.parse(extra: ["TySh": PSDFixture.tySh(text: "Hello", tx: 40, ty: 50)]))
         #expect(parsed.style.content == "Hello")
@@ -613,41 +453,6 @@ struct PSDRoundTripTests {
         #expect(abs(layer.transform.origin.y - 50) < 80)
     }
 
-    @Test func photoshopTextSizeUsesMatrixScaleNotDocumentResolution() {
-        // Identity scale keeps the engine size whether the document is 72 or 300 PPI.
-        #expect(PSDText.parse(extra: ["TySh": PSDFixture.tySh(text: "Hello")])?.style.fontSize == 24)
-        #expect(PSDText.parse(extra: ["TySh": PSDFixture.tySh(text: "Hello", xx: 2, yy: 2)])?.style.fontSize == 48)
-        // Non-1 scale and a non-72 document resolution still multiply by the matrix only.
-        #expect(PSDText.parse(extra: ["TySh": PSDFixture.tySh(text: "Hello", fontSize: 25, xx: 2, yy: 2)])?.style.fontSize == 50)
-    }
-
-    @Test func photoshopTextKeepsTheFirstStyleAndReportsTheRest() {
-        let parsed = PSDText.parse(extra: ["TySh": PSDFixture.tySh(text: "Hello", red: 1, green: 0, blue: 0, justification: 2, tracking: 1000, leading: 30, secondSize: 48)])
-        #expect(parsed?.style.content == "Hello")
-        #expect(parsed?.style.alignment == .center)
-        #expect(parsed?.style.tracking == 24)
-        #expect(parsed?.style.leading == 30)
-        #expect(parsed?.style.red == 1)
-        #expect(parsed?.style.fontSize == 24)
-        #expect(parsed?.notes.contains(PSDText.firstStyleNote) == true)
-    }
-
-    @Test func photoshopTextReportsLeadingOnlyStyleDifferences() {
-        let byLeading = PSDText.parse(extra: ["TySh": PSDFixture.tySh(text: "Hello", leading: 30, secondLeading: 48)])
-        #expect(byLeading?.style.leading == 30)
-        #expect(byLeading?.notes.contains(PSDText.firstStyleNote) == true)
-        let byScale = PSDText.parse(extra: ["TySh": PSDFixture.tySh(text: "Hello", secondHorizontalScale: 1.2)])
-        #expect(byScale?.notes.contains(PSDText.firstStyleNote) == true)
-    }
-
-    @Test func photoshopParagraphTextKeepsItsBox() {
-        let parsed = PSDText.parse(extra: ["TySh": PSDFixture.tySh(text: "Hello", tx: 10, ty: 30, bounds: (0, 0, 200, 80), glyphBounds: (0, -10, 40, 10))])
-        #expect(parsed?.anchorIsFrame == true)
-        #expect(parsed?.style.boxSize?.width == 224)
-        #expect(parsed?.style.boxSize?.height == 104)
-        #expect(parsed?.documentAnchor == CGPoint(x: 10, y: 30))
-    }
-
     @Test func oversizedPhotoshopParagraphFrameStaysPixels() throws {
         #expect(PSDText.parse(extra: ["TySh": PSDFixture.tySh(text: "Hello", bounds: (0, 0, 40_000, 100), glyphBounds: (0, 0, 40, 10))]) == nil)
         let image = try colorImage(width: 4, height: 4, red: 0, green: 1, blue: 0)
@@ -662,13 +467,6 @@ struct PSDRoundTripTests {
         #expect(layer.liveText == nil)
         #expect(layer.asset?.image.width == 4)
         #expect(imported.conversions.contains { $0.message == PSDText.rasterizedNote })
-    }
-
-    @Test func warpedPhotoshopTextStaysEditableAndSaysSo() {
-        let parsed = PSDText.parse(extra: ["TySh": PSDFixture.tySh(text: "Hello", fauxBold: true, warp: true)])
-        #expect(parsed?.style.content == "Hello")
-        #expect(parsed?.notes.contains(PSDText.warpNote) == true)
-        #expect(parsed?.notes.contains(PSDText.fauxNote) == true)
     }
 
     @Test func verticalOrBrokenPhotoshopTextStaysPixels() throws {
@@ -700,11 +498,5 @@ struct PSDRoundTripTests {
         let imported = try PSDDocumentBuilder.makeImport(PSDDocument(width: 64, height: 64, resolution: 72, layers: [record]))
         #expect(imported.layers.first?.liveText?.style.fontName == "DefinitelyMissingFontXYZ")
         #expect(imported.conversions.contains { $0.message == PSDText.missingFontNote("DefinitelyMissingFontXYZ") })
-    }
-
-    @Test func rotatedPhotoshopTextKeepsItsAngle() {
-        let parsed = PSDText.parse(extra: ["TySh": PSDFixture.tySh(text: "Hello", xx: 0, xy: -1, yx: 1, yy: 0)])
-        #expect(abs((parsed?.rotation ?? 0) - 90) < 0.01)
-        #expect(parsed?.flipY == false)
     }
 }

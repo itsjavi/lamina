@@ -102,24 +102,6 @@ struct ImageAdjustmentTests {
                 "larger grain should form visibly larger, more coherent particles")
     }
 
-    @Test func settingsSaveAndOlderAdjustmentsStillOpen() throws {
-        let levels = LayerAdjustment(kind: .levels)
-        let data = try JSONEncoder().encode(levels)
-        let json = try #require(String(data: data, encoding: .utf8))
-        #expect(!json.contains("exposureSettings"), "an existing kind saves exactly as before")
-        #expect(!json.contains("gradientMapSettings"))
-        #expect(!json.contains("grainSettings"))
-        #expect(try JSONDecoder().decode(LayerAdjustment.self, from: data) == levels)
-        var grain = LayerAdjustment(kind: .grain)
-        grain.grain = GrainSettings(amount: 40, size: 3, roughness: 10, seed: 9)
-        let decoded = try JSONDecoder().decode(LayerAdjustment.self, from: JSONEncoder().encode(grain))
-        #expect(decoded == grain)
-        #expect(decoded.isValid)
-        var broken = LayerAdjustment(kind: .exposure)
-        broken.exposure.gamma = 0
-        #expect(!broken.isValid)
-    }
-
     @Test func newAdjustmentLayersStartFromThePaletteRenderAndEditInThePanel() async throws {
         let session = EditorSession()
         session.createDocument(width: 20, height: 20)

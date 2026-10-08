@@ -12,13 +12,6 @@ struct ProjectTests {
         return url
     }
 
-    /// Saving writes `ProjectManifest.current` and `load` rejects anything outside
-    /// `ProjectManifest.supported`, so the two have to agree or the app cannot reopen its own
-    /// documents. This checks that directly, without touching the disk.
-    @Test func theCurrentFormatVersionIsOneTheReaderAccepts() {
-        #expect(ProjectManifest.supported.contains(ProjectManifest.current))
-    }
-
     /// A small project saved as `name` in `root`, its manifest's format id and version then rewritten as given.
     private func savedProject(_ name: String, in root: URL, format: String? = nil, version: Int? = nil) async throws -> URL {
         let session = EditorSession()

@@ -86,13 +86,6 @@ struct CropToCanvasImportTests {
         #expect(cropNotes.map(\.layerName) == ["Overhang"])
     }
 
-    @Test func croppedDocumentStillOverBudgetIsRejected() throws {
-        let fixture = try document()
-        #expect(throws: ImageImportError.tooLarge) {
-            try PSDReader.read(PSDFixture.data(fixture.source, composite: fixture.composite), remainingPixels: 11)
-        }
-    }
-
     @Test func offCanvasLayerIsKeptWithoutPixelsWhenCropping() throws {
         let composite = try rgbaImage(width: 4, height: 4)
         var layer = PSDRecord(id: UUID(), name: "Outside")
@@ -104,41 +97,5 @@ struct CropToCanvasImportTests {
         #expect(imported.image == nil)
         #expect(imported.croppedToCanvas)
         #expect((try PSDDocumentBuilder.makeImport(parsed)).conversions.contains { $0.layerName == "Outside" && $0.message.contains("Cropped to the canvas") })
-    }
-
-    @Test func channelCropsMatchFullDecodes() throws {
-        let width = 5, height = 4
-        let source = Data((0..<(width * height)).map { UInt8($0) })
-        let crop = PSDCrop(x: 1, y: 1, width: 3, height: 2)
-        let rawFull = try PSDChannelCoder.decode(compression: 0, width: width, height: height, data: source)
-        #expect(try PSDChannelCoder.decode(compression: 0, width: width, height: height, data: source, crop: crop) == sliced(rawFull, width: width, crop: crop))
-        for largeDocument in [false, true] {
-            let packed = packBits(source, width: width, height: height, largeDocument: largeDocument)
-            let full = try PSDChannelCoder.decode(compression: 1, width: width, height: height, data: packed, largeDocument: largeDocument)
-            let cropped = try PSDChannelCoder.decode(compression: 1, width: width, height: height, data: packed,
-                                                      largeDocument: largeDocument, crop: crop)
-            #expect(cropped == sliced(full, width: width, crop: crop))
-        }
-    }
-
-    private func sliced(_ plane: [UInt8], width: Int, crop: PSDCrop) -> [UInt8] {
-        var result: [UInt8] = []
-        for row in 0..<crop.height { result.append(contentsOf: plane[(crop.y + row) * width + crop.x..<(crop.y + row) * width + crop.x + crop.width]) }
-        return result
-    }
-
-    private func packBits(_ plane: Data, width: Int, height: Int, largeDocument: Bool) -> Data {
-        var counts = Data()
-        var rows = Data()
-        for row in 0..<height {
-            let bytes = plane[row * width..<(row + 1) * width]
-            var packed = Data([UInt8(width - 1)])
-            packed.append(bytes)
-            if largeDocument { counts.append(contentsOf: [0, 0]) }
-            counts.append(UInt8(packed.count >> 8))
-            counts.append(UInt8(packed.count))
-            rows.append(packed)
-        }
-        return counts + rows
     }
 }

@@ -3,9 +3,7 @@ import Foundation
 import Testing
 import LaminaCore
 import PSDFixtures
-@testable import LaminaApp
 
-@MainActor
 struct PSBImportTests {
     private func colorImage(width: Int, height: Int, red: CGFloat, green: CGFloat, blue: CGFloat) throws -> CGImage {
         let context = try #require(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,

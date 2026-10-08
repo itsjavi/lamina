@@ -156,21 +156,6 @@ struct HueSaturationTests {
         return session
     }
 
-    @Test func bandWeightsRampThroughFalloffAndWrapAround() {
-        let reds = ColorRange.reds.defaultBand // 315 / 345 / 15 / 45, wrapping past 0.
-        #expect(reds.weight(of: 0) == 1 && reds.weight(of: 345) == 1 && reds.weight(of: 15) == 1)
-        #expect(abs(reds.weight(of: 330) - 0.5) < 0.001)   // Halfway up the shoulder.
-        #expect(abs(reds.weight(of: 30) - 0.5) < 0.001)    // Halfway down the far shoulder.
-        #expect(reds.weight(of: 315) == 0 && reds.weight(of: 45) == 0 && reds.weight(of: 180) == 0)
-        #expect(ColorRange.master.defaultBand.weight(of: 123) == 1)
-        // Handles keep their order: crossing moves are refused.
-        var band = ColorRange.greens.defaultBand
-        band.setHandle(1, to: 200) // rangeStart past rangeEnd.
-        #expect(band == ColorRange.greens.defaultBand)
-        band.setHandle(1, to: 110)
-        #expect(band.rangeStart == 110)
-    }
-
     @Test func colorRangesAdjustIndependently() async throws {
         let session = try redAndBlue()
         var settings = HueSaturationSettings(hue: 60, range: .reds)

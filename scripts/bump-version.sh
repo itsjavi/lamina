@@ -57,7 +57,7 @@ fi
 echo "$next" > VERSION
 git add VERSION
 git commit -q -m "chore(release): $tag"
-git tag -a "$tag" -m "Compositor $next"
+git tag -a "$tag" -m "Lamina $next"
 echo "✓ $current → $next, committed and tagged $tag"
 
 if [ "$push" = 1 ]; then

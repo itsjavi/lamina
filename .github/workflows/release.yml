@@ -1,6 +1,6 @@
-# Pushing a vX.Y.Z tag builds Compositor for Apple silicon and publishes it:
+# Pushing a vX.Y.Z tag builds Lamina for Apple silicon and publishes it:
 # a GitHub release named after the tag with the DMG, the zip and SHA256SUMS,
-# and, with R2 credentials, the public copies and Sparkle's appcast.xml on downloads.itsjavi.com/compositor.
+# and, with R2 credentials, the public copies and Sparkle's appcast.xml on downloads.itsjavi.com/lamina.
 # Every secret is optional; see README, "Releases from CI".
 name: Release
 
@@ -83,9 +83,9 @@ jobs:
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          xcrun notarytool store-credentials compositor-ci --keychain "$KEYCHAIN" \
+          xcrun notarytool store-credentials lamina-ci --keychain "$KEYCHAIN" \
             --apple-id "$APPLE_ID" --password "$APPLE_APP_PASSWORD" --team-id "$APPLE_TEAM_ID"
-          { echo "NOTARY_PROFILE=compositor-ci"; echo "NOTARY_KEYCHAIN=$KEYCHAIN"; } >> "$GITHUB_ENV"
+          { echo "NOTARY_PROFILE=lamina-ci"; echo "NOTARY_KEYCHAIN=$KEYCHAIN"; } >> "$GITHUB_ENV"
 
       - name: Build
         run: make release
@@ -106,7 +106,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          files=("build/release/Compositor-$VERSION.dmg" "build/release/Compositor-$VERSION.zip" build/release/SHA256SUMS)
+          files=("build/release/Lamina-$VERSION.dmg" "build/release/Lamina-$VERSION.zip" build/release/SHA256SUMS)
           if [ -f build/appcast/appcast.xml ]; then files+=(build/appcast/appcast.xml); fi
           notes="$RUNNER_TEMP/notes.md"
           if [ -n "${NOTARY_PROFILE:-}" ]; then
@@ -132,11 +132,11 @@ jobs:
         run: |
           command -v aws >/dev/null || brew install awscli
           put() {
-            aws s3 cp "$1" "s3://$R2_BUCKET/compositor/$(basename "$1")" --only-show-errors \
+            aws s3 cp "$1" "s3://$R2_BUCKET/lamina/$(basename "$1")" --only-show-errors \
               --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" --content-type "$2" "${@:3}"
           }
-          put "build/release/Compositor-$VERSION.zip" application/zip
-          put "build/release/Compositor-$VERSION.dmg" application/x-apple-diskimage
+          put "build/release/Lamina-$VERSION.zip" application/zip
+          put "build/release/Lamina-$VERSION.dmg" application/x-apple-diskimage
           # The feed goes last, so it never lists a file that isn't there yet.
           if [ -f build/appcast/appcast.xml ]; then
             put build/appcast/appcast.xml application/xml --cache-control "max-age=300"

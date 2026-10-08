@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Assembles build/<Name>.app from the SwiftPM product.
-#   scripts/build-app.sh            # "Compositor.app": release build with the updater
-#   scripts/build-app.sh dev        # "Compositor Dev.app": debug build, separate id, sandbox container and prefs, no updater
+#   scripts/build-app.sh            # "Lamina.app": release build with the updater
+#   scripts/build-app.sh dev        # "Lamina Dev.app": debug build, separate id, sandbox container and prefs, no updater
 #   SIGN_IDENTITY="Developer ID Application: …"   # sign with a real identity (default: ad-hoc)
 #   HARDENED=1                                    # hardened runtime + secure timestamp (release.sh sets it)
 #   ARCH=arm64                                    # build for one architecture (default: this Mac's)
@@ -10,10 +10,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 VARIANT="${1:-release}"
-BUNDLE_ID="com.itsjavi.compositor"
+BUNDLE_ID="com.itsjavi.lamina"
 case "$VARIANT" in
-  release) CONFIG="${CONFIG:-release}"; NAME="Compositor"; ID="$BUNDLE_ID" ;;
-  dev)     CONFIG="${CONFIG:-debug}";   NAME="Compositor Dev"; ID="$BUNDLE_ID.dev" ;;
+  release) CONFIG="${CONFIG:-release}"; NAME="Lamina"; ID="$BUNDLE_ID" ;;
+  dev)     CONFIG="${CONFIG:-debug}";   NAME="Lamina Dev"; ID="$BUNDLE_ID.dev" ;;
   *) echo "unknown variant: $VARIANT (use release or dev)" >&2; exit 64 ;;
 esac
 APP="build/$NAME.app"
@@ -25,7 +25,7 @@ BUILD="${BUILD:-$(git rev-list --count HEAD 2>/dev/null || echo 1)}"
 
 SWIFT_FLAGS=(-c "$CONFIG" --disable-keychain)  # never a Keychain prompt when packages download
 if [ -n "${ARCH:-}" ]; then SWIFT_FLAGS+=(--arch "$ARCH"); fi
-swift build "${SWIFT_FLAGS[@]}" --product Compositor
+swift build "${SWIFT_FLAGS[@]}" --product LaminaApp
 swift build "${SWIFT_FLAGS[@]}" --product lamina
 BIN_DIR="$(swift build "${SWIFT_FLAGS[@]}" --show-bin-path)"
 
@@ -40,11 +40,11 @@ if [ -n "${ARCH:-}" ]; then
     if [[ " $archs " == *" $ARCH "* && "$archs" != "$ARCH" ]]; then lipo -thin "$ARCH" "$binary" -output "$binary"; fi
   done
 fi
-cp "$BIN_DIR/Compositor" "$APP/Contents/MacOS/Compositor"
+cp "$BIN_DIR/LaminaApp" "$APP/Contents/MacOS/Lamina"
 # The lamina command-line tool, which drives the running app (README: put it on your PATH with a symlink).
 cp "$BIN_DIR/lamina" "$APP/Contents/Helpers/lamina"
 # SwiftPM also adds this checkout's build folder as an rpath; the bundle only needs @-relative ones.
-for binary in "$APP/Contents/MacOS/Compositor" "$APP/Contents/Helpers/lamina"; do
+for binary in "$APP/Contents/MacOS/Lamina" "$APP/Contents/Helpers/lamina"; do
   otool -l "$binary" | awk '/LC_RPATH/ { getline; getline; print $2 }' | { grep '^/' || true; } |
     while read -r path; do install_name_tool -delete_rpath "$path" "$binary" 2>/dev/null; done
 done
@@ -89,8 +89,8 @@ else
 fi
 
 # The App Sandbox entitlements, naming this variant's Sparkle services.
-ENTITLEMENTS="$WORK/Compositor.entitlements"
-sed "s/\$(PRODUCT_BUNDLE_IDENTIFIER)/$ID/g" Resources/Compositor.entitlements > "$ENTITLEMENTS"
+ENTITLEMENTS="$WORK/Lamina.entitlements"
+sed "s/\$(PRODUCT_BUNDLE_IDENTIFIER)/$ID/g" Resources/LaminaApp.entitlements > "$ENTITLEMENTS"
 SIGN_FLAGS=(--force --sign "${SIGN_IDENTITY:--}")
 if [ -n "${HARDENED:-}" ]; then
   SIGN_FLAGS+=(--options runtime)

@@ -1,12 +1,14 @@
-# Compositor project format, versions 1–11
+# Lamina project format, versions 1–11
 
-A `.comp` file is a macOS document package containing `manifest.json` and an `images/` directory of `<layer UUID>.png` assets.
+A `.lam` file is a macOS document package (exported type `com.itsjavi.lamina.project`) containing `manifest.json` and an `images/` directory of `<layer UUID>.png` assets.
 
-The manifest identifies `com.compositor.project`, version `11` for new saves (versions `1`–`10` remain readable), and the sRGB working space. It stores document UUID, pixel dimensions, active layer UUID, and layers in bottom-to-top order. Each layer stores its UUID, name, visibility, transform (origin, size, clockwise rotation, flips, sampling), and optional image filename. Blank layers have no image asset.
+The manifest identifies `com.itsjavi.lamina.project`, version `11` for new saves (versions `1`–`10` remain readable), and the sRGB working space. It stores document UUID, pixel dimensions, active layer UUID, and layers in bottom-to-top order. Each layer stores its UUID, name, visibility, transform (origin, size, clockwise rotation, flips, sampling), and optional image filename. Blank layers have no image asset.
 
 Embedded PNGs preserve source pixels and transparency; transforms remain separate. Projects survive moving or deleting imported source photos. Saving uses a coordinated atomic package replacement. Unsupported versions, invalid metadata, missing assets, unsafe paths, and oversized data are rejected before replacing the live document. Angles may be any finite number: on load, a rotation (of a layer or a placed mask) past one turn either way is read as the same angle within one turn, and Hue/Saturation band handles outside 0–360 as the same hue within it.
 
 Limits: 30,000 pixels per canvas/image side, 100 million total source pixels, 10,000 layers, 4 MiB manifest, 512 MiB per encoded asset. See `ProjectStore.swift` for validation.
+
+Lamina began as a fork of Compositor, whose `.comp` packages (`com.compositor.project`) share this layout and versions 1–11 exactly. A `.comp` project of version 1–11 opens as an import: an untitled document that saves as `.lam`, never back to `.comp`. Later Lamina versions are Lamina's own; upstream changes past version 11 are only readable once ported into the importer.
 
 Undo history and viewport are session-only. Opening fits the canvas, restores selection, and starts with clean history. Future editable features must extend the schema and round-trip tests. PNG export is a flattened derivative and does not mark project edits saved.
 

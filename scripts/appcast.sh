@@ -2,12 +2,12 @@
 # Signs the release zip from `make release` and adds it to appcast.xml, Sparkle's update feed.
 #   make release && make appcast
 # Output in ./build/appcast: appcast.xml and every zip it lists. Upload both to the
-# compositor/ folder of the downloads bucket (downloads.itsjavi.com), zip first.
+# lamina/ folder of the downloads bucket (downloads.itsjavi.com), zip first.
 #
 # The private EdDSA key stays out of the repo: by default Sparkle's tools read it from the login
-# Keychain (account "compositor", made by `generate_keys --account compositor`). CI passes
-# SPARKLE_KEY_FILE instead, a file holding the exported key (`generate_keys --account compositor -x <file>`).
-# Release notes: put Compositor-<version>.html or .md next to the zip in build/appcast and they're
+# Keychain (account "lamina", made by `generate_keys --account lamina`). CI passes
+# SPARKLE_KEY_FILE instead, a file holding the exported key (`generate_keys --account lamina -x <file>`).
+# Release notes: put Lamina-<version>.html or .md next to the zip in build/appcast and they're
 # embedded in the feed.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -16,7 +16,7 @@ FEED_URL="$(/usr/libexec/PlistBuddy -c "Print :SUFeedURL" Resources/Info.plist)"
 PREFIX="${DOWNLOAD_URL_PREFIX:-${FEED_URL%/*}/}"
 TOOLS=".build/artifacts/sparkle/Sparkle/bin"
 OUT="build/appcast"
-APP="build/release/Compositor.app"
+APP="build/release/Lamina.app"
 
 if [ ! -x "$TOOLS/generate_appcast" ]; then
   swift package resolve --disable-keychain
@@ -30,7 +30,7 @@ if ! /usr/libexec/PlistBuddy -c "Print :SUPublicEDKey" "$APP/Contents/Info.plist
   exit 1
 fi
 VERSION="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Contents/Info.plist")"
-ZIP="build/release/Compositor-$VERSION.zip"
+ZIP="build/release/Lamina-$VERSION.zip"
 
 mkdir -p "$OUT"
 # Keep earlier releases in the feed: start from the published one unless there's a local copy.
@@ -46,7 +46,7 @@ if [ ! -f "$OUT/appcast.xml" ] && [ -z "${NEW_FEED:-}" ]; then
 fi
 cp "$ZIP" "$OUT/"
 
-KEY_FLAGS=(--account compositor)
+KEY_FLAGS=(--account lamina)
 if [ -n "${SPARKLE_KEY_FILE:-}" ]; then KEY_FLAGS=(--ed-key-file "$SPARKLE_KEY_FILE"); fi
 "$TOOLS/generate_appcast" "${KEY_FLAGS[@]}" --download-url-prefix "$PREFIX" \
   --embed-release-notes --maximum-deltas 0 "$OUT"
@@ -58,4 +58,4 @@ if ! grep -F "/$(basename "$ZIP")\"" "$OUT/appcast.xml" | grep -q 'sparkle:edSig
   exit 1
 fi
 
-echo "✓ $OUT/appcast.xml lists Compositor $VERSION. Upload $(basename "$ZIP"), then appcast.xml, to $PREFIX"
+echo "✓ $OUT/appcast.xml lists Lamina $VERSION. Upload $(basename "$ZIP"), then appcast.xml, to $PREFIX"

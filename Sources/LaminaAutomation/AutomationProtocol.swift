@@ -3,9 +3,9 @@ import Foundation
 /// The app `lamina` drives. The bundle ids live here and nowhere else in Swift, so renaming the app changes one place
 /// (scripts/build-app.sh has its own copy for signing).
 public enum AppIdentity {
-    public static let releaseBundleID = "com.itsjavi.compositor"
+    public static let releaseBundleID = "com.itsjavi.lamina"
     public static let devBundleID = releaseBundleID + ".dev"
-    public static let displayName = "Compositor"
+    public static let displayName = "Lamina"
 }
 
 /// How a request reaches the running app: one Apple Event of this class and id, its direct parameter a UTF-8 JSON

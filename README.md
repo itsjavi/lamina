@@ -1,4 +1,4 @@
-# Compositor
+# Lamina
 
 A simpler alternative to Photoshop and Affinity for the Mac: the tools you use every day for photos and compositing,
 without the bloat, the subscription or the sign-up. Native, open source and ready for agents, which can drive it from
@@ -6,20 +6,13 @@ the command line or as an MCP server. All in an app under 50 MB.
 
 Because it’s open source, you can add, remove or change any feature to fit your workflow.
 
-> This is a fork of [robbietilton/Compositor](https://github.com/robbietilton/Compositor), built as a Swift package
-> (no Xcode project). Its builds have their own identity (`com.itsjavi.compositor`) and update feed
-> (`downloads.itsjavi.com/compositor`), so they install and update apart from upstream's app.
+> Lamina started as a fork of [robbietilton/Compositor](https://github.com/robbietilton/Compositor) (MIT), built as a
+> Swift package (no Xcode project), with its own identity (`com.itsjavi.lamina`), project format and update feed.
 
 ## Installation
 
-### Download
-The upstream app: get Compositor from [robbietilton.com/compositor](https://robbietilton.com/compositor), or download the latest release directly from [GitHub Releases](https://github.com/robbietilton/Compositor/releases/latest).
-
-### Homebrew
-
-```sh
-brew install --cask robbietilton-compositor
-```
+There's no release yet: build it from source (see [Building](#building)). Releases will be published on
+[GitHub Releases](https://github.com/itsjavi/lamina/releases).
 
 ## Features
 
@@ -90,7 +83,7 @@ brew install --cask robbietilton-compositor
 - Automatic updates, signed and notarized
 
 ### Works with AI agents
-- AI agents and scripts can build and edit projects directly: a `.comp` is a folder of PNG layers and a manifest, and an open project updates live as it's written. See [Writing Compositor projects](docs/writing-comp-files.md)
+- AI agents and scripts can build and edit projects directly: a `.lam` project is a folder of PNG layers and a manifest, and an open project updates live as it's written. See [Writing Lamina projects](docs/writing-lamina-projects.md)
 - They can also drive the running app with the `lamina` command-line tool: list open projects and their layers, select layers, apply filters and adjustment layers with settings, undo, export and render previews. See [The lamina command-line tool](#the-lamina-command-line-tool)
 
 ## The lamina command-line tool
@@ -98,7 +91,7 @@ brew install --cask robbietilton-compositor
 The app ships `lamina` in its bundle. Put it on your PATH with a symlink:
 
 ```bash
-ln -s /Applications/Compositor.app/Contents/Helpers/lamina ~/.local/bin/lamina   # any folder on your PATH
+ln -s /Applications/Lamina.app/Contents/Helpers/lamina ~/.local/bin/lamina   # any folder on your PATH
 ```
 
 It controls the app while it's running (it never starts it):
@@ -114,21 +107,21 @@ lamina --help                                             # every command; lamin
 
 Each edit is one undo step in the app, and edits are refused while you're in the middle of something there (typing
 text, a transform, an open dialog). Output is text, or JSON with `--json`. `lamina` sends the app Apple Events, so the
-first command asks whether the app you run it from (Terminal, your editor, an agent) may control Compositor; that
+first command asks whether the app you run it from (Terminal, your editor, an agent) may control Lamina; that
 choice is in System Settings › Privacy & Security › Automation. Only your own processes on this Mac can send commands,
 and the app's sandbox entitlements are unchanged: `lamina` itself writes the exported files. With the Dev build
-running, use `lamina --dev …` (or the copy inside `build/Compositor Dev.app`).
+running, use `lamina --dev …` (or the copy inside `build/Lamina Dev.app`).
 
 ### As an MCP server
 
 `lamina mcp` offers the same commands as MCP tools over stdio, one tool per command. Register it with your MCP host:
 
 ```bash
-claude mcp add lamina -- /Applications/Compositor.app/Contents/Helpers/lamina mcp    # Claude Code
-codex mcp add lamina -- /Applications/Compositor.app/Contents/Helpers/lamina mcp     # Codex
+claude mcp add lamina -- /Applications/Lamina.app/Contents/Helpers/lamina mcp    # Claude Code
+codex mcp add lamina -- /Applications/Lamina.app/Contents/Helpers/lamina mcp     # Codex
 ```
 
-For Claude's desktop app, add `"lamina": {"command": "/Applications/Compositor.app/Contents/Helpers/lamina", "args":
+For Claude's desktop app, add `"lamina": {"command": "/Applications/Lamina.app/Contents/Helpers/lamina", "args":
 ["mcp"]}` under `mcpServers` in its `claude_desktop_config.json`. Add `--dev` after `mcp` to drive the Dev build.
 
 It speaks MCP 2026-07-28 (stateless, with `server/discover`) and, for hosts that still open with `initialize`,
@@ -144,21 +137,21 @@ and `CODEX_MCP_PROTOCOL_VERSION=2026-07-28` in the server's environment).
 ## Building
 
 ```bash
-make app        # build/Compositor.app (release, with the updater)
-make dev        # build/Compositor Dev.app (debug, its own id, sandbox container and prefs, no updater)
+make app        # build/Lamina.app (release, with the updater)
+make dev        # build/Lamina Dev.app (debug, its own id, sandbox container and prefs, no updater)
 make install    # copy the release app to /Applications
 make test       # unit tests (swift test)
 ```
 
-The app is App Sandboxed: its preferences and recent projects live in `~/Library/Containers/com.itsjavi.compositor`
+The app is App Sandboxed: its preferences and recent projects live in `~/Library/Containers/com.itsjavi.lamina`
 (`….dev` for the Dev build).
 
 ## Releasing
 
-Files go to the `compositor/` folder of the downloads bucket (downloads.itsjavi.com), like the other apps.
+Files go to the `lamina/` folder of the downloads bucket (downloads.itsjavi.com), like the other apps.
 
 ```bash
-make release                  # build/release: Compositor.app, zip, DMG, SHA256SUMS
+make release                  # build/release: Lamina.app, zip, DMG, SHA256SUMS
 make appcast                  # signs the zip, writes build/appcast/appcast.xml
 make bump V=patch PUSH=1      # bump VERSION, tag vX.Y.Z on main, push → release workflow
 ```
@@ -166,15 +159,15 @@ make bump V=patch PUSH=1      # bump VERSION, tag vX.Y.Z on main, push → relea
 `make release` signs and notarizes when `DEVELOPER_ID` and `NOTARY_PROFILE` are set (see `scripts/release.sh`);
 otherwise it builds ad-hoc and lists what's missing.
 
-Sparkle's private EdDSA key lives in the login Keychain under the account `compositor` (never in the repo); the public
+Sparkle's private EdDSA key lives in the login Keychain under the account `lamina` (never in the repo); the public
 key is `Resources/SparklePublicKey.txt`. Create them once with:
 
 ```bash
-swift package resolve && .build/artifacts/sparkle/Sparkle/bin/generate_keys --account compositor
+swift package resolve && .build/artifacts/sparkle/Sparkle/bin/generate_keys --account lamina
 ```
 
 and save the printed public key to `Resources/SparklePublicKey.txt`. Back the private key up (and export it for CI)
-with `generate_keys --account compositor -x compositor-sparkle.key`. Losing it means installed copies can't accept
+with `generate_keys --account lamina -x lamina-sparkle.key`. Losing it means installed copies can't accept
 updates signed with a new key. `make appcast` refuses a key that doesn't match the app's public key. Upload the zip
 first, then `appcast.xml`.
 

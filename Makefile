@@ -2,33 +2,33 @@ INSTALL_DIR ?= /Applications
 
 .PHONY: app dev run run-dev test install release appcast bump clean
 
-app: ## Build build/Compositor.app (release, with the updater)
+app: ## Build build/Lamina.app (release, with the updater)
 	scripts/build-app.sh release
 
-dev: ## Build build/Compositor Dev.app (debug, separate id, sandbox container and prefs, no updater)
+dev: ## Build build/Lamina Dev.app (debug, separate id, sandbox container and prefs, no updater)
 	scripts/build-app.sh dev
 
 run: app ## Build and open the release app
-	open build/Compositor.app
+	open build/Lamina.app
 
 run-dev: dev ## Build and open the dev app
-	open "build/Compositor Dev.app"
+	open "build/Lamina Dev.app"
 
 test: ## Run the unit tests
 	swift test
 
 install: app ## Copy the release app to /Applications (quits the running copy first) and open it
-	-osascript -e 'tell application id "com.itsjavi.compositor" to quit' 2>/dev/null
-	rm -rf "$(INSTALL_DIR)/Compositor.app"
-	cp -R build/Compositor.app "$(INSTALL_DIR)/"
-	open "$(INSTALL_DIR)/Compositor.app"
+	-osascript -e 'tell application id "com.itsjavi.lamina" to quit' 2>/dev/null
+	rm -rf "$(INSTALL_DIR)/Lamina.app"
+	cp -R build/Lamina.app "$(INSTALL_DIR)/"
+	open "$(INSTALL_DIR)/Lamina.app"
 
 # Apple silicon app, zip and DMG in build/release; signs and notarizes when
 # DEVELOPER_ID and NOTARY_PROFILE are set (see scripts/release.sh).
 release:
 	scripts/release.sh
 
-# Signs build/release's zip (EdDSA key "compositor" from the Keychain) and updates build/appcast/appcast.xml.
+# Signs build/release's zip (EdDSA key "lamina" from the Keychain) and updates build/appcast/appcast.xml.
 appcast:
 	scripts/appcast.sh
 

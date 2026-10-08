@@ -1,19 +1,19 @@
 #!/bin/bash
-# Builds a release of Compositor.app for Apple silicon into ./build/release: the app, a zip
+# Builds a release of Lamina.app for Apple silicon into ./build/release: the app, a zip
 # (for Sparkle updates) and a DMG (for downloads).
 #
 # Credentials, all optional (without them the build is ad-hoc signed, and other Macs need
 # System Settings ▸ Privacy & Security ▸ Open Anyway on first launch):
 #   DEVELOPER_ID="Developer ID Application: Name (TEAMID)"   # signing identity in the Keychain
-#   NOTARY_PROFILE=compositor    # a notarytool Keychain profile, made once with
-#                                # xcrun notarytool store-credentials compositor --apple-id … --team-id …
+#   NOTARY_PROFILE=lamina    # a notarytool Keychain profile, made once with
+#                                # xcrun notarytool store-credentials lamina --apple-id … --team-id …
 #   NOTARY_KEYCHAIN=<path>       # the keychain holding that profile, if not the login keychain (CI)
 # VERSION and BUILD override ./VERSION and the commit-count build number (see build-app.sh).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 OUT="build/release"
-APP="build/Compositor.app"
+APP="build/Lamina.app"
 missing=()
 if [ -z "${DEVELOPER_ID:-}" ]; then
   missing+=("DEVELOPER_ID (a Developer ID Application identity)")
@@ -28,7 +28,7 @@ ARCH=arm64 HARDENED=1 SIGN_IDENTITY="${DEVELOPER_ID:--}" ./scripts/build-app.sh 
 
 VERSION="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Contents/Info.plist")"
 BUILD="$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP/Contents/Info.plist")"
-BASE="Compositor-$VERSION"
+BASE="Lamina-$VERSION"
 rm -rf "$OUT"
 mkdir -p "$OUT"
 
@@ -52,7 +52,7 @@ STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 cp -R "$APP" "$STAGE/"
 ln -s /Applications "$STAGE/Applications"
-hdiutil create -quiet -volname "Compositor $VERSION" -srcfolder "$STAGE" -fs HFS+ -format UDZO "$OUT/$BASE.dmg"
+hdiutil create -quiet -volname "Lamina $VERSION" -srcfolder "$STAGE" -fs HFS+ -format UDZO "$OUT/$BASE.dmg"
 if [ -n "${DEVELOPER_ID:-}" ]; then
   codesign --force --sign "$DEVELOPER_ID" --timestamp "$OUT/$BASE.dmg"
   if [ -n "${NOTARY_PROFILE:-}" ]; then
@@ -63,7 +63,7 @@ fi
 cp -R "$APP" "$OUT/"
 (cd "$OUT" && shasum -a 256 "$BASE.zip" "$BASE.dmg" > SHA256SUMS)
 
-echo "✓ Compositor $VERSION ($BUILD) in $OUT: Compositor.app, $BASE.zip, $BASE.dmg, SHA256SUMS"
+echo "✓ Lamina $VERSION ($BUILD) in $OUT: Lamina.app, $BASE.zip, $BASE.dmg, SHA256SUMS"
 if [ ${#missing[@]} -gt 0 ]; then
   echo "⚠ Not ready to ship (ad-hoc builds need Open Anyway on other Macs on first launch). Missing:"
   for item in "${missing[@]}"; do echo "  - $item"; done

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-07 17:48'
-updated_date: '2026-10-08 21:01'
+updated_date: '2026-10-08 21:06'
 labels: []
 dependencies:
   - TASK-6
@@ -53,4 +53,6 @@ Measured 2026-10-08 (after the focus fix, 4713103):
 - Where it goes (serial durations): TiledLayerTests 52 s and GPUCanvasTests 26 s, 72% between them; then TypeToolTests 6 s, ExternalChangeTests 4 s, LargeCanvasBrushTests 3 s, MetalWarpTests 2.5 s. The format and PSD tests this task moves to LaminaCore take under a second in total.
 - Cause in TiledLayerTests: fixtures of 1600×1000 (and 3360×1812) noise built and compared with per-pixel Swift loops in an unoptimized build; noise() even allocates an array per pixel.
 - So the extraction alone won't make tests faster; asked the user how to widen or split the scope.
+
+Test speed (user chose: speed up first, then LaminaCore): the rendering suites' fixture and comparison loops moved to Tests/TestPixels (C, -O3), matching the Swift byte for byte. TiledLayerTests 52 → 3.8 s, GPUCanvasTests 26 → 3.3 s. Full swift test: 712 tests, 103 s → 32 s wall clock (serial 108 → 36 s). Next slowest: TypeToolTests 5.8 s, ExternalChangeTests 4.5 s (file-watch timing), LargeCanvasBrushTests 3.6 s.
 <!-- SECTION:NOTES:END -->

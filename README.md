@@ -1,18 +1,33 @@
-# Lamina
+<p align="center">
+  <img src="web/assets/icon.png" width="128" height="128" alt="Lamina app icon">
+</p>
 
-A simpler alternative to Photoshop and Affinity for the Mac: the tools you use every day for photos and compositing,
-without the bloat, the subscription or the sign-up. Native, open source and ready for agents, which can drive it from
-the command line or as an MCP server. All in an app under 50 MB.
+<h1 align="center">Lamina</h1>
 
-Because it’s open source, you can add, remove or change any feature to fit your workflow.
+<p align="center">
+  <strong>A simpler Photoshop and Affinity alternative for the Mac.</strong><br>
+  Photo editing and compositing without the bloat, the subscription or the sign-up. Open source, ready for agents,
+  and under 50 MB.
+</p>
 
-> Lamina started as a fork of [robbietilton/Compositor](https://github.com/robbietilton/Compositor) (MIT), built as a
-> Swift package (no Xcode project), with its own identity (`com.itsjavi.lamina`), project format and update feed.
+<p align="center">
+  <a href="#features">Features</a> ·
+  <a href="#works-with-ai-agents">AI agents</a> ·
+  <a href="#building">Building</a> ·
+  <a href="LICENSE">MIT License</a>
+</p>
 
-## Installation
+<img src="web/assets/screenshot.webp" alt="The Lamina window: a sunset composition on the canvas, its text title selected with transform handles, and the Layers panel with a Curves adjustment, a folder holding a text layer with a drop shadow, a masked lake, hill layers and a sun with an outer glow.">
 
-There's no release yet: build it from source (see [Building](#building)). Releases will be published on
-[GitHub Releases](https://github.com/itsjavi/lamina/releases).
+## Why Lamina
+
+Most image work comes down to the same handful of things: retouch a photo, cut something out, put a few layers
+together, add some text, export.
+
+Lamina is built for exactly that: the tools you reach for every day, with the Photoshop shortcuts and layer model you
+already know, in a native Mac app under 50 MB, with no subscription and no account. Projects are plain folders of PNG
+layers and a manifest, so nothing is locked in, and AI agents can work on them too: through the `lamina` command-line
+tool, as an MCP server, or by writing a project while you watch it update. Vector layers are next.
 
 ## Features
 
@@ -80,11 +95,22 @@ There's no release yet: build it from source (see [Building](#building)). Releas
 - A History panel beside Layers lists every undo step by name; click one to go back or forward to it
 - Photoshop-style keyboard shortcuts throughout, remappable or removable in Edit > Keyboard Shortcuts, where any menu command can also be given one
 - Drag a number's label to scrub its value, as in Photoshop
-- Automatic updates, signed and notarized
+- Automatic updates for signed releases
 
 ### Works with AI agents
 - AI agents and scripts can build and edit projects directly: a `.lam` project is a folder of PNG layers and a manifest, and an open project updates live as it's written. See [Writing Lamina projects](docs/writing-lamina-projects.md)
 - They can also drive the running app with the `lamina` command-line tool: list open projects and their layers, select layers, apply filters and adjustment layers with settings, undo, export and render previews. See [The lamina command-line tool](#the-lamina-command-line-tool)
+
+<table>
+  <tr>
+    <td width="50%"><img src="web/assets/camera-raw.webp" alt="The Camera Raw filter docked beside the canvas, with its histogram, Light and Color sliders and color grading wheels."></td>
+    <td width="50%"><img src="web/assets/curves.webp" alt="A Curves adjustment layer being edited in its floating panel over the canvas."></td>
+  </tr>
+  <tr>
+    <td align="center">Camera Raw filter</td>
+    <td align="center">Adjustment layers</td>
+  </tr>
+</table>
 
 ## The lamina command-line tool
 
@@ -131,50 +157,28 @@ and `CODEX_MCP_PROTOCOL_VERSION=2026-07-28` in the server's environment).
 
 ## Requirements
 
-- macOS 26.0 or later on a Mac with Apple silicon
-- Xcode 26 or later (to build from source: Swift 6.2, and actool for the icon)
+- macOS 26 or later on Apple silicon
+- Xcode 26 or later to build (Swift 6.2, and actool for the icon)
 
 ## Building
 
+There's no release yet; build it from source. Releases will be published on
+[GitHub Releases](https://github.com/itsjavi/lamina/releases).
+
 ```bash
-make app        # build/Lamina.app (release, with the updater)
-make dev        # build/Lamina Dev.app (debug, its own id, sandbox container and prefs, no updater)
-make install    # copy the release app to /Applications
-make test       # unit tests (swift test)
+git clone https://github.com/itsjavi/lamina.git
+cd lamina
+make install  # builds build/Lamina.app and copies it to /Applications
 ```
+
+Other targets: `make app` (release build only), `make dev` (a debug build with its own id, sandbox container and
+preferences, and no updater), `make test` (unit tests; `make test-ui` also runs the ones that show windows).
 
 The app is App Sandboxed: its preferences and recent projects live in `~/Library/Containers/com.itsjavi.lamina`
-(`….dev` for the Dev build).
-
-## Releasing
-
-Files go to the `lamina/` folder of the downloads bucket (downloads.itsjavi.com), like the other apps.
-
-```bash
-make release                  # build/release: Lamina.app, zip, DMG, SHA256SUMS
-make appcast                  # signs the zip, writes build/appcast/appcast.xml
-make bump V=patch PUSH=1      # bump VERSION, tag vX.Y.Z on main, push → release workflow
-```
-
-`make release` signs and notarizes when `DEVELOPER_ID` and `NOTARY_PROFILE` are set (see `scripts/release.sh`);
-otherwise it builds ad-hoc and lists what's missing.
-
-Sparkle's private EdDSA key lives in the login Keychain under the account `lamina` (never in the repo); the public
-key is `Resources/SparklePublicKey.txt`. Create them once with:
-
-```bash
-swift package resolve && .build/artifacts/sparkle/Sparkle/bin/generate_keys --account lamina
-```
-
-and save the printed public key to `Resources/SparklePublicKey.txt`. Back the private key up (and export it for CI)
-with `generate_keys --account lamina -x lamina-sparkle.key`. Losing it means installed copies can't accept
-updates signed with a new key. `make appcast` refuses a key that doesn't match the app's public key. Upload the zip
-first, then `appcast.xml`.
-
-CI (`.github/workflows/`): `ci.yml` runs the tests; `release.yml` runs on `vX.Y.Z` tags and uses these optional secrets
-in a `release` environment: `DEVELOPER_ID_P12`, `DEVELOPER_ID_P12_PASSWORD`, `APPLE_ID`, `APPLE_APP_PASSWORD`,
-`APPLE_TEAM_ID`, `SPARKLE_PRIVATE_KEY`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`.
+(`….dev` for the Dev build). See [AGENTS.md](AGENTS.md) for the project layout, build variants and tests, and
+[docs/releasing.md](docs/releasing.md) for publishing a release.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+[MIT](LICENSE). Lamina began as a fork of Robbie Tilton's [Compositor](https://github.com/robbietilton/Compositor)
+(MIT), and keeps its own project format, identity and update feed.

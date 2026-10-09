@@ -1,6 +1,6 @@
 INSTALL_DIR ?= /Applications
 
-.PHONY: app dev run run-dev test test-ui metrics metrics-web install install-notarized release appcast bump clean
+.PHONY: app dev run run-dev test test-ui metrics metrics-web install build-notarized install-notarized release appcast bump clean
 
 app: ## Build build/Lamina.app (release, with the updater)
 	scripts/build-app.sh release
@@ -37,13 +37,14 @@ install: app ## Copy the release app to /Applications (quits the running copy fi
 	cp -R build/Lamina.app "$(INSTALL_DIR)/"
 	open "$(INSTALL_DIR)/Lamina.app"
 
-# Like install, with the signed and notarized build from scripts/release.sh. DEVELOPER_ID defaults to the Keychain's
-# Developer ID Application identity and NOTARY_PROFILE to "lamina"; without an identity it stops instead of
-# installing an ad-hoc build.
-install-notarized: ## Build, sign and notarize the release app, copy it to /Applications and open it
+# scripts/release.sh with this Mac's credentials: DEVELOPER_ID defaults to the Keychain's Developer ID Application
+# identity and NOTARY_PROFILE to "lamina". Without an identity it stops instead of building ad-hoc like release.
+build-notarized: ## Build the signed and notarized app, zip, DMG and SHA256SUMS in build/release
 	@identity="$${DEVELOPER_ID:-$$(security find-identity -v -p codesigning | sed -n 's/.*"\(Developer ID Application: .*\)"/\1/p' | head -1)}"; \
 	if [ -z "$$identity" ]; then echo "error: no Developer ID Application identity in the Keychain (docs/releasing.md)" >&2; exit 1; fi; \
 	DEVELOPER_ID="$$identity" NOTARY_PROFILE="$${NOTARY_PROFILE:-lamina}" scripts/release.sh
+
+install-notarized: build-notarized ## Like install, with the notarized build
 	-osascript -e 'tell application id "com.itsjavi.lamina" to quit' 2>/dev/null
 	rm -rf "$(INSTALL_DIR)/Lamina.app"
 	cp -R build/release/Lamina.app "$(INSTALL_DIR)/"

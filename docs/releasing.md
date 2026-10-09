@@ -65,6 +65,6 @@ set; the profile is made once with `xcrun notarytool store-credentials lamina --
 builds ad-hoc and lists what's missing. Check a build with `spctl -a -vv build/release/Lamina.app` and
 `xcrun stapler validate build/release/Lamina-X.Y.Z.dmg`.
 
-`make install-notarized` does the same with the Keychain's Developer ID identity and the `lamina` profile (override
-them with `DEVELOPER_ID` and `NOTARY_PROFILE`), then installs the notarized app to `/Applications` like
-`make install`. Without an identity it stops instead of installing an ad-hoc build.
+`make build-notarized` does the same with the Keychain's Developer ID identity and the `lamina` profile (override
+them with `DEVELOPER_ID` and `NOTARY_PROFILE`); without an identity it stops instead of building ad-hoc.
+`make install-notarized` then installs that app to `/Applications` like `make install`.

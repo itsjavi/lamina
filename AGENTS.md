@@ -33,7 +33,7 @@ the names people know from Photoshop, Affinity and similar editors, drawn with n
 | Dev app bundle           | `make dev` → `build/Lamina Dev.app`                         |
 | Release app bundle       | `make app` → `build/Lamina.app`                             |
 | Install to /Applications | `make install`                                                  |
-| Install, notarized       | `make install-notarized` (Developer ID from the Keychain, notarytool profile `lamina`) |
+| Notarized build, install | `make build-notarized` → `build/release`; `make install-notarized` also installs it (Developer ID from the Keychain, notarytool profile `lamina`) |
 | Release zip/DMG          | `make release` (ad-hoc unless `DEVELOPER_ID`/`NOTARY_PROFILE`)  |
 | Update feed              | `make appcast` (Sparkle key: Keychain account `lamina`)     |
 | Version bump + tag       | `make bump V=patch\|X.Y.Z-beta.N [PUSH=1]` (never tag unless the user asks) |

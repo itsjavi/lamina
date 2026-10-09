@@ -35,7 +35,8 @@ the names people know from Photoshop, Affinity and similar editors, drawn with n
 | Install to /Applications | `make install`                                                  |
 | Release zip/DMG          | `make release` (ad-hoc unless `DEVELOPER_ID`/`NOTARY_PROFILE`)  |
 | Update feed              | `make appcast` (Sparkle key: Keychain account `lamina`)     |
-| Version bump + tag       | `make bump V=patch [PUSH=1]` (never tag unless the user asks)   |
+| Version bump + tag       | `make bump V=patch\|X.Y.Z-beta.N [PUSH=1]` (never tag unless the user asks) |
+| Publish a release        | A pushed `vX.Y.Z` tag: `release.yml` publishes a GitHub Release with the DMG, zip, `SHA256SUMS` and the update feed ([docs/releasing.md](docs/releasing.md)) |
 | Brush benchmark          | `BRUSH_BENCHMARK=1 swift test --filter BrushPerformanceTests`   |
 | Size, launch, memory     | `make metrics` (records and compares, `brand/metrics.json`); `make metrics-web` puts them on the website |
 | `lamina` (command line)  | `swift build --product lamina`; shipped as `Contents/Helpers/lamina` |

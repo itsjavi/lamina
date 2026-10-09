@@ -1,8 +1,10 @@
 #!/bin/bash
 # Signs the release zip from `make release` and adds it to appcast.xml, Sparkle's update feed.
 #   make release && make appcast
-# Output in ./build/appcast: appcast.xml and every zip it lists. Upload both to the
-# lamina/ folder of the downloads bucket (downloads.itsjavi.com), zip first.
+# Output in ./build/appcast: appcast.xml, starting from the published feed (Info.plist's SUFeedURL,
+# the newest GitHub release's appcast.xml) so it lists every release. Each item links to the zip in
+# its own release (releases/download/vX.Y.Z/), where the release workflow attaches it with the feed.
+# Pre-releases stay out of the feed.
 #
 # The private EdDSA key stays out of the repo: by default Sparkle's tools read it from the login
 # Keychain (account "lamina", made by `generate_keys --account lamina`). CI passes
@@ -13,7 +15,6 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 FEED_URL="$(/usr/libexec/PlistBuddy -c "Print :SUFeedURL" Resources/Info.plist)"
-PREFIX="${DOWNLOAD_URL_PREFIX:-${FEED_URL%/*}/}"
 TOOLS=".build/artifacts/sparkle/Sparkle/bin"
 OUT="build/appcast"
 APP="build/release/Lamina.app"
@@ -30,7 +31,13 @@ if ! /usr/libexec/PlistBuddy -c "Print :SUPublicEDKey" "$APP/Contents/Info.plist
   exit 1
 fi
 VERSION="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Contents/Info.plist")"
+if [[ "$VERSION" == *-* ]]; then
+  echo "error: $VERSION is a pre-release; installed copies only update to releases" >&2
+  exit 1
+fi
 ZIP="build/release/Lamina-$VERSION.zip"
+# https://github.com/<owner>/<repo>/releases/latest/download/appcast.xml → …/releases/download/v<version>/
+PREFIX="${DOWNLOAD_URL_PREFIX:-${FEED_URL%%/releases/*}/releases/download/v$VERSION/}"
 
 mkdir -p "$OUT"
 # Keep earlier releases in the feed: start from the published one unless there's a local copy.
@@ -49,7 +56,7 @@ cp "$ZIP" "$OUT/"
 KEY_FLAGS=(--account lamina)
 if [ -n "${SPARKLE_KEY_FILE:-}" ]; then KEY_FLAGS=(--ed-key-file "$SPARKLE_KEY_FILE"); fi
 "$TOOLS/generate_appcast" "${KEY_FLAGS[@]}" --download-url-prefix "$PREFIX" \
-  --embed-release-notes --maximum-deltas 0 "$OUT"
+  --embed-release-notes --maximum-deltas 0 --maximum-versions 0 "$OUT"
 
 # With a key that doesn't match the app's SUPublicEDKey, generate_appcast only warns and writes the
 # item unsigned, which installed copies would refuse. Never let that feed be uploaded.
@@ -58,4 +65,4 @@ if ! grep -F "/$(basename "$ZIP")\"" "$OUT/appcast.xml" | grep -q 'sparkle:edSig
   exit 1
 fi
 
-echo "✓ $OUT/appcast.xml lists Lamina $VERSION. Upload $(basename "$ZIP"), then appcast.xml, to $PREFIX"
+echo "✓ $OUT/appcast.xml lists Lamina $VERSION, linked to $PREFIX$(basename "$ZIP"); the v$VERSION release needs both"

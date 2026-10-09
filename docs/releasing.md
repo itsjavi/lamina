@@ -1,31 +1,66 @@
 # Releasing Lamina
 
-For maintainers. TASK-29 moves releases and the update feed to GitHub Releases (decision-3); until then this still
-describes the R2 bucket the tooling inherited.
-
-Files go to the `lamina/` folder of the downloads bucket (downloads.itsjavi.com), like the other apps.
+For maintainers. Releases and the update feed live on GitHub Releases (decision-3).
 
 ```bash
-make release                  # build/release: Lamina.app, zip, DMG, SHA256SUMS
-make appcast                  # signs the zip, writes build/appcast/appcast.xml
-make bump V=patch PUSH=1      # bump VERSION, tag vX.Y.Z on main, push → release workflow
+make bump V=patch PUSH=1          # bump VERSION, tag vX.Y.Z on main, push → the Release workflow publishes it
+make bump V=2.1.0-beta.1 PUSH=1   # a GitHub pre-release: no update feed, installed copies never get it
 ```
 
-`make release` signs and notarizes when `DEVELOPER_ID` and `NOTARY_PROFILE` are set (see `scripts/release.sh`);
-otherwise it builds ad-hoc and lists what's missing.
+Pushing a `vX.Y.Z` tag runs `.github/workflows/release.yml`: it tests, builds for Apple silicon, signs with Developer
+ID, notarizes and staples the app and the DMG, and publishes a GitHub Release named after the tag with
+`Lamina-X.Y.Z.dmg`, `Lamina-X.Y.Z.zip`, `SHA256SUMS` and `appcast.xml`. The tag must match `./VERSION`.
+
+A `vX.Y.Z-<pre-release>` tag publishes a GitHub pre-release with the same files except `appcast.xml`. GitHub never
+marks a pre-release as the latest release, so the feed, the website and the README's download link skip it. After a
+pre-release, name the next version (`make bump V=2.1.0` or `V=2.1.0-beta.2`): `major`, `minor` and `patch` need an
+X.Y.Z `VERSION`.
+
+## Update feed
+
+Info.plist's `SUFeedURL` is `https://github.com/itsjavi/lamina/releases/latest/download/appcast.xml`, the feed attached
+to the newest release. `make appcast` (`scripts/appcast.sh`) downloads that feed, adds the new build and signs it, so
+it lists every release; each item links to the zip in its own release (`releases/download/vX.Y.Z/`). It refuses
+pre-releases and a key that doesn't match the app's public key.
 
 Sparkle's private EdDSA key lives in the login Keychain under the account `lamina` (never in the repo); the public
-key is `Resources/SparklePublicKey.txt`. Create them once with:
+key is `Resources/SparklePublicKey.txt`. They were made once with:
 
 ```bash
-swift package resolve && .build/artifacts/sparkle/Sparkle/bin/generate_keys --account lamina
+.build/artifacts/sparkle/Sparkle/bin/generate_keys --account lamina
 ```
 
-and save the printed public key to `Resources/SparklePublicKey.txt`. Back the private key up (and export it for CI)
-with `generate_keys --account lamina -x lamina-sparkle.key`. Losing it means installed copies can't accept
-updates signed with a new key. `make appcast` refuses a key that doesn't match the app's public key. Upload the zip
-first, then `appcast.xml`.
+Export the private key (`generate_keys --account lamina -x lamina-sparkle.key`) for the `SPARKLE_PRIVATE_KEY` secret
+and keep a backup outside the repo. Losing it means installed copies can't accept updates signed with a new key.
 
-CI (`.github/workflows/`): `ci.yml` runs the tests; `release.yml` runs on `vX.Y.Z` tags and uses these optional secrets
-in a `release` environment: `DEVELOPER_ID_P12`, `DEVELOPER_ID_P12_PASSWORD`, `APPLE_ID`, `APPLE_APP_PASSWORD`,
-`APPLE_TEAM_ID`, `SPARKLE_PRIVATE_KEY`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`.
+## Website
+
+The download buttons on https://itsjavi.com/lamina/ link to `releases/latest`. In the browser they read GitHub's API
+for the newest release and point straight at its DMG, with its version, so a release needs no site deploy.
+
+## Credentials
+
+The workflow's secrets live in the `release` environment, which only `v*` tags can use. Every one is optional: without
+them the build is ad-hoc signed (other Macs need System Settings ▸ Privacy & Security ▸ Open Anyway on first launch)
+and has no feed, and the release notes say so.
+
+| Secret                      | What it is                                                                       |
+| --------------------------- | -------------------------------------------------------------------------------- |
+| `DEVELOPER_ID_P12`          | The Developer ID Application certificate and its private key, as a base64 .p12   |
+| `DEVELOPER_ID_P12_PASSWORD` | The password the .p12 was exported with                                          |
+| `APPLE_ID`                  | The Apple Account that notarizes                                                 |
+| `APPLE_APP_PASSWORD`        | An app-specific password for it (account.apple.com ▸ Sign-In and Security)       |
+| `APPLE_TEAM_ID`             | The team that owns the certificate                                               |
+| `SPARKLE_PRIVATE_KEY`       | The exported Sparkle private key                                                 |
+
+## Building a release locally
+
+```bash
+DEVELOPER_ID="Developer ID Application: Name (TEAMID)" NOTARY_PROFILE=lamina make release
+```
+
+`make release` (`scripts/release.sh`) writes `Lamina.app`, the zip, the DMG and `SHA256SUMS` to `build/release`. It
+signs and notarizes when `DEVELOPER_ID` (from `security find-identity -v -p codesigning`) and `NOTARY_PROFILE` are
+set; the profile is made once with `xcrun notarytool store-credentials lamina --apple-id … --team-id …`. Otherwise it
+builds ad-hoc and lists what's missing. Check a build with `spctl -a -vv build/release/Lamina.app` and
+`xcrun stapler validate build/release/Lamina-X.Y.Z.dmg`.

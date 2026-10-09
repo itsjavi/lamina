@@ -1,12 +1,13 @@
-# Pushing a vX.Y.Z tag builds Lamina for Apple silicon and publishes it:
-# a GitHub release named after the tag with the DMG, the zip and SHA256SUMS,
-# and, with R2 credentials, the public copies and Sparkle's appcast.xml on downloads.itsjavi.com/lamina.
-# Every secret is optional; see README, "Releases from CI".
+# Pushing a vX.Y.Z tag builds Lamina for Apple silicon and publishes a GitHub release named after
+# the tag with the DMG, the zip, SHA256SUMS and Sparkle's appcast.xml, which installed copies read
+# through releases/latest/download/appcast.xml. A vX.Y.Z-<pre-release> tag (v2.1.0-beta.1) publishes
+# a GitHub pre-release with no feed, so installed copies never update to it.
+# Every secret is optional; see docs/releasing.md.
 name: Release
 
 on:
   push:
-    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+", "v[0-9]+.[0-9]+.[0-9]+-*"]
 
 permissions:
   contents: write
@@ -17,8 +18,8 @@ concurrency:
 
 jobs:
   release:
-    # Xcode 27 (the macOS 27 SDK), like local builds; CI's tests keep Xcode 26 building.
-    runs-on: xcode-27
+    # The image ci.yml tests on (Xcode 26, the macOS 26 SDK).
+    runs-on: macos-26
     timeout-minutes: 60
     # Protected environment: its secrets only reach tag builds that pass its rules.
     environment: release
@@ -27,7 +28,6 @@ jobs:
       HAS_DEVELOPER_ID: ${{ secrets.DEVELOPER_ID_P12 != '' }}
       HAS_NOTARY: ${{ secrets.APPLE_ID != '' && secrets.APPLE_APP_PASSWORD != '' && secrets.APPLE_TEAM_ID != '' }}
       HAS_SPARKLE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
-      HAS_R2: ${{ secrets.R2_ACCOUNT_ID != '' && secrets.R2_ACCESS_KEY_ID != '' && secrets.R2_SECRET_ACCESS_KEY != '' && secrets.R2_BUCKET != '' }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -35,8 +35,8 @@ jobs:
 
       - name: Version from the tag
         run: |
-          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::$TAG isn't a vX.Y.Z tag"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::$TAG isn't a vX.Y.Z or vX.Y.Z-<pre-release> tag"
             exit 1
           fi
           version="${TAG#v}"
@@ -44,7 +44,9 @@ jobs:
             echo "::error::The tag says $version but ./VERSION says $(cat VERSION): bump VERSION in the tagged commit"
             exit 1
           fi
-          { echo "VERSION=$version"; echo "KEYCHAIN=$RUNNER_TEMP/release.keychain-db"; } >> "$GITHUB_ENV"
+          prerelease=false
+          if [[ "$version" == *-* ]]; then prerelease=true; fi
+          { echo "VERSION=$version"; echo "PRERELEASE=$prerelease"; echo "KEYCHAIN=$RUNNER_TEMP/release.keychain-db"; } >> "$GITHUB_ENV"
 
       - name: Select Xcode
         run: ./scripts/ci-select-xcode.sh
@@ -90,15 +92,15 @@ jobs:
       - name: Build
         run: make release
 
+      # Starts from the newest stable release's feed (GitHub's latest release is never a pre-release)
+      # and adds this build, linked to this release's zip.
       - name: Update the appcast
-        if: env.HAS_SPARKLE_KEY == 'true'
+        if: env.HAS_SPARKLE_KEY == 'true' && env.PRERELEASE == 'false'
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
           key="$RUNNER_TEMP/sparkle.key"
           printf '%s' "$SPARKLE_PRIVATE_KEY" > "$key"
-          # Without R2 this feed is only attached to the GitHub release, so it lists just this build.
-          if [ "$HAS_R2" != 'true' ]; then export NEW_FEED=1; fi
           SPARKLE_KEY_FILE="$key" make appcast
           rm "$key"
 
@@ -114,32 +116,18 @@ jobs:
           else
             echo "⚠ **Not notarized**: ad-hoc signed. On another Mac, the first launch needs System Settings ▸ Privacy & Security ▸ Open Anyway." > "$notes"
           fi
-          if [ "$HAS_SPARKLE_KEY" != 'true' ]; then echo "No appcast: SPARKLE_PRIVATE_KEY isn't set." >> "$notes"; fi
+          if [ "$PRERELEASE" = true ]; then
+            echo "Pre-release: installed copies don't update to it." >> "$notes"
+          elif [ "$HAS_SPARKLE_KEY" != 'true' ]; then
+            echo "No appcast: SPARKLE_PRIVATE_KEY isn't set." >> "$notes"
+          fi
+          printf '\nCheck a download with `shasum -a 256 -c SHA256SUMS --ignore-missing`.\n' >> "$notes"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "${files[@]}" --clobber
           else
-            gh release create "$TAG" "${files[@]}" --title "$TAG" --notes-file "$notes" --generate-notes --verify-tag
-          fi
-
-      - name: Publish to R2
-        if: env.HAS_R2 == 'true'
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: auto
-          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-          R2_BUCKET: ${{ secrets.R2_BUCKET }}
-        run: |
-          command -v aws >/dev/null || brew install awscli
-          put() {
-            aws s3 cp "$1" "s3://$R2_BUCKET/lamina/$(basename "$1")" --only-show-errors \
-              --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" --content-type "$2" "${@:3}"
-          }
-          put "build/release/Lamina-$VERSION.zip" application/zip
-          put "build/release/Lamina-$VERSION.dmg" application/x-apple-diskimage
-          # The feed goes last, so it never lists a file that isn't there yet.
-          if [ -f build/appcast/appcast.xml ]; then
-            put build/appcast/appcast.xml application/xml --cache-control "max-age=300"
+            flags=(--title "$TAG" --notes-file "$notes" --generate-notes --verify-tag)
+            if [ "$PRERELEASE" = true ]; then flags+=(--prerelease); fi
+            gh release create "$TAG" "${files[@]}" "${flags[@]}"
           fi
 
       - name: Remove the keychain

@@ -172,6 +172,8 @@ final class EditorSession {
     /// Liquify's way back: the tool chosen before it, and how many History steps were applied then.
     @ObservationIgnored var liquifyEntry: (tool: NavigationTool, position: Int)?
     var collapsedGroupIDs: Set<UUID> = []
+    /// Styled layers whose effect rows the Layers panel's fx badge has folded away.
+    var collapsedEffectLayerIDs: Set<UUID> = []
     var cropRect: CGRect?
     var cropRatioChoice = "Free"
     var cropError: String?

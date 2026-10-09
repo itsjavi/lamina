@@ -231,7 +231,7 @@ struct CursorTests {
             $0 is NSButton && !$0.isHiddenOrHasHiddenAncestor && $0.accessibilityLabel()?.hasPrefix("Select image") == true
         })
         row.layoutSubtreeIfNeeded()
-        #expect(thumbnail.frame.size == CGSize(width: 36, height: 27), "the thumbnail takes the 400 × 300 canvas's shape")
+        #expect((thumbnail as? NSButton)?.image?.size == CGSize(width: 24, height: 18), "the thumbnail takes the 400 × 300 canvas's shape")
         let center = thumbnail.convert(NSPoint(x: thumbnail.bounds.midX, y: thumbnail.bounds.midY), to: nil)
         table.mouseMoved(with: mouse(at: center, flags: .option, in: window))
         // The thumbnail's centre is not in the row's bottom quarter, which is the only place Option means

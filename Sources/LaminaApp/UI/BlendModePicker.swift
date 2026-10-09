@@ -19,6 +19,10 @@ struct BlendModePicker: NSViewRepresentable {
         button.setAccessibilityLabel("Blend mode")
         // A capsule like the SwiftUI buttons and menus (`roundedControls`), which don't reach this AppKit pop-up.
         button.borderShape = .capsule
+        button.font = .systemFont(ofSize: 12)
+        // Takes the width the Layers panel's top row leaves it, rather than its longest mode's.
+        button.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return button
     }
     func updateNSView(_ button: NSPopUpButton, context: Context) {

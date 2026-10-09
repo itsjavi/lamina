@@ -13,8 +13,8 @@ struct NativeLayerList: NSViewRepresentable {
         table.headerView = nil
         table.backgroundColor = .clear
         table.style = .plain
-        table.rowHeight = 52
-        table.intercellSpacing = NSSize(width: 0, height: 2)
+        table.rowHeight = LayerCell.lineHeight
+        table.intercellSpacing = .zero
         table.allowsMultipleSelection = true
         table.allowsEmptySelection = true
         table.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
@@ -51,6 +51,8 @@ struct NativeLayerList: NSViewRepresentable {
         private var rows: [ImageLayer] = []
         private var rowDetails: [UUID: LayerHierarchy.Entry] = [:]
         private var oldCollapsed: Set<UUID> = []
+        /// The styled layers whose effect rows are folded, as the rows' heights were last worked out.
+        private var collapsedEffects: Set<UUID> = []
         private var editingEnabled = false
         private var synchronizing = false
         init(session: EditorSession) { self.session = session }
@@ -63,6 +65,8 @@ struct NativeLayerList: NSViewRepresentable {
             rowDetails = Dictionary(uniqueKeysWithValues: entries.map { ($0.layer.id, $0) })
             let expansionChanged = oldCollapsed != session.collapsedGroupIDs
             oldCollapsed = session.collapsedGroupIDs
+            let oldCollapsedEffects = collapsedEffects
+            collapsedEffects = session.collapsedEffectLayerIDs
             let enabled = session.canEditLayers
             synchronizing = true
             defer { synchronizing = false }
@@ -73,12 +77,14 @@ struct NativeLayerList: NSViewRepresentable {
             if old.map(\.id) != next.map(\.id) {
                 table.reloadData()
             } else {
+                let resized = IndexSet(next.indices.filter {
+                    Self.height(of: old[$0], collapsedEffects: oldCollapsedEffects) != Self.height(of: next[$0], collapsedEffects: collapsedEffects)
+                })
                 // Selection never reloads cells or recreates thumbnails.
                 let changed = IndexSet(next.indices.filter {
-                    editableChanged || expansionChanged || (old[$0].name != next[$0].name || old[$0].isVisible != next[$0].isVisible || old[$0].size != next[$0].size || old[$0].parentID != next[$0].parentID || old[$0].isGroup != next[$0].isGroup || old[$0].asset?.image !== next[$0].asset?.image || (old[$0].liveText != nil) != (next[$0].liveText != nil) || old[$0].effects != next[$0].effects || old[$0].mask != next[$0].mask || old[$0].maskSourceID != next[$0].maskSourceID) || previousDetails[next[$0].id]?.depth != rowDetails[next[$0].id]?.depth || previousDetails[next[$0].id]?.visible != rowDetails[next[$0].id]?.visible
+                    editableChanged || expansionChanged || resized.contains($0) || (old[$0].name != next[$0].name || old[$0].isVisible != next[$0].isVisible || old[$0].size != next[$0].size || old[$0].parentID != next[$0].parentID || old[$0].isGroup != next[$0].isGroup || old[$0].asset?.image !== next[$0].asset?.image || (old[$0].liveText != nil) != (next[$0].liveText != nil) || old[$0].effects != next[$0].effects || old[$0].mask != next[$0].mask || old[$0].maskSourceID != next[$0].maskSourceID) || previousDetails[next[$0].id]?.depth != rowDetails[next[$0].id]?.depth || previousDetails[next[$0].id]?.visible != rowDetails[next[$0].id]?.visible
                 })
-                let resized = IndexSet(next.indices.filter { (old[$0].effects?.kinds.count ?? 0) != (next[$0].effects?.kinds.count ?? 0) })
-                // Adding or removing an effect only changes how tall a row is. Left to AppKit that is animated, and
+                // Adding, removing or folding effects only changes how tall a row is. Left to AppKit that is animated, and
                 // the row appears to be taken away and put back; here it simply becomes its new height.
                 NSAnimationContext.beginGrouping()
                 NSAnimationContext.current.duration = 0
@@ -173,7 +179,7 @@ struct NativeLayerList: NSViewRepresentable {
             groupItem.isEnabled = validateMenuItem(groupItem)
             menu.addItem(groupItem)
 
-            // A folder right-clicked can be ungrouped: its layers stay where they are, and the folder goes.
+            // A group right-clicked can be ungrouped: its layers stay where they are, and the group goes.
             if rows[row].isGroup {
                 let ungroupItem = NSMenuItem(title: "Ungroup Layers", action: #selector(ungroupLayersAction), keyEquivalent: "")
                 ungroupItem.target = self
@@ -181,8 +187,8 @@ struct NativeLayerList: NSViewRepresentable {
                 menu.addItem(ungroupItem)
             }
 
-            // 6. Move Out of Folder
-            let moveOutItem = NSMenuItem(title: "Move Out of Folder", action: #selector(moveOutOfFolderAction), keyEquivalent: "")
+            // 6. Move Out of Group
+            let moveOutItem = NSMenuItem(title: "Move Out of Group", action: #selector(moveOutOfFolderAction), keyEquivalent: "")
             moveOutItem.target = self
             moveOutItem.isEnabled = validateMenuItem(moveOutItem)
             menu.addItem(moveOutItem)
@@ -424,14 +430,24 @@ struct NativeLayerList: NSViewRepresentable {
         }
 
         func numberOfRows(in tableView: NSTableView) -> Int { rows.count }
+        /// A one-line row, then, unless the fx badge folded them, an "Effects" row and a row per effect.
+        static func height(of layer: ImageLayer, collapsedEffects: Set<UUID>) -> CGFloat {
+            let effects = layer.effects?.kinds.count ?? 0
+            guard effects > 0, !collapsedEffects.contains(layer.id) else { return LayerCell.lineHeight }
+            return LayerCell.lineHeight + CGFloat(effects + 1) * LayerCell.effectRowHeight
+        }
         func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
-            52 + CGFloat(rows[row].effects?.kinds.count ?? 0) * 24
+            Self.height(of: rows[row], collapsedEffects: collapsedEffects)
+        }
+        func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
+            tableView.makeView(withIdentifier: LayerRowView.identifier, owner: self) as? LayerRowView ?? LayerRowView()
         }
         func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
             let identifier = NSUserInterfaceItemIdentifier("layerCell")
             let cell = tableView.makeView(withIdentifier: identifier, owner: self) as? LayerCell ?? LayerCell()
             cell.identifier = identifier
-            cell.configure(rows[row], enabled: editingEnabled, session: session, depth: rowDetails[rows[row].id]?.depth ?? 0, visible: rowDetails[rows[row].id]?.visible ?? true)
+            cell.configure(rows[row], enabled: editingEnabled, session: session, depth: rowDetails[rows[row].id]?.depth ?? 0,
+                           visible: rowDetails[rows[row].id]?.visible ?? true, showsEffects: !collapsedEffects.contains(rows[row].id))
             return cell
         }
         func tableViewSelectionDidChange(_ notification: Notification) {
@@ -462,6 +478,12 @@ struct NativeLayerList: NSViewRepresentable {
             // other layer.
             let point = NSApp.currentEvent?.locationInWindow ?? .zero
             let cell = table.view(atColumn: 0, row: table.clickedRow, makeIfNecessary: false) as? LayerCell
+            // On the "Effects" row it opens the Layer Style dialog.
+            if cell?.isOnEffectsHeader(point) == true {
+                session.selectLayerTarget(id, mask: false)
+                session.openLayerStyle(.blendingOptions)
+                return
+            }
             if cell?.isOnControl(point) == true {
                 if rows[table.clickedRow].liveText != nil { session.editActiveText(); return }
                 if rows[table.clickedRow].adjustment != nil { session.showProperties(); return }
@@ -731,7 +753,7 @@ final class LayerTableView: NSTableView {
 
     /// Option-click clips along the bottom edge of a row: a fixed strip, not a share of the row's height, so a row
     /// listing several effects keeps the rest of itself free for Option-dragging those effects.
-    private static let clippingStrip: CGFloat = 10
+    private static let clippingStrip: CGFloat = 8
     private func isClippingZone(_ point: NSPoint, row: Int) -> Bool {
         guard row >= 0 else { return false }
         if let entries = session?.layerRows, entries.indices.contains(row), entries[row].layer.isGroup == true { return false }
@@ -840,15 +862,50 @@ final class LayerTableView: NSTableView {
     }
 }
 
+/// A layer's row while it is selected: `selection` behind its one-line top only (an effect row marks its own
+/// selection), with the row's text left in its usual colors.
+private final class LayerRowView: NSTableRowView {
+    static let identifier = NSUserInterfaceItemIdentifier("layerRow")
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        identifier = Self.identifier
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    override var isEmphasized: Bool { get { false } set {} }
+    override func drawSelection(in dirtyRect: NSRect) {
+        ColorRole.selection.nsColor.setFill()
+        NSRect(x: 0, y: 0, width: bounds.width, height: min(bounds.height, LayerCell.lineHeight)).fill()
+    }
+}
+
+/// One layer: a one-line row (eye, then, stepped in by its group depth, a group's triangle and folder or the layer's
+/// thumbnail, the link and mask thumbnail, the name and an fx badge) and, under a styled layer, its effect rows.
 private final class LayerCell: NSTableCellView, NSTextFieldDelegate {
+    /// The one-line row, and each row under a styled layer: "Effects", then one per effect.
+    static let lineHeight: CGFloat = 32
+    static let effectRowHeight: CGFloat = 22
+    /// The column of eyes at the left, and how far each group level (and a clipping mask) steps a row in.
+    static let eyeColumn: CGFloat = 26
+    static let indentStep: CGFloat = 14
+    /// Thumbnails fit a 24 pt square. Their buttons are 3 pt larger all round, where the target outline goes.
+    static let thumbnailBox: CGFloat = 24
+    static let thumbnailInset: CGFloat = 3
+    /// Where a row's content starts, right of the eye column, before its indent.
+    static let contentStart = eyeColumn + 6
+    /// Where the name starts in a layer's row (not a group's, whose triangle comes first), before its indent: the
+    /// "Effects" row's label lines up with it.
+    static let nameStart = contentStart + thumbnailBox + 2 * thumbnailInset + 4
+
     /// The layer's own name, without the mark a clipped layer's row shows in front of it.
     private var layerName = ""
     private var renaming = false
     private let eye = EyeSwipeButton()
     private let effectRows = NSStackView()
+    private var effectsHeader: LayerEffectsHeader?
     private var effectButtons: [LayerEffectRow] = []
     private let disclosure = NSButton()
     private var indentation: NSLayoutConstraint!
+    private var disclosureWidth: NSLayoutConstraint!
     private let thumbnail = LayerThumbnailButton()
     private let maskThumbnail = LayerThumbnailButton()
     private let disabledMaskMark = MaskDisabledMark(labelWithString: "╱")
@@ -880,7 +937,12 @@ private final class LayerCell: NSTableCellView, NSTextFieldDelegate {
     private var maskThumbnailWidth: NSLayoutConstraint!
     private var maskThumbnailHeight: NSLayoutConstraint!
     private let nameLabel = NSTextField(labelWithString: "")
-    private let dimensions = NSTextField(labelWithString: "")
+    /// "fx" and a triangle that folds the effect rows away, on styled layers.
+    private let effectsBadge = NSButton()
+    private var nameToBadge: NSLayoutConstraint!
+    private var nameToEdge: NSLayoutConstraint!
+    /// Whether the layer's thumbnail shows the target outline: pictures, and anything with a mask to tell apart.
+    private var outlinesThumbnail = true
     private var layerID: UUID?
     private weak var session: EditorSession?
 
@@ -894,172 +956,219 @@ private final class LayerCell: NSTableCellView, NSTextFieldDelegate {
         NSLayoutConstraint.activate([
             effectRows.leadingAnchor.constraint(equalTo: leadingAnchor),
             effectRows.trailingAnchor.constraint(equalTo: trailingAnchor),
-            effectRows.topAnchor.constraint(equalTo: topAnchor, constant: 52)
+            effectRows.topAnchor.constraint(equalTo: topAnchor, constant: Self.lineHeight)
         ])
         disclosure.isBordered = false
+        disclosure.imagePosition = .imageOnly
+        disclosure.contentTintColor = ColorRole.icon.nsColor
         disclosure.target = self
         disclosure.action = #selector(toggleExpansion)
         eye.isBordered = false
+        eye.imagePosition = .imageOnly
+        eye.contentTintColor = ColorRole.icon.nsColor
         eye.target = self
         eye.action = #selector(toggleVisibility)
-        thumbnail.imageScaling = .scaleProportionallyUpOrDown
         for button in [thumbnail, maskThumbnail] {
             button.isBordered = false
             button.imagePosition = .imageOnly
-            button.wantsLayer = true
-            button.layer?.cornerRadius = 3
+            button.imageScaling = .scaleNone
             button.target = self
         }
         thumbnail.action = #selector(selectImage)
         maskThumbnail.action = #selector(selectMask)
         maskThumbnail.isMaskTarget = true
+        maskThumbnail.framed = true
         thumbnail.loadsSelection = true
-        thumbnail.toolTip = "Select layer; Cmd-click to select its pixels (Cmd-Shift adds, Cmd-Option subtracts)"
-        maskThumbnail.imageScaling = .scaleProportionallyUpOrDown
         linkButton.isBordered = false
         linkButton.title = ""
         linkButton.imagePosition = .imageOnly
-        linkButton.contentTintColor = .secondaryLabelColor
+        linkButton.contentTintColor = ColorRole.secondaryText.nsColor
         linkButton.target = self
         linkButton.action = #selector(toggleMaskLink)
-        disabledMaskMark.font = .systemFont(ofSize: 32, weight: .medium)
+        disabledMaskMark.font = .systemFont(ofSize: 24, weight: .medium)
         disabledMaskMark.textColor = .systemRed
         disabledMaskMark.isHidden = true
         nameLabel.lineBreakMode = .byTruncatingTail
         // One line, whatever the name holds: a text layer named after a paragraph would otherwise grow the row.
         nameLabel.usesSingleLineMode = true
         nameLabel.maximumNumberOfLines = 1
-        nameLabel.font = .systemFont(ofSize: 13)
-        dimensions.font = .systemFont(ofSize: 10)
-        dimensions.textColor = .secondaryLabelColor
-        for view in [eye, disclosure, thumbnail, linkButton, maskThumbnail, disabledMaskMark, nameLabel, dimensions] {
+        nameLabel.font = .systemFont(ofSize: 12)
+        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        nameLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        effectsBadge.isBordered = false
+        effectsBadge.imagePosition = .imageTrailing
+        effectsBadge.contentTintColor = ColorRole.icon.nsColor
+        effectsBadge.attributedTitle = NSAttributedString(string: "fx", attributes: [
+            .font: NSFont(descriptor: NSFont.systemFont(ofSize: 12, weight: .semibold).fontDescriptor
+                .withDesign(.serif)?.withSymbolicTraits(.italic) ?? NSFont.systemFont(ofSize: 12).fontDescriptor, size: 12)
+                ?? NSFont.systemFont(ofSize: 12),
+            .foregroundColor: ColorRole.icon.nsColor,
+        ])
+        // As wide as "fx" and its triangle, never stretched by a short name.
+        effectsBadge.setContentHuggingPriority(.required, for: .horizontal)
+        effectsBadge.setContentCompressionResistancePriority(.required, for: .horizontal)
+        effectsBadge.target = self
+        effectsBadge.action = #selector(toggleEffects)
+        effectsBadge.toolTip = "Show or hide the layer's effects"
+        for view in [eye, disclosure, thumbnail, linkButton, maskThumbnail, disabledMaskMark, nameLabel, effectsBadge] {
             view.translatesAutoresizingMaskIntoConstraints = false
             addSubview(view)
         }
-        // A faint hairline along the bottom of each row marks where one layer ends and the next begins.
+        // A faint hairline along the bottom of each row marks where one layer ends and the next begins, and another
+        // runs down the right of the eye column.
         let edge = RowEdgeLine()
-        edge.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(edge)
+        let column = RowEdgeLine(vertical: true)
+        for line in [edge, column] {
+            line.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(line)
+        }
         NSLayoutConstraint.activate([
             edge.leadingAnchor.constraint(equalTo: leadingAnchor), edge.trailingAnchor.constraint(equalTo: trailingAnchor),
             edge.bottomAnchor.constraint(equalTo: bottomAnchor), edge.heightAnchor.constraint(equalToConstant: 1),
+            column.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Self.eyeColumn),
+            column.widthAnchor.constraint(equalToConstant: 1),
+            column.topAnchor.constraint(equalTo: topAnchor), column.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
-        indentation = disclosure.leadingAnchor.constraint(equalTo: eye.trailingAnchor, constant: 0)
+        let middle = Self.lineHeight / 2
+        let thumbnailSide = Self.thumbnailBox + 2 * Self.thumbnailInset
+        indentation = disclosure.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Self.contentStart)
+        disclosureWidth = disclosure.widthAnchor.constraint(equalToConstant: 0)
         addLayoutGuide(thumbnailSlot)
         addLayoutGuide(maskSlot)
         maskWidth = maskSlot.widthAnchor.constraint(equalToConstant: 0)
-        maskGap = maskSlot.leadingAnchor.constraint(equalTo: thumbnailSlot.trailingAnchor, constant: 5)
-        thumbnailWidth = thumbnail.widthAnchor.constraint(equalToConstant: 36)
-        thumbnailHeight = thumbnail.heightAnchor.constraint(equalToConstant: 36)
-        maskThumbnailWidth = maskThumbnail.widthAnchor.constraint(equalToConstant: 30)
-        maskThumbnailHeight = maskThumbnail.heightAnchor.constraint(equalToConstant: 30)
+        maskGap = maskSlot.leadingAnchor.constraint(equalTo: thumbnailSlot.trailingAnchor, constant: 0)
+        thumbnailWidth = thumbnail.widthAnchor.constraint(equalToConstant: thumbnailSide)
+        thumbnailHeight = thumbnail.heightAnchor.constraint(equalToConstant: thumbnailSide)
+        maskThumbnailWidth = maskThumbnail.widthAnchor.constraint(equalToConstant: thumbnailSide)
+        maskThumbnailHeight = maskThumbnail.heightAnchor.constraint(equalToConstant: thumbnailSide)
+        nameToBadge = nameLabel.trailingAnchor.constraint(equalTo: effectsBadge.leadingAnchor, constant: -4)
+        nameToEdge = nameLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6)
         NSLayoutConstraint.activate([
-            eye.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
-            eye.centerYAnchor.constraint(equalTo: topAnchor, constant: 26),
-            eye.widthAnchor.constraint(equalToConstant: 20), eye.heightAnchor.constraint(equalToConstant: 32),
-            indentation,
-            disclosure.centerYAnchor.constraint(equalTo: topAnchor, constant: 26),
-            disclosure.widthAnchor.constraint(equalToConstant: 16), disclosure.heightAnchor.constraint(equalToConstant: 24),
-            thumbnailSlot.leadingAnchor.constraint(equalTo: disclosure.trailingAnchor, constant: -2),
-            thumbnailSlot.widthAnchor.constraint(equalToConstant: 36),
-            thumbnailSlot.topAnchor.constraint(equalTo: topAnchor), thumbnailSlot.bottomAnchor.constraint(equalTo: topAnchor, constant: 52),
+            eye.leadingAnchor.constraint(equalTo: leadingAnchor), eye.topAnchor.constraint(equalTo: topAnchor),
+            eye.widthAnchor.constraint(equalToConstant: Self.eyeColumn), eye.heightAnchor.constraint(equalToConstant: Self.lineHeight),
+            indentation, disclosureWidth,
+            disclosure.centerYAnchor.constraint(equalTo: topAnchor, constant: middle),
+            disclosure.heightAnchor.constraint(equalToConstant: 20),
+            thumbnailSlot.leadingAnchor.constraint(equalTo: disclosure.trailingAnchor),
+            thumbnailSlot.widthAnchor.constraint(equalToConstant: thumbnailSide),
+            thumbnailSlot.topAnchor.constraint(equalTo: topAnchor),
+            thumbnailSlot.heightAnchor.constraint(equalToConstant: Self.lineHeight),
             thumbnail.centerXAnchor.constraint(equalTo: thumbnailSlot.centerXAnchor),
-            thumbnail.centerYAnchor.constraint(equalTo: topAnchor, constant: 26),
+            thumbnail.centerYAnchor.constraint(equalTo: topAnchor, constant: middle),
             thumbnailWidth, thumbnailHeight,
             maskGap,
-            linkButton.centerXAnchor.constraint(equalTo: maskSlot.leadingAnchor, constant: -6.5),
-            linkButton.centerYAnchor.constraint(equalTo: topAnchor, constant: 26),
+            linkButton.centerXAnchor.constraint(equalTo: maskSlot.leadingAnchor, constant: -5),
+            linkButton.centerYAnchor.constraint(equalTo: topAnchor, constant: middle),
             linkButton.widthAnchor.constraint(equalToConstant: 9), linkButton.heightAnchor.constraint(equalToConstant: 20),
             maskWidth,
-            maskSlot.topAnchor.constraint(equalTo: topAnchor), maskSlot.bottomAnchor.constraint(equalTo: topAnchor, constant: 52),
+            maskSlot.topAnchor.constraint(equalTo: topAnchor), maskSlot.heightAnchor.constraint(equalToConstant: Self.lineHeight),
             maskThumbnail.centerXAnchor.constraint(equalTo: maskSlot.centerXAnchor),
-            maskThumbnail.centerYAnchor.constraint(equalTo: topAnchor, constant: 26),
+            maskThumbnail.centerYAnchor.constraint(equalTo: topAnchor, constant: middle),
             maskThumbnailWidth, maskThumbnailHeight,
             disabledMaskMark.centerXAnchor.constraint(equalTo: maskThumbnail.centerXAnchor),
             disabledMaskMark.centerYAnchor.constraint(equalTo: maskThumbnail.centerYAnchor),
-            nameLabel.leadingAnchor.constraint(equalTo: maskSlot.trailingAnchor, constant: 5),
-            nameLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
-            nameLabel.topAnchor.constraint(equalTo: topAnchor, constant: 9),
-            dimensions.leadingAnchor.constraint(equalTo: nameLabel.leadingAnchor),
-            dimensions.trailingAnchor.constraint(equalTo: nameLabel.trailingAnchor),
-            dimensions.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 3)
+            nameLabel.leadingAnchor.constraint(equalTo: maskSlot.trailingAnchor, constant: 4),
+            nameLabel.centerYAnchor.constraint(equalTo: topAnchor, constant: middle),
+            effectsBadge.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6),
+            effectsBadge.centerYAnchor.constraint(equalTo: topAnchor, constant: middle),
+            effectsBadge.heightAnchor.constraint(equalToConstant: 20),
         ])
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    func configure(_ layer: ImageLayer, enabled: Bool, session: EditorSession, depth: Int, visible: Bool) {
+    func configure(_ layer: ImageLayer, enabled: Bool, session: EditorSession, depth: Int, visible: Bool, showsEffects: Bool) {
         self.session = session
-        for row in effectButtons { effectRows.removeArrangedSubview(row); row.removeFromSuperview() }
-        effectButtons = (layer.effects?.kinds ?? []).map { kind in
-            let row = LayerEffectRow(session: session, layerID: layer.id, kind: kind,
-                                     enabled: layer.effects?.isEnabled(kind) == true,
-                                     // The same step in as the row above them, so a clipped layer's effects sit
-                                     // under its name rather than out to the left of it.
-                                     indent: CGFloat(min(depth, 8)) * 24 + (layer.maskSourceID == nil ? 0 : 24))
-            effectRows.addArrangedSubview(row)
-            row.widthAnchor.constraint(equalTo: effectRows.widthAnchor).isActive = true
-            return row
+        // A group steps its contents in by the same distance a clipping mask does; the two add up.
+        let indent = CGFloat(min(depth, 8)) * Self.indentStep + (layer.maskSourceID == nil ? 0 : Self.indentStep)
+        for row in effectRows.arrangedSubviews { effectRows.removeArrangedSubview(row); row.removeFromSuperview() }
+        effectsHeader = nil
+        effectButtons = []
+        let kinds = LayerEffectKind.layerStyleOrder.filter { layer.effects?.contains($0) == true }
+        if showsEffects, let effects = layer.effects, !kinds.isEmpty {
+            let header = LayerEffectsHeader(session: session, layerID: layer.id, showing: kinds.contains { effects.isEnabled($0) },
+                                            enabled: enabled, indent: indent)
+            effectRows.addArrangedSubview(header)
+            header.widthAnchor.constraint(equalTo: effectRows.widthAnchor).isActive = true
+            effectsHeader = header
+            effectButtons = kinds.map { kind in
+                let row = LayerEffectRow(session: session, layerID: layer.id, kind: kind, enabled: effects.isEnabled(kind), indent: indent)
+                effectRows.addArrangedSubview(row)
+                row.widthAnchor.constraint(equalTo: effectRows.widthAnchor).isActive = true
+                return row
+            }
         }
-        // A folder steps its contents in by the same distance a clipping mask does; the two add up.
-        indentation.constant = CGFloat(min(depth, 8)) * 24 + (layer.maskSourceID == nil ? 0 : 24)
+        indentation.constant = Self.contentStart + indent
         disclosure.isHidden = !layer.isGroup
+        disclosureWidth.constant = layer.isGroup ? 13 : 0
         disclosure.isEnabled = enabled
-        disclosure.image = NSImage(systemSymbolName: session.collapsedGroupIDs.contains(layer.id) ? "chevron.right" : "chevron.down", accessibilityDescription: "Expand or collapse folder")
+        let collapsed = session.collapsedGroupIDs.contains(layer.id)
+        disclosure.image = Self.chevron(collapsed ? "chevron.right" : "chevron.down",
+                                        description: collapsed ? "Expand group" : "Collapse group")
         // Pixel layers and masks show the whole canvas with their pixels where they sit, as Photoshop does;
-        // editable text, adjustments and folders keep a square icon. Pictures redraw only when what they show changes.
+        // adjustment and type layers show their symbol on a plate, groups a folder. Pictures redraw only when what
+        // they show changes.
         let canvas = session.document?.size ?? CGSize(width: 1, height: 1)
         let editableText = layer.liveText != nil
         let framed = layer.adjustment == nil && !layer.isGroup && !editableText
-        let layerSize = framed ? CanvasThumbnail.fittedSize(canvas: canvas, box: 36) : CGSize(width: 36, height: 36)
-        thumbnailWidth.constant = layerSize.width
-        thumbnailHeight.constant = layerSize.height
+        let box = Self.thumbnailBox, inset = Self.thumbnailInset
+        let layerSize = framed ? CanvasThumbnail.fittedSize(canvas: canvas, box: box) : CGSize(width: box, height: box)
+        thumbnailWidth.constant = layerSize.width + 2 * inset
+        thumbnailHeight.constant = layerSize.height + 2 * inset
         let key = ThumbnailKey(image: layer.asset.map { ObjectIdentifier($0.thumbnail) }, transform: layer.transform, canvas: canvas, editableText: editableText)
         if layerID != layer.id || thumbnailKey != key {
-            thumbnail.image = layer.adjustment.map { Self.adjustmentIcon($0.kind.symbol, description: $0.kind.rawValue, quarterTurnClockwise: $0.kind == .curves) }
+            thumbnail.image = layer.adjustment.map { Self.symbolIcon($0.kind.panelSymbol, description: $0.kind.rawValue) }
                 ?? (layer.isGroup ? Self.folderIcon
-                    : editableText ? Self.adjustmentIcon("textformat", description: "Editable text")
-                    : CanvasThumbnail.layer(layer.asset?.thumbnail, transform: layer.transform, canvas: canvas, box: 36))
+                    : editableText ? Self.typeIcon
+                    : CanvasThumbnail.layer(layer.asset?.thumbnail, transform: layer.transform, canvas: canvas, box: box))
             thumbnailKey = key
         }
-        let maskSize = CanvasThumbnail.fittedSize(canvas: canvas, box: 30)
-        maskThumbnailWidth.constant = maskSize.width
-        maskThumbnailHeight.constant = maskSize.height
+        thumbnail.plate = layer.adjustment != nil || editableText
+        thumbnail.framed = framed
+        thumbnail.contentTintColor = editableText ? ColorRole.text.nsColor : ColorRole.icon.nsColor
+        let maskSize = CanvasThumbnail.fittedSize(canvas: canvas, box: box)
+        maskThumbnailWidth.constant = maskSize.width + 2 * inset
+        maskThumbnailHeight.constant = maskSize.height + 2 * inset
         let maskKey = ThumbnailKey(image: layer.mask.map { ObjectIdentifier($0.asset.thumbnail) }, transform: layer.maskTransform, canvas: canvas)
         if layerID != layer.id || maskThumbnailKey != maskKey {
-            maskThumbnail.image = layer.mask.map { CanvasThumbnail.mask($0.asset.thumbnail, transform: layer.maskTransform, canvas: canvas, box: 30) }
+            maskThumbnail.image = layer.mask.map { CanvasThumbnail.mask($0.asset.thumbnail, transform: layer.maskTransform, canvas: canvas, box: box) }
             maskThumbnailKey = maskKey
         }
         layerID = layer.id
         maskThumbnail.isHidden = layer.mask == nil
         maskThumbnail.layerID = layer.id
-        maskWidth.constant = layer.mask == nil ? 0 : 30
+        maskWidth.constant = layer.mask == nil ? 0 : box + 2 * inset
         disabledMaskMark.isHidden = layer.mask?.isEnabled != false
         thumbnail.isEnabled = !session.showsBusy && !session.isImporting
         maskThumbnail.isEnabled = thumbnail.isEnabled
+        outlinesThumbnail = framed || layer.mask != nil
         let linkable = layer.mask != nil && layer.adjustment == nil && !layer.isGroup
-        maskGap.constant = linkable ? 13 : 5
+        maskGap.constant = layer.mask == nil ? 0 : linkable ? 10 : 2
         linkButton.isHidden = !linkable
         linkButton.image = layer.mask?.isLinked == false ? nil : Self.linkImage
         linkButton.isEnabled = thumbnail.isEnabled
         linkButton.toolTip = layer.mask?.isLinked == false ? "Link layer and mask so they move together"
             : "Unlink layer and mask to move or transform them separately"
         linkButton.setAccessibilityLabel(layer.mask?.isLinked == false ? "Link mask: \(layer.name)" : "Unlink mask: \(layer.name)")
-        thumbnail.toolTip = editableText ? "Editable text layer" : "Select image pixels"
-        maskThumbnail.toolTip = "Select layer mask; Option-click to view it alone; Shift-click to enable/disable; Cmd-click to select its black areas (Cmd-Shift adds, Cmd-Option subtracts)"
-        thumbnail.setAccessibilityLabel("Select \(editableText ? "text" : "image"): \(layer.name)")
+        thumbnail.toolTip = layer.isGroup ? "Group"
+            : editableText ? "Type layer: double-click to edit its text"
+            : layer.adjustment.map { "\($0.kind.rawValue): double-click to edit it in Properties" }
+            ?? "\(layer.sizeLabel). Click to target the layer; Cmd-click to select its pixels (Cmd-Shift adds, Cmd-Option subtracts)"
+        maskThumbnail.toolTip = "Layer mask: click to target it; Option-click to view it alone; Shift-click to enable/disable; Cmd-click to select its black areas (Cmd-Shift adds, Cmd-Option subtracts)"
+        let kind = editableText ? "text" : layer.isGroup ? "group" : layer.adjustment != nil ? "adjustment" : "image"
+        thumbnail.setAccessibilityLabel("Select \(kind): \(layer.name)")
         maskThumbnail.setAccessibilityLabel("Select mask: \(layer.name)")
+        let styled = !kinds.isEmpty
+        effectsBadge.isHidden = !styled
+        effectsBadge.image = Self.chevron(showsEffects ? "chevron.down" : "chevron.right", description: nil)
+        effectsBadge.setAccessibilityLabel(showsEffects ? "Hide effects: \(layer.name)" : "Show effects: \(layer.name)")
+        NSLayoutConstraint.deactivate([nameToBadge, nameToEdge])
+        NSLayoutConstraint.activate([styled ? nameToBadge : nameToEdge])
         updateTarget()
         layerName = layer.name
         // A reused cell must not carry another row's half-finished rename.
         if renaming, layerID != layer.id { restoreLabel() }
         if !renaming { nameLabel.stringValue = (layer.maskSourceID == nil ? "" : "↳ ") + layer.name }
-        dimensions.stringValue = layer.liveText != nil ? "Text · Double-click to edit" : layer.adjustment != nil ? "Adjustment · Double-click to edit" : layer.isGroup ? "Folder" : layer.sizeLabel
-        if let source = layer.maskSourceID {
-            let sourceName = session.document?.layers.first(where: { $0.id == source })?.name ?? "Missing source"
-            dimensions.stringValue = "Clipped to \(sourceName)"
-            dimensions.toolTip = "Clipping mask based on \(sourceName). Option-click the bottom of its row to release."
-        } else { dimensions.toolTip = nil }
-        eye.image = NSImage(systemSymbolName: layer.isVisible ? "eye" : "eye.slash", accessibilityDescription: nil)
+        eye.image = Self.eyeImage(visible: layer.isVisible)
         eye.setAccessibilityLabel("\(layer.isVisible ? "Hide" : "Show") \(layer.name)")
         eye.isEnabled = enabled
         eye.layerID = layer.id
@@ -1072,26 +1181,26 @@ private final class LayerCell: NSTableCellView, NSTextFieldDelegate {
         row.select(editing: editing)
         return true
     }
-    // Layer colors don't follow the appearance by themselves.
+    /// Whether a window point lands on the "Effects" row.
+    func isOnEffectsHeader(_ windowPoint: NSPoint) -> Bool {
+        guard let effectsHeader else { return false }
+        return effectsHeader.bounds.contains(effectsHeader.convert(windowPoint, from: nil))
+    }
     override func viewDidChangeEffectiveAppearance() { updateTarget() }
     func updateTarget() {
         effectButtons.forEach { $0.updateSelection() }
-        if let layer = session?.document?.layers.first(where: { $0.id == layerID }),
-           let sourceID = layer.maskSourceID,
-           let source = session?.document?.layers.first(where: { $0.id == sourceID }) {
-            dimensions.stringValue = "Clipped to \(source.name)"
-            dimensions.toolTip = "Clipping mask based on \(source.name). Option-click the bottom of its row to release."
-        }
+        let layer = session?.document?.layers.first(where: { $0.id == layerID })
+        if let sourceID = layer?.maskSourceID {
+            let source = session?.document?.layers.first(where: { $0.id == sourceID })?.name ?? "Missing source"
+            nameLabel.toolTip = "Clipped to \(source). Option-click the bottom of its row to release."
+        } else { nameLabel.toolTip = nil }
         let active = session?.activeLayerID == layerID && session?.selectedLayerIDs.count == 1
         let mask = session?.isMaskSelected == true
-        thumbnail.layer?.borderColor = NSColor.controlAccentColor.cgColor
-        maskThumbnail.layer?.borderColor = NSColor.controlAccentColor.cgColor
-        thumbnail.layer?.borderWidth = active && !mask ? 2 : 0
-        maskThumbnail.layer?.borderWidth = active && mask ? 2 : 0
-        // Shown alone on the canvas, the mask is outlined in the text color rather than the accent.
-        if active, session?.maskAloneLayer?.id == layerID {
-            maskThumbnail.layer?.borderColor = ColorRole.text.resolved(for: effectiveAppearance).cgColor
-        }
+        // The targeted thumbnail is outlined in the text color, as in the mockup; a mask shown alone on the canvas
+        // in the accent, so the two read apart.
+        thumbnail.outline = active && !mask && outlinesThumbnail ? ColorRole.text.nsColor : nil
+        maskThumbnail.outline = active && mask
+            ? (session?.maskAloneLayer?.id == layerID ? NSColor.controlAccentColor : ColorRole.text.nsColor) : nil
     }
     /// Types the layer's name in the row: Return keeps it, Escape leaves it as it was, as does clicking away.
     func beginRenaming() {
@@ -1143,7 +1252,9 @@ private final class LayerCell: NSTableCellView, NSTextFieldDelegate {
     @objc private func toggleMaskLink() { if let layerID { session?.toggleMaskLink(layerID) } }
     /// Whether a window point lands on one of the row's buttons rather than its name.
     func isOnControl(_ windowPoint: NSPoint) -> Bool {
-        [eye, disclosure, thumbnail, linkButton, maskThumbnail].contains { !$0.isHidden && $0.bounds.contains($0.convert(windowPoint, from: nil)) }
+        [eye, disclosure, thumbnail, linkButton, maskThumbnail, effectsBadge].contains {
+            !$0.isHidden && $0.bounds.contains($0.convert(windowPoint, from: nil))
+        }
     }
     @objc func loadMaskSelection() {
         guard let layerID else { return }
@@ -1172,43 +1283,98 @@ private final class LayerCell: NSTableCellView, NSTextFieldDelegate {
         if NSApp.currentEvent?.modifierFlags.contains(.shift) == true { session?.toggleLayerMask() }
     }
     @objc private func toggleExpansion() { if let layerID { session?.toggleGroupExpansion(layerID) } }
+    @objc private func toggleEffects() { if let layerID { session?.toggleEffectsExpansion(layerID) } }
     private var thumbnailKey: ThumbnailKey?
     @objc private func toggleVisibility() { if let layerID { session?.toggleLayerVisibility(layerID) } }
-    /// Adjustment layers' icons, a little smaller than a bare symbol shows in the thumbnail (roughly
-    /// 15.5 pt instead of 18). Drawn into a 36 pt template image (the thumbnail's size), which the button
-    /// shows 1:1 and still tints; 1.21× the symbol's natural size lands the glyph there.
-    private static var adjustmentIcons: [String: NSImage] = [:]
-    /// The folder symbol at 80% of the size it would fill the thumbnail slot with.
-    private static let folderIcon: NSImage? = {
-        guard let symbol = NSImage(systemSymbolName: "folder", accessibilityDescription: "Folder") else { return nil }
-        let fit = 36 * 0.8 / max(symbol.size.width, symbol.size.height)
-        let size = NSSize(width: symbol.size.width * fit, height: symbol.size.height * fit)
-        let icon = NSImage(size: NSSize(width: 36, height: 36), flipped: false) { bounds in
+
+    static func eyeImage(visible: Bool, pointSize: CGFloat = 12) -> NSImage? {
+        NSImage(systemSymbolName: visible ? "eye" : "eye.slash", accessibilityDescription: nil)?
+            .withSymbolConfiguration(.init(pointSize: pointSize, weight: .regular))
+    }
+    private static func chevron(_ name: String, description: String?) -> NSImage? {
+        NSImage(systemSymbolName: name, accessibilityDescription: description)?
+            .withSymbolConfiguration(.init(pointSize: 8, weight: .semibold))
+    }
+    /// Symbols drawn centered in a template image the thumbnail's size, which the button shows 1:1 and tints:
+    /// adjustment layers' symbols (the Adjustments panel's) at the panels' 15 pt, and a group's folder.
+    private static var symbolIcons: [String: NSImage] = [:]
+    private static func symbolIcon(_ name: String, description: String, pointSize: CGFloat = 15) -> NSImage? {
+        if let icon = symbolIcons[name] { return icon }
+        guard let symbol = NSImage(systemSymbolName: name, accessibilityDescription: description)?
+            .withSymbolConfiguration(.init(pointSize: pointSize, weight: .regular)) else { return nil }
+        let icon = NSImage(size: NSSize(width: thumbnailBox, height: thumbnailBox), flipped: false) { bounds in
+            let size = symbol.size
             symbol.draw(in: NSRect(x: bounds.midX - size.width / 2, y: bounds.midY - size.height / 2, width: size.width, height: size.height))
             return true
         }
         icon.isTemplate = true
-        icon.accessibilityDescription = "Folder"
+        icon.accessibilityDescription = description
+        symbolIcons[name] = icon
         return icon
-    }()
-    private static func adjustmentIcon(_ symbolName: String, description: String, quarterTurnClockwise: Bool = false) -> NSImage? {
-        if let icon = adjustmentIcons[symbolName] { return icon }
-        guard let symbol = NSImage(systemSymbolName: symbolName, accessibilityDescription: description) else { return nil }
-        let size = NSSize(width: symbol.size.width * 1.21, height: symbol.size.height * 1.21)
-        let icon = NSImage(size: NSSize(width: 36, height: 36), flipped: false) { bounds in
-            let transform = NSAffineTransform()
-            transform.translateX(by: bounds.midX, yBy: bounds.midY)
-            // y points up in this image, so a negative angle turns clockwise.
-            if quarterTurnClockwise { transform.rotate(byDegrees: -90) }
-            transform.concat()
-            symbol.draw(in: NSRect(x: -size.width / 2, y: -size.height / 2, width: size.width, height: size.height))
+    }
+    private static let folderIcon = symbolIcon("folder", description: "Group", pointSize: 16)
+    /// A type layer's thumbnail: a serif "T", as the Type tool's icon draws it.
+    private static let typeIcon: NSImage = {
+        let base = NSFont.systemFont(ofSize: 15, weight: .semibold)
+        let font = base.fontDescriptor.withDesign(.serif).flatMap { NSFont(descriptor: $0, size: 15) } ?? base
+        let letter = NSAttributedString(string: "T", attributes: [.font: font, .foregroundColor: NSColor.black])
+        let icon = NSImage(size: NSSize(width: thumbnailBox, height: thumbnailBox), flipped: false) { bounds in
+            let size = letter.size()
+            letter.draw(at: NSPoint(x: bounds.midX - size.width / 2, y: bounds.midY - size.height / 2))
             return true
         }
         icon.isTemplate = true
-        icon.accessibilityDescription = description
-        adjustmentIcons[symbolName] = icon
+        icon.accessibilityDescription = "Type layer"
         return icon
+    }()
+}
+
+/// Draws the separator along the top of a row under a styled layer.
+@MainActor private func drawTopHairline(in view: NSView) {
+    let scale = view.window?.backingScaleFactor ?? 2
+    ColorRole.separator.nsColor.setFill()
+    NSRect(x: 0, y: view.bounds.maxY - 1 / scale, width: view.bounds.width, height: 1 / scale).fill()
+}
+
+/// The "Effects" row under a styled layer: its eye hides or shows every effect; a double-click on it opens the
+/// Layer Style dialog. Other clicks on it belong to the layer's row.
+private final class LayerEffectsHeader: NSView {
+    private let eye = NSButton()
+    private weak var session: EditorSession?
+    private let layerID: UUID
+    init(session: EditorSession, layerID: UUID, showing: Bool, enabled: Bool, indent: CGFloat) {
+        self.session = session; self.layerID = layerID
+        super.init(frame: .zero)
+        translatesAutoresizingMaskIntoConstraints = false
+        heightAnchor.constraint(equalToConstant: LayerCell.effectRowHeight).isActive = true
+        eye.isBordered = false
+        eye.image = LayerCell.eyeImage(visible: showing, pointSize: 11)
+        eye.imagePosition = .imageOnly
+        eye.contentTintColor = ColorRole.icon.nsColor
+        eye.target = self; eye.action = #selector(toggle)
+        eye.isEnabled = enabled
+        eye.setAccessibilityLabel(showing ? "Hide Effects" : "Show Effects")
+        let label = NSTextField(labelWithString: "Effects")
+        label.font = .systemFont(ofSize: 11)
+        label.textColor = ColorRole.secondaryText.nsColor
+        for view in [eye, label] { view.translatesAutoresizingMaskIntoConstraints = false; addSubview(view) }
+        NSLayoutConstraint.activate([
+            eye.leadingAnchor.constraint(equalTo: leadingAnchor), eye.centerYAnchor.constraint(equalTo: centerYAnchor),
+            eye.widthAnchor.constraint(equalToConstant: LayerCell.eyeColumn), eye.heightAnchor.constraint(equalToConstant: LayerCell.effectRowHeight),
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: LayerCell.nameStart + indent),
+            label.centerYAnchor.constraint(equalTo: centerYAnchor),
+            label.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -6),
+        ])
     }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    override func draw(_ dirtyRect: NSRect) { drawTopHairline(in: self) }
+    override var isFlipped: Bool { false }
+    /// Only the eye answers clicks; the rest of the row goes to the list, which selects the layer.
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        let local = convert(point, from: superview)
+        return eye.frame.contains(local) ? eye : nil
+    }
+    @objc private func toggle() { session?.toggleAllEffects(on: layerID) }
 }
 
 /// An effect belongs visually to its layer but has its own selection and visibility control.
@@ -1225,23 +1391,23 @@ private final class LayerEffectRow: NSView, NSDraggingSource {
         super.init(frame: .zero)
         wantsLayer = true
         translatesAutoresizingMaskIntoConstraints = false
-        heightAnchor.constraint(equalToConstant: 24).isActive = true
+        heightAnchor.constraint(equalToConstant: LayerCell.effectRowHeight).isActive = true
         eye.isBordered = false
-        eye.image = NSImage(systemSymbolName: enabled ? "eye" : "eye.slash", accessibilityDescription: nil)
+        eye.image = LayerCell.eyeImage(visible: enabled, pointSize: 11)
         eye.imagePosition = .imageOnly
-        eye.contentTintColor = .secondaryLabelColor
+        eye.contentTintColor = ColorRole.icon.nsColor
         eye.target = self; eye.action = #selector(toggle)
         eye.isEnabled = session.canEditLayers
         eye.setAccessibilityLabel((enabled ? "Hide " : "Show ") + kind.rawValue)
         label.font = .systemFont(ofSize: 11)
-        label.textColor = enabled ? .labelColor : .secondaryLabelColor
+        label.textColor = enabled ? ColorRole.secondaryText.nsColor : ColorRole.tertiaryText.nsColor
         label.lineBreakMode = .byTruncatingTail
         for view in [eye, label] { view.translatesAutoresizingMaskIntoConstraints = false; addSubview(view) }
         NSLayoutConstraint.activate([
-            eye.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 38 + indent),
+            eye.leadingAnchor.constraint(equalTo: leadingAnchor),
             eye.centerYAnchor.constraint(equalTo: centerYAnchor),
-            eye.widthAnchor.constraint(equalToConstant: 20), eye.heightAnchor.constraint(equalToConstant: 22),
-            label.leadingAnchor.constraint(equalTo: eye.trailingAnchor, constant: 8),
+            eye.widthAnchor.constraint(equalToConstant: LayerCell.eyeColumn), eye.heightAnchor.constraint(equalToConstant: LayerCell.effectRowHeight),
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: LayerCell.nameStart + LayerCell.indentStep + indent),
             label.centerYAnchor.constraint(equalTo: centerYAnchor),
             label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8)
         ])
@@ -1252,6 +1418,7 @@ private final class LayerEffectRow: NSView, NSDraggingSource {
         updateSelection()
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    override func draw(_ dirtyRect: NSRect) { drawTopHairline(in: self) }
     override func hitTest(_ point: NSPoint) -> NSView? {
         let local = convert(point, from: superview)
         guard bounds.contains(local) else { return nil }
@@ -1313,6 +1480,31 @@ private final class LayerThumbnailButton: NSButton, NSDraggingSource {
     /// Image thumbnails also load a selection on Cmd-click (masks always do).
     var loadsSelection = false { didSet { updateTrackingAreas() } }
     var cmdClickLoads: Bool { isMaskTarget || loadsSelection }
+    /// Drawn on a `control` plate (adjustment and type layers' symbols) or edged as a well (pictures and masks).
+    var plate = false { didSet { if plate != oldValue { needsDisplay = true } } }
+    var framed = false { didSet { if framed != oldValue { needsDisplay = true } } }
+    /// The target outline, 2 pt wide and 1 pt off the picture.
+    var outline: NSColor? { didSet { if outline != oldValue { needsDisplay = true } } }
+    override func draw(_ dirtyRect: NSRect) {
+        let picture = bounds.insetBy(dx: LayerCell.thumbnailInset, dy: LayerCell.thumbnailInset)
+        if plate {
+            ColorRole.control.nsColor.setFill()
+            NSBezierPath(roundedRect: picture, xRadius: 3, yRadius: 3).fill()
+        }
+        super.draw(dirtyRect)
+        if framed {
+            ColorRole.edge.nsColor.setStroke()
+            let edge = NSBezierPath(rect: picture.insetBy(dx: 0.5, dy: 0.5))
+            edge.lineWidth = 1
+            edge.stroke()
+        }
+        if let outline {
+            outline.setStroke()
+            let ring = NSBezierPath(rect: picture.insetBy(dx: -2, dy: -2))
+            ring.lineWidth = 2
+            ring.stroke()
+        }
+    }
     private var hoverArea: NSTrackingArea?
     private var hovering = false
     private var modifierMonitor: Any?
@@ -1421,12 +1613,18 @@ extension LayerThumbnailButton {
         context == .withinApplication ? .copy : []
     }
 }
-/// One device pixel of separator, ignored by clicks.
+/// One device pixel of separator, along the bottom of the view or, vertical, down its left; ignored by clicks.
 private final class RowEdgeLine: NSView {
+    private var vertical = false
+    convenience init(vertical: Bool) {
+        self.init(frame: .zero)
+        self.vertical = vertical
+    }
     override func draw(_ dirtyRect: NSRect) {
         let scale = window?.backingScaleFactor ?? 2
         ColorRole.separator.nsColor.setFill()
-        NSRect(x: 0, y: 0, width: bounds.width, height: 1 / scale).fill()
+        (vertical ? NSRect(x: 0, y: 0, width: 1 / scale, height: bounds.height)
+                  : NSRect(x: 0, y: 0, width: bounds.width, height: 1 / scale)).fill()
     }
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }

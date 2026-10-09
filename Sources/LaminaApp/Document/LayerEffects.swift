@@ -69,6 +69,23 @@ extension EditorSession {
         setEffects(effects, on: id, name: (enabled ? "Hide " : "Show ") + kind.rawValue)
     }
 
+    /// The Effects row's eye: hides every effect when any shows, otherwise shows them all, in one undo step.
+    func toggleAllEffects(on id: UUID) {
+        guard var effects = document?.layers.first(where: { $0.id == id })?.effects, !effects.isEmpty else { return }
+        let showing = effects.kinds.contains { effects.isEnabled($0) }
+        for kind in effects.kinds { effects.setEnabled(!showing, for: kind) }
+        setEffects(effects, on: id, name: showing ? "Hide Effects" : "Show Effects")
+    }
+
+    /// The fx badge's triangle: folds a styled layer's effect rows away in the Layers panel, or shows them again.
+    func toggleEffectsExpansion(_ id: UUID) {
+        if collapsedEffectLayerIDs.contains(id) { collapsedEffectLayerIDs.remove(id) }
+        else {
+            if effectSelection?.layerID == id { effectSelection = nil }
+            collapsedEffectLayerIDs.insert(id)
+        }
+    }
+
     func removeSelectedEffect() {
         guard let selectedEffect, canEditLayers,
               var effects = document?.layers.first(where: { $0.id == selectedEffect.layerID })?.effects else { return }

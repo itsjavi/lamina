@@ -247,8 +247,8 @@ struct LayerTests {
         let coordinator = NativeLayerList.Coordinator(session: session)
         let table = LayerTableView()
         table.session = session
-        table.rowHeight = 52
-        table.intercellSpacing = NSSize(width: 0, height: 2)
+        table.rowHeight = 32
+        table.intercellSpacing = .zero
         table.allowsMultipleSelection = true
         table.allowsEmptySelection = true
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("layer"))

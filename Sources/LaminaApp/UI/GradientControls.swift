@@ -1,47 +1,94 @@
 import SwiftUI
 
+/// The Gradient tool's bar: the gradient preset picker, Linear and Radial, Opacity and Reverse, then Cancel and Commit
+/// while a gradient waits to be applied.
 struct GradientControls: View {
     @Bindable var session: EditorSession
+    @State private var choosesPreset = false
 
     var body: some View {
-        HStack(spacing: 12) {
-            Picker("Shape", selection: $session.gradientSettings.shape) {
-                ForEach(GradientShape.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+        OptionsBarRow(commit: commitButtons) {
+            presetPicker
+            HStack(spacing: 2) {
+                ForEach(GradientShape.allCases, id: \.self) { shape in
+                    OptionsBarIconButton(title: shape.rawValue + " Gradient", isPressed: session.gradientSettings.shape == shape,
+                                         action: { session.gradientSettings.shape = shape }) {
+                        GradientShapeIcon(shape: shape)
+                    }
+                }
             }
-            .pickerStyle(.segmented).labelsHidden().fixedSize()
             .help("Linear runs along the line; Radial spreads out from the start point")
-            swatch
-            Picker("Colors", selection: $session.gradientSettings.style) {
-                ForEach(GradientStyle.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-            }
-            .labelsHidden().fixedSize()
-            Toggle("Reverse", isOn: $session.gradientSettings.reversed)
-            Text("Opacity").scrubbable(sensitivity: 0.01, value: $session.gradientSettings.opacity, range: 0.01...1)
-            Slider(value: $session.gradientSettings.opacity, in: 0.01...1).frame(width: 100)
-            TextField("Opacity", value: Binding<Double>(get: { Double(session.gradientSettings.opacity * 100) },
-                set: { session.gradientSettings.opacity = $0.isFinite ? CGFloat(min(100, max(1, $0)) / 100) : 1 }),
-                format: .number.precision(.fractionLength(0)))
-                .frame(width: 42).textFieldStyle(.roundedBorder)
-                .arrowSteps(value: { Double(session.gradientSettings.opacity * 100) },
-                            change: { session.gradientSettings.opacity = CGFloat(min(100, max(1, $0)) / 100) })
+            OptionsBarDivider()
+            PercentField(label: "Opacity", value: $session.gradientSettings.opacity)
                 .help("Press 1–9 for 10–90%, 0 for 100%")
-                .unitSuffix("%")
-            Spacer(minLength: 0)
+            Toggle("Reverse", isOn: $session.gradientSettings.reversed).toggleStyle(.checkbox)
             if session.isMaskSelected { Text("Mask").foregroundStyle(.secondary) }
-            if session.gradientEdit != nil {
-                Button("Cancel") { session.cancelGradient() }
-                Button("Apply") { Task { await session.commitGradient() } }
-            }
         }
-        .padding(.horizontal, 18).toolHeaderBar().releasesFocusOnCommit(session)
+        .releasesFocusOnCommit(session)
         .disabled(session.showsBusy || session.document == nil)
     }
 
-    /// Current colors, over a checkerboard so transparency reads as transparency.
-    private var swatch: some View {
-        let colors = session.gradientColors(mask: false).map { Color(cgColor: $0) }
+    private var commitButtons: OptionsBarCommitButtons? {
+        guard session.gradientEdit != nil else { return nil }
+        return OptionsBarCommitButtons(cancelTitle: "Cancel Gradient (Escape)", commitTitle: "Commit Gradient (Return)",
+                                       cancel: { session.cancelGradient() }, commit: { Task { await session.commitGradient() } })
+    }
+
+    /// The gradient as it will draw, and a pop-over of the presets: Foreground to Background, Foreground to Transparent.
+    private var presetPicker: some View {
+        Button { choosesPreset.toggle() } label: {
+            HStack(spacing: 3) {
+                GradientSwatch(colors: session.gradientColors(mask: false).map { Color(cgColor: $0) })
+                    .frame(width: 56, height: 18)
+                Image(systemName: "chevron.down").font(.system(size: 8, weight: .semibold))
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .help("Gradient: " + session.gradientSettings.style.rawValue)
+        .accessibilityLabel("Gradient, " + session.gradientSettings.style.rawValue)
+        .accessibilityIdentifier("gradientPreset")
+        .popover(isPresented: $choosesPreset, arrowEdge: .bottom) {
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(GradientStyle.allCases, id: \.self) { style in
+                    Button {
+                        session.gradientSettings.style = style
+                        choosesPreset = false
+                    } label: {
+                        HStack(spacing: 8) {
+                            GradientSwatch(colors: colors(style)).frame(width: 56, height: 18)
+                            Text(style.rawValue)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(4)
+                        .background(session.gradientSettings.style == style ? ColorRole.selection.color : .clear,
+                                    in: RoundedRectangle(cornerRadius: 5))
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(session.gradientSettings.style == style ? .isSelected : [])
+                }
+            }
+            .padding(8).frame(width: 260)
+        }
+    }
+
+    /// A preset's colors from the swatches, as it would draw unreversed.
+    private func colors(_ style: GradientStyle) -> [Color] {
+        let foreground = Color(nsColor: session.paletteColor(background: false).nsColor)
+        return style == .foregroundToBackground
+            ? [foreground, Color(nsColor: session.paletteColor(background: true).nsColor)]
+            : [foreground, foreground.opacity(0)]
+    }
+}
+
+/// Gradient colors over a checkerboard, so transparency reads as transparency.
+struct GradientSwatch: View {
+    let colors: [Color]
+
+    var body: some View {
         let shape = RoundedRectangle(cornerRadius: 3, style: .continuous)
-        return Canvas { context, size in
+        Canvas { context, size in
             let tile: CGFloat = 4
             for row in 0..<Int(ceil(size.height / tile)) {
                 for column in 0..<Int(ceil(size.width / tile)) where (row + column).isMultiple(of: 2) {
@@ -54,7 +101,25 @@ struct GradientControls: View {
         .overlay { LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing) }
         .clipShape(shape)
         .overlay { shape.strokeBorder(ColorRole.edge.color, lineWidth: 1) }
-        .frame(width: 56, height: 18)
+        .accessibilityHidden(true)
+    }
+}
+
+/// Linear and Radial as icons: a square fading across, or out from its middle, in the icon's one color.
+struct GradientShapeIcon: View {
+    let shape: GradientShape
+
+    var body: some View {
+        let frame = RoundedRectangle(cornerRadius: 2.5, style: .continuous)
+        let ink = ColorRole.icon.color
+        Group {
+            switch shape {
+            case .linear: frame.fill(LinearGradient(colors: [ink, ink.opacity(0)], startPoint: .leading, endPoint: .trailing))
+            case .radial: frame.fill(RadialGradient(colors: [ink, ink.opacity(0)], center: .center, startRadius: 0, endRadius: 8))
+            }
+        }
+        .overlay { frame.strokeBorder(ink, lineWidth: 1.2) }
+        .frame(width: 14, height: 14)
         .accessibilityHidden(true)
     }
 }

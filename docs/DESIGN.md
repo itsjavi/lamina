@@ -289,8 +289,8 @@ divider and 24 × 22 icon button).
 | Brush | brush picker (Size, Hardness; bristle presets in progress, TASK-46) │ Opacity: · pressure for opacity · Flow: │ Smoothing: │ pressure for size |
 | Clone Stamp | brush picker │ Opacity: │ Aligned · Sample: Current Layer, All Layers |
 | Eraser | brush picker │ Opacity: · pressure for opacity · Flow: · Smoothing: │ pressure for size |
-| Gradient | gradient preset picker · Linear, Radial │ Opacity · Reverse |
-| Paint Bucket | Fill: Foreground │ Opacity · Tolerance · Anti-alias · Contiguous · All Layers |
+| Gradient | gradient preset picker (Foreground to Background, Foreground to Transparent) · Linear, Radial │ Opacity: · Reverse │ … Cancel ⊘ · Commit ✓ (while a gradient is pending) |
+| Paint Bucket | Fill: Foreground │ Opacity: · Tolerance: · Anti-alias · Contiguous · All Layers |
 | Blur / Smudge | brush picker │ Strength: · Radius: px (Blur only, Lamina) |
 | Liquify (Filter ▸ Liquify…) | brush picker │ Strength: │ … Cancel ⊘ · Commit ✓ |
 | Dodge / Burn | brush picker │ Range: Shadows, Midtones, Highlights · Exposure: │ pressure for size |
@@ -310,6 +310,12 @@ them with its sides (Original Ratio with the canvas's pixels). Typing both and p
 remembers it at the end of the pop-up (eight at most, newest first), which replaces the old Custom… item. ⇄ turns the
 ratio on its side (16:9 to 9:16) and Clear goes back to Ratio. Cancel ⊘ and Commit ✓ show while a crop is pending;
 Escape and Return on the canvas do the same.
+
+The Gradient bar (`GradientControls`, **shipping**, TASK-57) starts with the gradient as it will draw (over the
+checkerboard, with a chevron); a click opens a pop-over of the two presets, each with its swatch and name. Linear and
+Radial are custom icons (`GradientShapeIcon`: a square fading across, or out from its middle, in `icon`). Cancel ⊘ and
+Commit ✓ show while a drawn gradient waits for Return. The Paint Bucket's Fill: pop-up offers Foreground alone (no
+Pattern until Lamina has patterns), and All Layers is a checkbox where the bar had a This Layer / All Layers picker.
 
 The painting bars (`BrushControls`, **shipping**, TASK-57) start with the brush picker (`BrushPicker`,
 `UI/BrushPicker.swift`): the tip drawn in `text`, solid to its hardness and fading to its edge, with the size in pixels

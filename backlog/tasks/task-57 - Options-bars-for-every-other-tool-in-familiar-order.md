@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-09 02:14'
-updated_date: '2026-10-09 06:54'
+updated_date: '2026-10-09 06:56'
 labels: []
 milestone: m-5
 dependencies:
@@ -64,4 +64,6 @@ Selection tools: SelectionModeButtons (New/Add/Subtract icons, pressed while Shi
 Painting tools: BrushPicker (tip preview + size; pop-over with Size in square-root slider steps and Hardness, plus BristlePresetList for the Brush, replacing BristlePresetsMenu). PercentField for Opacity/Flow/Smoothing/Strength/Exposure. Pressure toggles only where pressure works (Brush, Eraser; size for Dodge/Burn), so the spec's pressure buttons on Spot Healing, Clone Stamp, Blur/Smudge were left out and the rows updated. Mask painting: maskPaintWhite removed; a targeted mask paints the foreground's gray (PaletteColor.gray, Rec. 601; exact for grays), the swatches show gray (paletteColor), D/X reset and swap the real colors; the toolbar swatch's Black/White pop-over stays as a quick pick. Dodge/Burn: strokes take Exposure only (Opacity, Flow, opacity pressure and Smoothing, which their bar doesn't show, no longer apply) and 1–0 set Exposure; Blur/Smudge/Liquify's Strength is the opacity the keys already set. Spot Healing keeps Opacity as a Lamina extra (healing honors it). Liquify's Cancel/Done became ⊘/✓.
 
 Crop: Ratio pop-up shows CropRatio.title (Free → Ratio, Original → Original Ratio, 1:1 → 1:1 (Square)); 9:20 and 2.39:1 joined the built-ins. W ⇄ H fields (cropRatioSides, swapCropRatio, clearCropRatio) replace the Custom… pop-over: typing both sides + Return chooses and remembers the ratio. The crop's pixel size stays after Clear as a readout. Cancel/Commit icons only while cropRect exists; Return/Escape stay with the canvas. The Custom… window test went with the pop-over; CropRatioTests covers names, sides, swap and clear.
+
+Gradient: preset swatch pop-over (GradientSwatch per GradientStyle), Linear/Radial as GradientShapeIcon icon buttons, Opacity PercentField, Reverse, ⊘/✓ while gradientEdit is pending (was Cancel/Apply text). Paint Bucket: Fill: Foreground pop-up (one item), Opacity, Tolerance, Anti-alias, Contiguous, All Layers checkbox.
 <!-- SECTION:NOTES:END -->

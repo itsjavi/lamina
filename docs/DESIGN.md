@@ -146,8 +146,8 @@ Every numeric field uses monospaced digits so values don't jitter while scrubbin
 - SF Symbols first, at the symbol weight that matches 1.5 pt strokes; draw a custom icon only when no symbol reads as
   the tool. Custom icons are SwiftUI shapes (like today's `GradientToolIcon`) with the same stroke weight and corner
   treatment as the symbols around them.
-- Sizes: 18 pt in toolbar slots, 16 pt in options bars, menus (the toolbar's flyouts too) and the panel icon column,
-  15 pt in panels and footers.
+- Sizes: 18 pt in toolbar slots and the Adjustments grid, 16 pt in options bars, menus (the toolbar's flyouts too)
+  and the panel icon column, 15 pt in panels and footers.
 - Icons take the `icon` role; the active tool's icon takes `text`. No colored icons except the color swatches.
 - A slot whose group has more than one tool shows a small triangle in its bottom-right corner (4 pt, inset 3 pt,
   `secondaryText`).
@@ -320,7 +320,7 @@ The painting bars carry no color swatch: color comes from the toolbar's swatches
 ### Dock and panels
 
 Tab groups with a 26 pt tab row and a panel menu (≡) at the right; the active tab is `text` with an underline.
-Status: the frame is **shipping** (TASK-58); the panels' contents are **m-5** (TASK-59, TASK-60, TASK-61).
+Status: the frame is **shipping** (TASK-58); Adjustments' grid is **shipping** (TASK-60); Properties' and Layers' contents are **m-5** (TASK-59, TASK-61).
 
 - Right of the canvas: the 34 pt panel icon column (`chrome`, 28 pt buttons with 16 pt icons, the open panel's
   button on `activeTool`), then the dock, 292 pt wide by default and 240–360 pt by dragging its left edge. Properties
@@ -336,8 +336,7 @@ Status: the frame is **shipping** (TASK-58); the panels' contents are **m-5** (T
   it and brings it to the front. Window ▸ Workspace ▸ Essentials (Default) is the only workspace and always checked;
   Reset Essentials restores the default width and split, opens every dock panel with Properties in front, and closes
   History. All of them take a shortcut in Keyboard Shortcuts; none has a default key.
-- Until TASK-59 and TASK-60 fill them, Properties reads "No properties" and Adjustments "Add an adjustment" with a
-  pointer to Layer › New Adjustment Layer. Layers moved in unchanged, its own title row included, until TASK-61.
+- Until TASK-59 fills it, Properties reads "No properties". Layers moved in unchanged, its own title row included, until TASK-61.
 - Code: `UI/Dock.swift` (`DockArea`, `Dock`, `DockGroup`, `PanelIconColumn`, `HistoryFlyout`, `DockResizeEdge`),
   `UI/DockLayout.swift` (`DockLayout.shared`, `DockPanel`), `UI/DockCommands.swift` (the Window items). A panel fills
   its tab through `Dock`'s content builder: `PropertiesPanel` (`UI/PropertiesPanel.swift`), `AdjustmentsPanel`
@@ -354,9 +353,25 @@ Status: the frame is **shipping** (TASK-58); the panels' contents are **m-5** (T
   | Adjustment layer | the adjustment's controls, live, with a footer: clip to layer, reset, visibility, delete |
   | Layer mask | Refine: Color Range…, Invert · footer: load selection from mask, apply, delete |
 
-- **Adjustments** (TASK-60): a grid of labeled icons that add an adjustment layer in one click, in this order: Grain,
-  Levels, Curves, Exposure, Hue/Saturation, Color Balance, Black & White, Invert, Gradient Map; then a "Filter layers"
-  section (Lamina): Gaussian Blur, Motion Blur, Add Noise.
+- **Adjustments** (**shipping**, TASK-60): a grid of labeled icons that add an adjustment layer in one click, in this
+  order: Grain, Levels, Curves, Exposure, Hue/Saturation, Color Balance, Black & White, Invert, Gradient Map; then a
+  "Filter layers" section (11.5 pt semibold heading with a 9.5 pt "Lamina" tag, `secondaryText` on `control`): Gaussian
+  Blur, Motion Blur, Add Noise. Each cell is an 18 pt `icon` symbol over its 10 pt name, on `hover` under the pointer
+  (5 pt corners), with a help tag naming the adjustment; columns are at least 62 pt, so four fit a row at 292 pt and
+  three at 240, and the grid reflows as the dock is resized. A click does what Layer ▸ New Adjustment Layer does (one
+  undo step; the new layer goes above the active one and is selected) and brings Properties to the front. The grid
+  is dimmed under the menu's rule: no document, or layers can't be edited right now.
+
+  | Adjustment | Symbol | Adjustment | Symbol |
+  | --- | --- | --- | --- |
+  | Grain | `film` | Black & White | `circle.lefthalf.filled` |
+  | Levels | `chart.bar.xaxis` | Invert | `circle.lefthalf.filled.inverse` |
+  | Curves | `point.bottomleft.forward.to.point.topright.scurvepath` | Gradient Map | `rectangle.split.3x1` |
+  | Exposure | `plusminus.circle` | Gaussian Blur | `camera.aperture` |
+  | Hue/Saturation | `drop.halffull` | Motion Blur | `wind` |
+  | Color Balance | `slider.horizontal.3` | Add Noise | `aqi.medium` |
+
+  Code: `UI/AdjustmentsPanel.swift` (`AdjustmentsPanel.adjustments`, `filterLayers`, `AdjustmentKind.panelSymbol`).
 - **Layers** (TASK-61): blend mode menu and Opacity on top; one-line 32 pt rows (eye, thumbnail, link, mask thumbnail,
   name, fx badge); clicking the layer or mask thumbnail picks what edits target; styled layers list an "Effects" row and
   one 22 pt row per effect, each with an eye. Footer, left to right: Add a layer style (menu: Blending Options… │

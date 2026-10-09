@@ -68,7 +68,7 @@ extension AdjustmentKind {
         case .hsv: "drop.halffull"
         case .colorBalance: "slider.horizontal.3"
         case .blackWhite: "circle.lefthalf.filled"
-        case .invert: "circle.righthalf.filled.inverse"
+        case .invert: "circle.lefthalf.filled.inverse"
         case .gradientMap: "rectangle.split.3x1"
         case .gaussianBlur: "camera.aperture"
         case .motionBlur: "wind"

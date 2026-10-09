@@ -6,6 +6,8 @@ nonisolated enum SizeUnit: String, CaseIterable, Identifiable, Sendable {
     case pixels = "Pixels", percent = "Percent", inches = "Inches", centimeters = "Centimeters", millimeters = "Millimeters"
 
     var id: String { rawValue }
+    /// What the rulers can measure in: a length, so not Percent.
+    static let rulerUnits: [SizeUnit] = [.pixels, .inches, .centimeters, .millimeters]
     /// What follows a number in this unit.
     var abbreviation: String {
         switch self {

@@ -66,9 +66,6 @@ struct LayersPanel: View {
 
         }
         .frame(width: width)
-        .task(id: session.adjustmentEditingID) {
-            if let id = session.adjustmentEditingID { await session.beginAdjustmentEditing(id) }
-        }
     }
 
 }

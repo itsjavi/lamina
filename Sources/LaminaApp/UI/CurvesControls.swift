@@ -3,6 +3,8 @@ import LaminaCore
 
 struct CurvesControls: View {
     @Binding var settings: CurvesSettings
+    /// The graph's height: the dialog's, or Properties' shorter one.
+    var graphHeight: CGFloat = 260
     @State private var selected: Int?
     @State private var dragging: Int?
     private var points: [CurvePoint] { settings.channels[settings.channel.index] }
@@ -36,7 +38,7 @@ struct CurvesControls: View {
                     context.fill(Path(ellipseIn: CGRect(x: p.x-4, y: p.y-4, width: 8, height: 8)), with: .color(selected == i ? .accentColor : ColorRole.text.color))
                 }
             }
-            .frame(height: 260).background(ColorRole.field.color)
+            .frame(height: graphHeight).background(ColorRole.field.color)
             .overlay { Rectangle().strokeBorder(ColorRole.edge.color) }
             .contentShape(Rectangle())
             .overlay { GeometryReader { geometry in

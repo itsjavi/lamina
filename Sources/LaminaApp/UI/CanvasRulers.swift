@@ -35,6 +35,8 @@ struct CanvasRulerView: NSViewRepresentable {
         _ = session.viewport
         _ = session.document?.id
         _ = session.document?.size
+        _ = session.document?.resolution
+        _ = session.rulerUnits
         view.needsDisplay = true
     }
 }
@@ -62,8 +64,10 @@ final class CanvasRulerNSView: NSView {
         bounds.fill()
         guard let document = session.document else { return }
         let size = document.size
-        let scale = session.viewport.pointsPerPixel
-        let step = Self.majorStep(pointsPerPixel: scale)
+        // Ticks and labels count in the chosen units: `perUnit` document pixels make one.
+        let perUnit = session.rulerUnits.pixels(1, resolution: document.resolution)
+        guard perUnit > 0, perUnit.isFinite else { return }
+        let step = Self.majorStep(pointsPerUnit: session.viewport.pointsPerPixel * perUnit, fractions: session.rulerUnits != .pixels)
         let minor = step / 10
         let hairline = 1 / max(window?.backingScaleFactor ?? 1, 1)
         let tick = ColorRole.secondaryText.nsColor
@@ -82,21 +86,21 @@ final class CanvasRulerNSView: NSView {
             start = session.viewport.documentPoint(from: CGPoint(x: 0, y: 0), documentSize: size).y
             end = session.viewport.documentPoint(from: CGPoint(x: 0, y: bounds.height), documentSize: size).y
         }
-        let first = floor(min(start, end) / minor) * minor
-        let last = ceil(max(start, end) / minor) * minor
-        guard minor > 0, last.isFinite, first.isFinite else { return }
+        let first = floor(min(start, end) / perUnit / minor)
+        let last = ceil(max(start, end) / perUnit / minor)
+        guard minor > 0, last.isFinite, first.isFinite, last - first < 100_000 else { return }
 
-        var value = first
-        while value <= last + 0.001 {
+        // Counted in minor ticks, so a tenth of an inch never drifts off its mark.
+        for index in Int(first)...Int(last) {
+            let value = CGFloat(index) * minor
             let view: CGFloat
             if axis == .horizontal {
-                view = session.viewport.viewPoint(from: CGPoint(x: value, y: 0), documentSize: size).x
+                view = session.viewport.viewPoint(from: CGPoint(x: value * perUnit, y: 0), documentSize: size).x
             } else {
-                view = session.viewport.viewPoint(from: CGPoint(x: 0, y: value), documentSize: size).y
+                view = session.viewport.viewPoint(from: CGPoint(x: 0, y: value * perUnit), documentSize: size).y
             }
-            let remainder = abs(value.remainder(dividingBy: step))
-            let isMajor = remainder < 0.001 || abs(remainder - step) < 0.001
-            let isMid = !isMajor && (abs(value.remainder(dividingBy: step / 2)) < 0.001)
+            let isMajor = index % 10 == 0
+            let isMid = !isMajor && index % 5 == 0
             let length: CGFloat = isMajor ? 8 : isMid ? 5 : 3
             tick.setFill()
             if axis == .horizontal {
@@ -121,7 +125,6 @@ final class CanvasRulerNSView: NSView {
                     NSGraphicsContext.current?.restoreGraphicsState()
                 }
             }
-            value += minor
         }
         ColorRole.edge.nsColor.setFill()
         if axis == .horizontal {
@@ -173,15 +176,16 @@ final class CanvasRulerNSView: NSView {
         return canvas.isOverRuler(canvas.convert(event.locationInWindow, from: nil))
     }
 
-    /// Numbered ticks about 70 points apart, using 1-2-5 steps in document pixels.
-    static func majorStep(pointsPerPixel: CGFloat) -> CGFloat {
-        let target = 70 / max(pointsPerPixel, 0.0001)
-        let nice: [CGFloat] = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1_000, 2_000, 2_500, 5_000, 10_000, 20_000, 25_000]
+    /// Numbered ticks about 70 points apart, using 1-2-5 steps in the ruler's units: whole pixels, and fractions of
+    /// an inch, a centimeter or a millimeter.
+    static func majorStep(pointsPerUnit: CGFloat, fractions: Bool = false) -> CGFloat {
+        let target = 70 / max(pointsPerUnit, 0.0001)
+        let small: [CGFloat] = fractions ? [0.01, 0.02, 0.05, 0.1, 0.2, 0.25, 0.5] : []
+        let nice: [CGFloat] = small + [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1_000, 2_000, 2_500, 5_000, 10_000, 20_000, 25_000]
         return nice.first { $0 >= target } ?? 50_000
     }
 
     static func label(_ value: CGFloat) -> NSString {
-        let rounded = value.rounded()
-        return (rounded == 0 ? "0" : String(Int(rounded))) as NSString
+        NumberLabel.upToTwoDecimals(Double(value)) as NSString
     }
 }

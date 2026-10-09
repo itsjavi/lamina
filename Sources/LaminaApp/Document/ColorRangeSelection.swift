@@ -1,6 +1,7 @@
 import AppKit
 import CPixels
 import Observation
+import LaminaCore
 
 /// Select > Color Range: every pixel near the colors clicked on the canvas, anywhere in the image. The panel shows
 /// the selection live; OK keeps it as one undo step, Cancel puts back the one there was.
@@ -24,8 +25,12 @@ final class ColorRangeEdit {
     /// The image as shown, at document size: what the colors are matched against.
     @ObservationIgnored let image: CGImage
     @ObservationIgnored let original: DocumentSelection?
+    /// The layer whose mask OK replaces (Properties ▸ Masks ▸ Color Range…); nil when OK makes a selection.
+    @ObservationIgnored let maskLayerID: UUID?
     @ObservationIgnored var generation = 0
-    init(image: CGImage, original: DocumentSelection?) { self.image = image; self.original = original }
+    init(image: CGImage, original: DocumentSelection?, maskLayerID: UUID? = nil) {
+        self.image = image; self.original = original; self.maskLayerID = maskLayerID
+    }
     var hasColors: Bool { !include.isEmpty }
 }
 
@@ -44,9 +49,11 @@ private nonisolated struct ColorRangeResult: @unchecked Sendable {
 extension EditorSession {
     var canSelectColorRange: Bool { document != nil && colorRange == nil && canEditSelection }
 
-    func beginColorRange() {
+    /// `forMask`, from a targeted mask's Properties: the colors picked become the mask instead of a selection.
+    func beginColorRange(forMask: Bool = false) {
         guard canSelectColorRange, let document, let image = selectionSample(document, sampleAllLayers: true) else { return }
-        colorRange = ColorRangeEdit(image: image, original: selection)
+        let mask = forMask && isMaskSelected && activeLayer?.mask != nil ? activeLayerID : nil
+        colorRange = ColorRangeEdit(image: image, original: selection, maskLayerID: mask)
     }
 
     /// A click on the canvas while the panel is open. Shift adds the color and Option takes it away, whichever
@@ -86,7 +93,42 @@ extension EditorSession {
         document?.selection = edit.original
         colorRange = nil
         guard edit.hasColors, edit.error == nil else { return }
+        if let id = edit.maskLayerID { replaceMask(of: id, revealing: result); return }
         if let result { setSelection(result, name: "Color Range") } else { deselect() }
+    }
+
+    /// Color Range aimed at a mask: white where the colors matched, black elsewhere, in the mask's own pixels and
+    /// place, as one undo step. The selection is left as it was.
+    private func replaceMask(of id: UUID, revealing selection: DocumentSelection?) {
+        guard canEditLayers, let document, let index = document.layers.firstIndex(where: { $0.id == id }),
+              let mask = document.layers[index].mask else { return }
+        let layer = document.layers[index]
+        // A uniform mask has no grid of its own yet: it takes the layer's, as a new mask would.
+        let uniform = mask.asset.image.width == 1 && mask.asset.image.height == 1
+        let width = uniform ? layer.asset?.image.width ?? Int(layer.size.width.rounded()) : mask.asset.image.width
+        let height = uniform ? layer.asset?.image.height ?? Int(layer.size.height.rounded()) : mask.asset.image.height
+        do {
+            guard width > 0, height > 0, width * height <= DocumentLimits.maxSurfacePixels else { throw ProjectError.tooLarge }
+            let context = try BrushRaster.context(width: width, height: height, mask: true)
+            context.setFillColor(gray: 0, alpha: 1)
+            context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+            if let selection {
+                let clip = try selection.clip(canvas: document.size)
+                context.concatenate(BrushRaster.pixelToDocument(uniform ? layer.transform : layer.maskTransform,
+                                                                width: width, height: height).inverted())
+                clip.apply(to: context)
+                context.setFillColor(gray: 1, alpha: 1)
+                context.fill(clip.rect)
+            }
+            guard let image = context.makeImage() else { throw ExportError.render }
+            var replaced = mask.replacing(try LayerMask.asset(from: image))
+            if uniform { replaced.placement = nil }
+            finishOpacityEdit()
+            beginEdit("Mask Color Range")
+            self.document?.layers[index].mask = replaced
+            endEdit()
+            brushRevision += 1
+        } catch { brushError = error.localizedDescription }
     }
 
     func cancelColorRange() {

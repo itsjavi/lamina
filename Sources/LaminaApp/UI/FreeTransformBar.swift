@@ -143,6 +143,8 @@ struct TransformValueField: View {
     var suffix: String? = nil
     let value: CGFloat
     let range: ClosedRange<CGFloat>
+    /// Shown in place of 0, which the field then leaves empty: Leading's "Auto".
+    var prompt: String? = nil
     /// The field is done with its value: a drag on its label let go, or the field left.
     let finish: () -> Void
     let change: (CGFloat) -> Void
@@ -159,7 +161,7 @@ struct TransformValueField: View {
                 change(newValue)
                 text = Self.formatted(Double(newValue))
             }), range: range, step: 1, onEnd: finish)
-            TextField(label, text: $text)
+            TextField(label, text: $text, prompt: prompt.map { Text($0) })
                 .textFieldStyle(.roundedBorder).focused($focused)
                 .frame(width: 58)
                 .accessibilityLabel(label)
@@ -169,6 +171,7 @@ struct TransformValueField: View {
                 .onChange(of: focused) { if !focused { finish(); sync() } }
                 .onChange(of: text) {
                     if focused, let number = Double(text), number.isFinite { change(CGFloat(number)) }
+                    else if focused, prompt != nil, text.trimmingCharacters(in: .whitespaces).isEmpty { change(0) }
                 }
                 // The field holds off syncing while it has focus, so as not to fight what is being typed; a step
                 // is not typing, so it writes the number it applied.
@@ -180,7 +183,7 @@ struct TransformValueField: View {
             if let suffix { Text(suffix).foregroundStyle(.secondary) }
         }
     }
-    private func sync() { text = Self.formatted(Double(value)) }
+    private func sync() { text = prompt != nil && value == 0 ? "" : Self.formatted(Double(value)) }
     /// No trailing zeros on a whole number, two decimals otherwise.
     static func formatted(_ value: Double) -> String { NumberLabel.upToTwoDecimals(value) }
 }

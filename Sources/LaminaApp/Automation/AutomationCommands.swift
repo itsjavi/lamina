@@ -177,7 +177,6 @@ extension AutomationDispatcher {
             let previous = session.activeLayerID
             session.beginEdit("New \(kind.rawValue) Adjustment")
             session.addAdjustment(kind)
-            session.adjustmentEditingID = nil
             guard let id = session.activeLayerID, id != previous, let value = session.activeLayer?.adjustment else {
                 session.endEdit()
                 throw AutomationError(.failed, "The adjustment layer couldn't be added.")

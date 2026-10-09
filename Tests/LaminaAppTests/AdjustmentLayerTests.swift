@@ -20,7 +20,7 @@ import LaminaCore
         try pixels(await ImageExporter.shared.render(#require(session.projectSnapshot())).image)
     }
     func add(_ kind: AdjustmentKind, to s: EditorSession) throws -> UUID {
-        s.addAdjustment(kind); s.adjustmentEditingID = nil
+        s.addAdjustment(kind)
         return try #require(s.activeLayerID)
     }
     @Test func globalAdjustmentAffectsBelowButNotAboveAndRemainsLive() async throws {
@@ -118,15 +118,15 @@ import LaminaCore
 }
 
 @MainActor struct AdjustmentEditorTests {
-    /// Invert is the one adjustment with nothing to set: adding it applies straight away rather
-    /// than opening an editor, and it inverts what is underneath without touching those pixels.
+    /// Invert is the one adjustment with nothing to set: adding it applies straight away, and it
+    /// inverts what is underneath without touching those pixels.
     @Test func invertAppliesWithoutAnEditor() throws {
         let fixtures = AdjustmentLayerTests()
         let session = EditorSession()
         session.createDocument(width: 2, height: 2)
         session.insert(try fixtures.image(.white))
         session.addAdjustment(.invert)
-        #expect(session.adjustmentEditingID == nil, "nothing to edit, so no editor opens")
+        #expect(session.propertiesKind == .adjustment(.invert), "shown in Properties, with nothing to set")
         let adjustment = try #require(session.activeLayer?.adjustment)
         #expect(adjustment.kind == .invert)
         #expect(!adjustment.kind.isEditable)
@@ -154,9 +154,9 @@ import LaminaCore
         return (px[0], px[1], px[2], px[3])
     }
 
-    // Invert has no settings and so no editor; it is covered on its own.
+    // Invert has no settings; it is covered on its own.
     @Test(arguments: AdjustmentKind.allCases.filter(\.isEditable))
-    func sharedEditorsKeepPixelsDynamicAndSupportCancel(_ kind: AdjustmentKind) async throws {
+    func propertiesEditTheLayerLiveOneStepPerChange(_ kind: AdjustmentKind) async throws {
         let fixtures = AdjustmentLayerTests()
         let session = EditorSession()
         session.createDocument(width: 2, height: 2)
@@ -164,100 +164,66 @@ import LaminaCore
         session.insert(asset)
         let baseID = try #require(session.activeLayerID)
         session.addAdjustment(kind)
-        let id = try #require(session.adjustmentEditingID)
+        let id = try #require(session.activeLayerID)
+        #expect(session.propertiesKind == .adjustment(kind))
         // As created: a Gradient Map takes the palette's colors and a Grain layer its own pattern.
         let created = try #require(session.activeLayer?.adjustment)
-        await session.beginAdjustmentEditing(id)
-        #expect(session.adjustmentOriginal?.kind == kind)
-        #expect(!session.showsBusy)
+        let steps = session.history.undoCount
+        // What each kind's controls in Properties write: Levels and Hue/Saturation their own settings, the rest the
+        // filter settings they share with the Filter menu's dialogs.
+        var filter = created.filterSettings
         switch kind {
-        case .invert: return   // filtered out above: no editor to share
-        case .levels:
-            let edit = try #require(session.levels)
-            await edit.histogramTask?.value
-            #expect(edit.histogramReady)
-            #expect(edit.histogram[0][255] == 4)
-            var settings = edit.settings
-            settings.ranges[0].outputWhite = 0
-            session.updateLevels(settings, preview: true)
-            #expect(session.activeLayer?.adjustment?.levels == settings)
-            session.updateLevels(settings, preview: false)
-            #expect(session.activeLayer?.adjustment == LayerAdjustment(kind: kind))
-            await session.commitLevels()
-        case .curves:
-            var settings = try #require(session.filterEdit).settings
-            settings.curves.channels[0] = [CurvePoint(x: 0, y: 0), CurvePoint(x: 255, y: 0)]
-            session.updateFilter(settings, preview: true)
-            #expect(session.activeLayer?.adjustment?.curves == settings.curves)
-            await session.commitFilter()
-        case .exposure, .gradientMap, .grain, .blackWhite, .colorBalance, .gaussianBlur, .motionBlur, .addNoise:
-            #expect(session.filterEdit?.kind == kind.filterKind)
-            var settings = try #require(session.filterEdit).settings
+        case .blackWhite: filter.blackWhite.reds = 100
+        case .colorBalance: filter.colorBalance.midCyanRed = 50
+        case .exposure: filter.exposure.exposure = 1
+        case .gradientMap: filter.gradientMap.reversed = true
+        case .gaussianBlur: filter.radius = 24
+        case .motionBlur: filter.angle = 35; filter.distance = 48
+        case .addNoise: filter.amount = 35; filter.gaussian = true; filter.monochromatic = true
+        case .curves: filter.curves.channels[0] = [CurvePoint(x: 0, y: 0), CurvePoint(x: 255, y: 0)]
+        default: filter.grain.amount = 70
+        }
+        var hsv = created.resolvedHSV
+        hsv.range = .reds
+        hsv.hue = 80
+        hsv.band = hsv.band.centered(on: 25)
+        hsv.invertRange = true
+        session.changeAdjustment(id) { value in
             switch kind {
-            case .blackWhite: settings.blackWhite.reds = 100
-            case .colorBalance: settings.colorBalance.midCyanRed = 50
-            case .exposure: settings.exposure.exposure = 1
-            case .gradientMap: settings.gradientMap.reversed = true
-            case .gaussianBlur: settings.radius = 24
-            case .motionBlur: settings.angle = 35; settings.distance = 48
-            case .addNoise: settings.amount = 35; settings.gaussian = true; settings.monochromatic = true
-            default: settings.grain.amount = 70
+            case .levels: value.levels.ranges[0].outputWhite = 0
+            case .hsv: value.hsvSettings = hsv
+            default: value.take(filter)
             }
-            session.updateFilter(settings, preview: true)
-            let live = try #require(session.activeLayer?.adjustment)
-            #expect(live.exposure == settings.exposure && live.gradientMap == settings.gradientMap && live.grain == settings.grain)
-            if kind == .gaussianBlur { #expect(live.gaussianRadius == 24) }
-            if kind == .motionBlur { #expect(live.resolvedMotionAngle == 35 && live.resolvedMotionDistance == 48) }
-            if kind == .addNoise {
-                #expect(live.resolvedNoiseAmount == 35 && live.resolvedNoiseGaussian && live.resolvedNoiseMonochromatic)
-            }
-            await session.commitFilter()
-        case .hsv:
-            var settings = try #require(session.hueSaturation).settings
-            settings.range = .reds
-            settings.hue = 80
-            settings.band = settings.band.centered(on: 25)
-            settings.invertRange = true
-            session.updateHueSaturation(settings, preview: true)
-            #expect(session.activeLayer?.adjustment?.resolvedHSV == settings)
-            await session.commitHueSaturation()
         }
         let saved = try #require(session.activeLayer?.adjustment)
-        #expect(session.adjustmentEditingID == nil)
+        #expect(saved != created)
+        #expect(session.history.undoCount == steps + 1 && session.history.undoName == "Edit \(kind.rawValue) Adjustment")
+        switch kind {
+        case .levels: #expect(saved.levels.ranges[0].outputWhite == 0)
+        case .hsv: #expect(saved.resolvedHSV == hsv)
+        default:
+            let reopened = saved.filterSettings
+            #expect(reopened.curves == filter.curves && reopened.exposure == filter.exposure
+                    && reopened.gradientMap == filter.gradientMap && reopened.grain == filter.grain
+                    && reopened.blackWhite == filter.blackWhite && reopened.colorBalance == filter.colorBalance)
+            #expect(reopened.radius == filter.radius && reopened.angle == filter.angle && reopened.distance == filter.distance)
+            #expect(reopened.amount == filter.amount && reopened.gaussian == filter.gaussian
+                    && reopened.monochromatic == filter.monochromatic)
+        }
         #expect(session.document?.layers.first { $0.id == baseID }?.asset?.image === asset.image)
         #expect(session.activeLayer?.asset == nil)
         let encoded = try JSONEncoder().encode(saved)
         #expect(try JSONDecoder().decode(LayerAdjustment.self, from: encoded) == saved)
-        session.adjustmentEditingID = id
-        await session.beginAdjustmentEditing(id)
-        switch kind {
-        case .invert: return   // filtered out above: nothing to reopen
-        case .levels:
-            #expect(session.levels?.settings == saved.levels)
-            session.updateLevels(LevelsSettings(), preview: true)
-            session.cancelLevels()
-        case .curves, .exposure, .gradientMap, .grain, .blackWhite, .colorBalance, .gaussianBlur, .motionBlur, .addNoise:
-            let reopened = try #require(session.filterEdit).settings
-            #expect(reopened.curves == saved.curves && reopened.exposure == saved.exposure
-                    && reopened.gradientMap == saved.gradientMap && reopened.grain == saved.grain
-                    && reopened.blackWhite == saved.blackWhite && reopened.colorBalance == saved.colorBalance)
-            #expect(reopened.radius == saved.gaussianRadius && reopened.angle == saved.resolvedMotionAngle
-                    && reopened.distance == saved.resolvedMotionDistance)
-            #expect(reopened.amount == saved.resolvedNoiseAmount && reopened.gaussian == saved.resolvedNoiseGaussian
-                    && reopened.monochromatic == saved.resolvedNoiseMonochromatic)
-            session.updateFilter(FilterSettings(), preview: true)
-            session.cancelFilter()
-        case .hsv:
-            #expect(session.hueSaturation?.settings == saved.resolvedHSV)
-            session.updateHueSaturation(HueSaturationSettings(), preview: true)
-            session.cancelHueSaturation()
-        }
-        #expect(session.activeLayer?.adjustment == saved)
-        #expect(session.adjustmentEditingID == nil)
         session.undo()
         #expect(session.activeLayer?.adjustment == created)
         session.redo()
         #expect(session.activeLayer?.adjustment == saved)
+        // Reset goes back to what a new layer starts with, its own pattern kept, as one more step.
+        session.resetAdjustment(id)
+        let reset = try #require(session.activeLayer?.adjustment)
+        #expect(reset.grain.seed == created.grain.seed && reset.resolvedNoiseSeed == created.resolvedNoiseSeed)
+        if kind != .gradientMap { #expect(reset == created) }
+        #expect(session.history.undoCount == steps + 2)
     }
 
     @Test func legacyHSVStillDecodesAndRenders() throws {

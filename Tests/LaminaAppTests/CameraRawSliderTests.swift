@@ -50,11 +50,11 @@ struct CameraRawSliderTests {
     }
 
     @Test func colorBalanceTracksRunFromEachColorToItsOpposite() throws {
-        let cyanRed = try #require(FilterSheet.cyanRedTrack.colors)
+        let cyanRed = try #require(FilterControls.cyanRedTrack.colors)
         #expect(cyanRed[0].blueComponent > cyanRed[0].redComponent && cyanRed[1].redComponent > cyanRed[1].blueComponent)
-        let magentaGreen = try #require(FilterSheet.magentaGreenTrack.colors)
+        let magentaGreen = try #require(FilterControls.magentaGreenTrack.colors)
         #expect(magentaGreen[0].redComponent > magentaGreen[0].greenComponent && magentaGreen[1].greenComponent > magentaGreen[1].redComponent)
-        let yellowBlue = try #require(FilterSheet.yellowBlueTrack.colors)
+        let yellowBlue = try #require(FilterControls.yellowBlueTrack.colors)
         #expect(yellowBlue[0].greenComponent > yellowBlue[0].blueComponent && yellowBlue[1].blueComponent > yellowBlue[1].greenComponent)
         let greens = try #require(CameraRawSliderTrack.luminance(120).colors?.last?.usingColorSpace(.sRGB))
         #expect(greens.greenComponent > greens.redComponent && greens.greenComponent > greens.blueComponent)

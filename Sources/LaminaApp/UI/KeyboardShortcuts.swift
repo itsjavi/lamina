@@ -97,7 +97,7 @@ struct ShortcutDefinition: Identifiable {
             "Select › Layer's Pixels", "Select › Color Range…", "Select › Mask's Black Areas",
             "Select › Expand…", "Select › Contract…", "Select › Feather…",
             "Image › Trim…", "Image › Flip Canvas Horizontal", "Image › Flip Canvas Vertical",
-            "Layer › Edit Adjustment…", "Layer › Move Out of Folder", "Layer › Rename Layer…",
+            "Layer › Layer Content Options…", "Layer › Move Out of Folder", "Layer › Rename Layer…",
             "Layer › Show or Hide Layer", "Layer › Show or Hide All Other Layers",
             "Layer › Apply Layer Mask", "Layer › Merge Visible", "Layer › Flatten Image",
             "Layer › Layer Style › Copy Layer Style", "Layer › Layer Style › Paste Layer Style",
@@ -210,6 +210,7 @@ final class ShortcutSettings {
         "Canvas & Layers:Blur / Smudge / Liquify": "Canvas & Layers:Blur / Smudge",
         "Canvas & Layers:Cycle shape kind": "Canvas & Layers:Next shape tool",
         "Canvas & Layers:Switch Gradient / Paint Bucket": "Canvas & Layers:Next Gradient / Paint Bucket",
+        "\(ShortcutDefinition.moreGroup):Layer › Edit Adjustment…": "\(ShortcutDefinition.moreGroup):Layer › Layer Content Options…",
     ]
     private let defaults: UserDefaults
     /// `defaults` is the app's own everywhere but tests, which use a throwaway suite.

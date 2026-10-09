@@ -132,7 +132,6 @@ final class ProjectWorkspace {
         session.cancelFilter()
         session.cancelHueSaturation()
         session.cancelLevels()
-        session.finishAdjustmentEditing(commit: false)
         session.cancelColorRange()
         session.selectionAmountOperation = nil
         if session.colorPicker != nil { session.closeColorPicker(commit: false) }

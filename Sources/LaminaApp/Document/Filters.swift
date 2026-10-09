@@ -585,7 +585,6 @@ extension EditorSession {
             do { try edit.growForBlur() }
             catch { brushError = error.localizedDescription }
         }
-        if previewAdjustmentEditing(preview: preview) { return }
         if edit.kind.isAutomatic, edit.preparedPreview != nil, edit.preparedSettings == edit.settings { brushRevision += 1; return }
         // A filter dialog's own preview keeps rendering with Preview off; only the canvas stops showing it
         // (`previewImage(for:)`).
@@ -643,7 +642,6 @@ extension EditorSession {
         if case .gradientMap = colorPicker?.target { closeColorPicker(commit: false) }
         if case .vignette = colorPicker?.target { closeColorPicker(commit: false) }
         if case .dither = colorPicker?.target { closeColorPicker(commit: false) }
-        if finishAdjustmentEditing(commit: false) { return }
         guard let edit = filterEdit, !edit.committing else { return }
         edit.previewTask?.cancel()
         filterEdit = nil
@@ -654,7 +652,6 @@ extension EditorSession {
         if case .gradientMap = colorPicker?.target { closeColorPicker(commit: true) }
         if case .vignette = colorPicker?.target { closeColorPicker(commit: true) }
         if case .dither = colorPicker?.target { closeColorPicker(commit: true) }
-        if finishAdjustmentEditing(commit: true) { return }
         guard let edit = filterEdit, !edit.committing else { return }
         if edit.kind.isAutomatic {
             await edit.previewTask?.value

@@ -174,7 +174,7 @@ struct AutomationTests {
         ])
         let added = try #require(f.session.activeLayer)
         #expect(added.adjustment?.kind == .exposure && added.adjustment?.exposure.exposure == 0.5 && added.adjustment?.exposure.gamma == 1.2)
-        #expect(f.session.adjustmentEditingID == nil, "no settings panel left open")
+        #expect(f.session.filterEdit == nil && f.session.propertyEdit == nil, "nothing left open")
         #expect(f.session.history.undoCount == count + 1 && f.session.history.undoName == "New Exposure Adjustment")
         #expect(result["added"] == [.string(String(ShortID.hex(added.id).prefix(8)))] && result["layer"] == result["added"]?.arrayValue?.first)
         #expect(f.session.document?.layers.last?.id == added.id)

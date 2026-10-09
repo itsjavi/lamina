@@ -44,7 +44,6 @@ import LaminaCore
         #expect(session.activeLayerID == after[1].id)
         #expect(layout.isVisible(.properties))
 
-        session.adjustmentEditingID = nil
         session.undo()
         #expect(session.document?.layers.map(\.id) == layers.map(\.id))
     }
@@ -58,8 +57,11 @@ import LaminaCore
         let session = EditorSession(); session.createDocument(width: 2, height: 2)
         #expect(AdjustmentsPanel.canAdd(session))
         session.addAdjustment(.levels)
-        // Its settings are open, so the session refuses layer edits, as the menu does.
-        #expect(session.adjustmentEditingID != nil && !AdjustmentsPanel.canAdd(session))
+        // Its settings are in Properties, which never holds the layers up.
+        #expect(AdjustmentsPanel.canAdd(session))
+        // A layer being renamed does, as it does the menu.
+        session.renamingLayerID = session.activeLayerID
+        #expect(!AdjustmentsPanel.canAdd(session))
         let count = session.document?.layers.count
         layout.show(.adjustments)
         AdjustmentsPanel.add(.grain, session: session, layout: layout)

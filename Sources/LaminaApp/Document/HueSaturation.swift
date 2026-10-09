@@ -295,7 +295,6 @@ extension EditorSession {
         guard let edit = hueSaturation else { return }
         edit.settings = settings
         edit.preview = preview
-        if previewAdjustmentEditing(preview: preview) { return }
         guard preview, !settings.isIdentity else {
             hueSaturationTask?.cancel()
             hueSaturationPending = nil
@@ -328,7 +327,6 @@ extension EditorSession {
     /// OK: renders at full quality and records one "Hue/Saturation" undo step. Identity
     /// settings change nothing at all.
     func commitHueSaturation() async {
-        if finishAdjustmentEditing(commit: true) { return }
         guard let edit = hueSaturation else { return }
         hueSampleMode = nil
         hueTargeting = false
@@ -413,7 +411,6 @@ extension EditorSession {
     func endHueTargeting() { hueTargetDrag = nil }
 
     func cancelHueSaturation() {
-        if finishAdjustmentEditing(commit: false) { return }
         hueSampleMode = nil
         hueTargeting = false
         hueTargetDrag = nil

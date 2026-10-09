@@ -8,19 +8,7 @@ struct HueSaturationSheet: View {
 
     private var edit: HueSaturationEdit? { session.hueSaturation }
     private var current: HueSaturationSettings { edit?.settings ?? HueSaturationSettings() }
-    private var hueRange: ClosedRange<Double> { current.colorize ? 0...360 : -180...180 }
-    private var saturationRange: ClosedRange<Double> { current.colorize ? 0...100 : -100...100 }
-    private var showsSpectrum: Bool { current.range != .master && !current.colorize }
-    /// What a double-click puts a slider back to: Photoshop's colorize start, or no change.
-    private var resetValues: HueSaturationSettings { current.colorize ? .colorizeStart : HueSaturationSettings() }
-    /// The middle of the selected color range; Master centers on red.
-    private var rangeHue: Double { Double(max(0, ColorRange.colorRanges.firstIndex(of: current.range) ?? 0)) * 60 }
-    /// Colorizing picks an absolute hue, red to red; otherwise the track shows the shift around the range's color.
-    private var hueTrack: CameraRawSliderTrack { .spectrum(current.colorize ? 180 : rangeHue) }
-    private var saturationTrack: CameraRawSliderTrack {
-        if current.colorize { return .saturation(current.hue) }
-        return current.range == .master ? .chroma : .saturation(rangeHue)
-    }
+    private var showsSpectrum: Bool { current.showsSpectrum }
 
     private var settings: Binding<HueSaturationSettings> {
         Binding(get: { current },
@@ -35,29 +23,11 @@ struct HueSaturationSheet: View {
         DialogLayout(preview: preview, confirm: { Task { await session.commitHueSaturation() } },
                      cancel: { session.cancelHueSaturation() }) {
             VStack(alignment: .leading, spacing: 8) {
-                Picker("Range", selection: settings.range) {
-                    ForEach(ColorRange.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-                }
-                .pickerStyle(.menu).labelsHidden().fixedSize().disabled(current.colorize)
-                .help("The colors the adjustment changes: Master is all of them")
-                slider("Hue", value: settings.hue, range: hueRange, unit: "°", track: hueTrack, reset: resetValues.hue)
-                slider("Saturation", value: settings.saturation, range: saturationRange, unit: "", track: saturationTrack,
-                       reset: resetValues.saturation)
-                slider("Lightness", value: settings.lightness, range: -100...100, unit: "",
-                       track: .opposing(.black, .white), reset: resetValues.lightness)
-                if showsSpectrum { SpectrumEditor(settings: settings).padding(.top, 8) }
-                HStack(spacing: 8) {
-                    Toggle("Colorize", isOn: Binding(get: { current.colorize }, set: { colorize in
-                        // Photoshop starts colorizing at hue 0, saturation 25.
-                        settings.wrappedValue = colorize ? .colorizeStart : HueSaturationSettings()
-                    }))
-                    Spacer(minLength: 0)
+                // A field's own submit swallows Return, so it confirms the window itself, as OK does.
+                HueSaturationControls(settings: settings, submit: { Task { await session.commitHueSaturation() } }) {
                     samplingControls
                 }
-                .padding(.top, 8)
-                // Lamina's own, after the familiar settings.
-                if showsSpectrum { Toggle("Apply outside this range instead", isOn: settings.invertRange) }
-                if session.adjustmentOriginal == nil && session.selection != nil {
+                if session.selection != nil {
                     Text("Limited to the selection").font(.callout).foregroundStyle(.secondary)
                 }
             }
@@ -114,6 +84,57 @@ struct HueSaturationSheet: View {
         }
         .frame(width: 24, height: 20)
     }
+}
+
+/// Hue/Saturation's settings: the range, Hue, Saturation and Lightness, the spectrum for a color range, Colorize, and
+/// Lamina's Apply outside this range. Image ▸ Adjustments ▸ Hue/Saturation… shows them with its eyedroppers
+/// (`accessory`, beside Colorize); a Hue/Saturation layer's Properties shows them on their own.
+struct HueSaturationControls<Accessory: View>: View {
+    @Binding var settings: HueSaturationSettings
+    /// Return in a field: the dialog confirms.
+    var submit: () -> Void = {}
+    @ViewBuilder var accessory: Accessory
+
+    private var current: HueSaturationSettings { settings }
+    private var hueRange: ClosedRange<Double> { current.colorize ? 0...360 : -180...180 }
+    private var saturationRange: ClosedRange<Double> { current.colorize ? 0...100 : -100...100 }
+    /// What a double-click puts a slider back to: Photoshop's colorize start, or no change.
+    private var resetValues: HueSaturationSettings { current.colorize ? .colorizeStart : HueSaturationSettings() }
+    /// The middle of the selected color range; Master centers on red.
+    private var rangeHue: Double { Double(max(0, ColorRange.colorRanges.firstIndex(of: current.range) ?? 0)) * 60 }
+    /// Colorizing picks an absolute hue, red to red; otherwise the track shows the shift around the range's color.
+    private var hueTrack: CameraRawSliderTrack { .spectrum(current.colorize ? 180 : rangeHue) }
+    private var saturationTrack: CameraRawSliderTrack {
+        if current.colorize { return .saturation(current.hue) }
+        return current.range == .master ? .chroma : .saturation(rangeHue)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Picker("Range", selection: $settings.range) {
+                ForEach(ColorRange.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.menu).labelsHidden().fixedSize().disabled(current.colorize)
+            .help("The colors the adjustment changes: Master is all of them")
+            slider("Hue", value: $settings.hue, range: hueRange, unit: "°", track: hueTrack, reset: resetValues.hue)
+            slider("Saturation", value: $settings.saturation, range: saturationRange, unit: "", track: saturationTrack,
+                   reset: resetValues.saturation)
+            slider("Lightness", value: $settings.lightness, range: -100...100, unit: "",
+                   track: .opposing(.black, .white), reset: resetValues.lightness)
+            if current.showsSpectrum { SpectrumEditor(settings: $settings).padding(.top, 8) }
+            HStack(spacing: 8) {
+                Toggle("Colorize", isOn: Binding(get: { current.colorize }, set: { colorize in
+                    // Photoshop starts colorizing at hue 0, saturation 25.
+                    settings = colorize ? .colorizeStart : HueSaturationSettings()
+                }))
+                Spacer(minLength: 0)
+                accessory
+            }
+            .padding(.top, 8)
+            // Lamina's own, after the familiar settings.
+            if current.showsSpectrum { Toggle("Apply outside this range instead", isOn: $settings.invertRange) }
+        }
+    }
 
     /// Photoshop's layout: the title above, then a colored slider paired with an exact field. A double-click on the
     /// title or knob resets that one value.
@@ -132,7 +153,7 @@ struct HueSaturationSheet: View {
                         // A field's own submit swallows Return, so it confirms the window itself, as OK does.
                         .onSubmit {
                             value.wrappedValue = min(range.upperBound, max(range.lowerBound, value.wrappedValue))
-                            Task { await session.commitHueSaturation() }
+                            submit()
                         }
                     Text(unit).frame(width: 12, alignment: .leading)
                 }
@@ -140,6 +161,15 @@ struct HueSaturationSheet: View {
         }
         .padding(.top, 6)
     }
+}
+
+extension HueSaturationControls where Accessory == EmptyView {
+    init(settings: Binding<HueSaturationSettings>) { self.init(settings: settings, accessory: { EmptyView() }) }
+}
+
+extension HueSaturationSettings {
+    /// A color range is chosen, and not Colorize: the spectrum, its eyedroppers and Apply outside this range show.
+    var showsSpectrum: Bool { range != .master && !colorize }
 }
 
 /// Photoshop's two spectrum bars: the hues as they are, the handles for the selected

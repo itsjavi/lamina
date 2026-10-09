@@ -5,20 +5,22 @@ import SwiftUI
 struct DockArea: View {
     @Bindable var session: EditorSession
     @Bindable var layout: DockLayout
+    var projects: ProjectController? = nil
 
     var body: some View {
         HStack(spacing: 0) {
             PanelIconColumn(layout: layout)
             if layout.showsDock {
                 DockResizeEdge(axis: .horizontal, value: $layout.width, range: DockLayout.widths)
-                Dock(session: session, layout: layout)
+                Dock(session: session, layout: layout, projects: projects)
             }
         }
-        // Renaming a layer and editing an adjustment happen in the Layers panel (Layer › Rename Layer…, Edit
-        // Adjustment…), so it opens for them.
-        .onChange(of: session.renamingLayerID != nil || session.adjustmentEditingID != nil) { _, needsLayers in
+        // Renaming a layer happens in the Layers panel (Layer › Rename Layer…), so it opens for it.
+        .onChange(of: session.renamingLayerID != nil) { _, needsLayers in
             if needsLayers { layout.show(.layers) }
         }
+        // An adjustment layer is edited in Properties: adding one, double-clicking one, Layer Content Options….
+        .onChange(of: session.propertiesRequest) { _, _ in layout.show(.properties) }
     }
 }
 
@@ -27,6 +29,7 @@ struct DockArea: View {
 struct Dock: View {
     @Bindable var session: EditorSession
     @Bindable var layout: DockLayout
+    var projects: ProjectController? = nil
 
     var body: some View {
         let showsLayers = !layout.openPanels(of: DockPanel.bottomGroup).isEmpty
@@ -35,7 +38,7 @@ struct Dock: View {
                 if let front = layout.topFront {
                     DockGroup(tabs: layout.openPanels(of: DockPanel.topGroup),
                               selection: Binding(get: { front }, set: { layout.topSelection = $0 }), layout: layout) { panel in
-                        if panel == .adjustments { AdjustmentsPanel(session: session, layout: layout) } else { PropertiesPanel(session: session) }
+                        if panel == .adjustments { AdjustmentsPanel(session: session, layout: layout) } else { PropertiesPanel(session: session, projects: projects) }
                     }
                     .frame(height: showsLayers ? DockLayout.topHeight(layout.topHeight, in: proxy.size.height) : nil)
                     if showsLayers {

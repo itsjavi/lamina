@@ -77,11 +77,36 @@ final class ProjectController {
             })
             window.beginSheet(sheet)
         }
-        guard let options, let snapshot = session.projectSnapshot() else { return }
+        guard let options else { return }
+        await applyCanvasSize(options)
+    }
+
+    /// Properties' Canvas width and height: applied as Canvas Size… applies them, around the center, the new area
+    /// transparent.
+    func resizeCanvas(width: Int, height: Int) async {
+        guard let document = session.document, width != document.width || height != document.height, begin() else { return }
+        defer { session.isProjectBusy = false }
+        await applyCanvasSize(CanvasSizeOptions(width: width, height: height))
+    }
+
+    private func applyCanvasSize(_ options: CanvasSizeOptions) async {
+        guard let snapshot = session.projectSnapshot() else { return }
         do {
             let resized = try await CanvasResizer.shared.resize(snapshot, to: options)
             session.applyDocumentSize(resized, actionName: "Canvas Size")
         } catch { await showError("Couldn’t change canvas size", error: error) }
+    }
+
+    /// Properties' Resolution: Image Size… without resampling, so the pixels stay as they are and print at a new size.
+    func changeResolution(_ resolution: Double) async {
+        guard let document = session.document, resolution != document.resolution, begin() else { return }
+        defer { session.isProjectBusy = false }
+        guard let snapshot = session.projectSnapshot() else { return }
+        do {
+            let resized = try await ImageResizer.shared.resize(snapshot, to: ImageSizeOptions(
+                width: document.width, height: document.height, resolution: resolution))
+            session.applyImageSize(resized)
+        } catch { await showError("Couldn’t change the resolution", error: error) }
     }
 
     func imageSize() async {

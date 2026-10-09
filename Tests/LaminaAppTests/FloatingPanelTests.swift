@@ -53,34 +53,6 @@ struct FloatingPanelTests {
         controller.close()
         session.closeColorPicker(commit: false)
     }
-    // Invert has no settings and so no editor; it is covered on its own.
-    @Test(arguments: AdjustmentKind.allCases.filter(\.isEditable))
-    func adjustmentEditorsUseMovableNonmodalPanels(_ kind: AdjustmentKind) async throws {
-        activateTestHost()
-        let session = try sessionWithPixels()
-        session.addAdjustment(kind)
-        await session.beginAdjustmentEditing(try #require(session.adjustmentEditingID))
-        let controller = FloatingPanelController(name: "testDynamicAdjustmentPanel-\(kind.rawValue)")
-        controller.onClose = { session.finishAdjustmentEditing(commit: false) }
-        switch kind {
-        case .levels: controller.show(title: "Levels", content: LevelsSheet(session: session))
-        case .hsv: controller.show(title: "Hue/Saturation", content: HueSaturationSheet(session: session))
-        case .curves, .exposure, .gradientMap, .grain, .blackWhite, .colorBalance, .gaussianBlur, .motionBlur, .addNoise:
-            controller.show(title: kind.rawValue, content: FilterSheet(session: session))
-        case .invert: return   // filtered out above: no editor, so no panel to test
-        }
-        settle()
-        let panel = try #require(NSApp.windows.first { $0.identifier == controller.identifier })
-        #expect(panel.isVisible && panel.isMovable && !panel.isSheet)
-        #expect(panel.sheetParent == nil && !session.showsBusy)
-        let origin = panel.frame.origin
-        panel.setFrameOrigin(NSPoint(x: origin.x + 20, y: origin.y + 20))
-        #expect(panel.frame.origin != origin)
-        panel.performClose(nil)
-        #expect(session.adjustmentEditingID == nil)
-        #expect(session.levels == nil && session.hueSaturation == nil && session.filterEdit == nil)
-    }
-
     /// Camera Raw docks to the document window. That frame must not become the place
     /// Gaussian Blur and the other filters reopen.
     @Test func dockedPlacementLeavesTheSavedFilterPosition() throws {

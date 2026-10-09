@@ -102,23 +102,22 @@ struct ImageAdjustmentTests {
                 "larger grain should form visibly larger, more coherent particles")
     }
 
-    @Test func newAdjustmentLayersStartFromThePaletteRenderAndEditInThePanel() async throws {
+    @Test func newAdjustmentLayersStartFromThePaletteRenderAndEditInProperties() async throws {
         let session = EditorSession()
         session.createDocument(width: 20, height: 20)
         let base = try gray(width: 20, height: 20)
         session.insert(ImportedImage(image: base, thumbnail: base, name: "Gray"))
         session.setPaletteColor(PaletteColor(red: 1, green: 0, blue: 0), background: false)
         session.setPaletteColor(PaletteColor(red: 0, green: 0, blue: 1), background: true)
+        let requests = session.propertiesRequest
         session.addAdjustment(.gradientMap)
-        let id = try #require(session.activeLayerID)
         let adjustment = try #require(session.activeLayer?.adjustment)
         #expect(adjustment.kind == .gradientMap)
         #expect(adjustment.gradientMap.shadows == AdjustmentColor(red: 1, green: 0, blue: 0))
         #expect(adjustment.gradientMap.highlights == AdjustmentColor(red: 0, green: 0, blue: 1))
-        #expect(session.adjustmentEditingID == id)
-        await session.beginAdjustmentEditing(id)
-        #expect(session.filterEdit?.kind == .gradientMap, "edited in the floating filter panel, like Curves")
-        session.finishAdjustmentEditing(commit: false)
+        #expect(session.propertiesRequest == requests + 1 && session.propertiesKind == .adjustment(.gradientMap),
+                "edited in Properties, like Curves")
+        #expect(session.filterEdit == nil, "no floating panel")
 
         let rendered = try await ImageExporter.shared.render(try #require(session.projectSnapshot())).image
         let middle = try pixels(rendered)[210]
@@ -129,7 +128,6 @@ struct ImageAdjustmentTests {
 
         session.addAdjustment(.grain)
         let first = try #require(session.activeLayer?.adjustment?.grain.seed)
-        session.adjustmentEditingID = nil // this test never opened its panel, so there is no edit to finish
         session.addAdjustment(.grain)
         #expect(session.document?.layers.filter { $0.adjustment?.kind == .grain }.count == 2)
         #expect(session.activeLayer?.adjustment?.grain.seed != first, "each Grain layer gets its own pattern")
@@ -166,10 +164,10 @@ struct ImageAdjustmentTests {
         settings.blackWhite.reds = 250
         settings.blackWhite.blues = -100
         session.updateFilter(settings, preview: true)
-        settings = FilterSheet.resetting(\.blackWhite.reds, in: settings)
+        settings = FilterControls.resetting(\.blackWhite.reds, in: settings)
         #expect(settings.blackWhite.reds == BlackWhiteSettings().reds)
         #expect(settings.blackWhite.blues == -100, "only the double-clicked slider resets")
-        session.updateFilter(FilterSheet.resetting(\.blackWhite.blues, in: settings), preview: true)
+        session.updateFilter(FilterControls.resetting(\.blackWhite.blues, in: settings), preview: true)
         #expect(try #require(session.filterEdit).settings.blackWhite == BlackWhiteSettings())
         #expect(try #require(session.filterEdit).preview)
         await session.commitFilter()
@@ -181,7 +179,7 @@ struct ImageAdjustmentTests {
         var balance = try #require(session.filterEdit).settings
         balance.colorBalance.midCyanRed = -80
         session.updateFilter(balance, preview: false)
-        session.updateFilter(FilterSheet.resetting(\.colorBalance.midCyanRed, in: balance), preview: false)
+        session.updateFilter(FilterControls.resetting(\.colorBalance.midCyanRed, in: balance), preview: false)
         #expect(try #require(session.filterEdit).settings.colorBalance == ColorBalanceSettings())
         #expect(try #require(session.filterEdit).preview == false, "a reset leaves Preview off")
         session.cancelFilter()

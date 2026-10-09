@@ -90,7 +90,6 @@ final class AutomationDispatcher {
         if workspace.isManaging { return "The app is opening, closing or saving a project." }
         if s.textDraft != nil { return "Text is being edited." }
         if s.transformEdit != nil { return "A transform is in progress." }
-        if s.adjustmentEditingID != nil { return "An adjustment layer's settings are open." }
         if let edit = s.filterEdit { return "The \(edit.kind.rawValue) dialog is open." }
         if s.hueSaturation != nil { return "The Hue/Saturation dialog is open." }
         if s.levels != nil { return "The Levels dialog is open." }
@@ -102,7 +101,8 @@ final class AutomationDispatcher {
         if s.gradientEdit != nil { return "A gradient is waiting to be applied." }
         if s.pixelMove != nil { return "Pixels are being moved." }
         if s.brushStroke != nil || s.warpStroke != nil { return "A brush stroke is in progress." }
-        if s.shapeDraft != nil || s.lassoDraft != nil || s.guideDrag != nil || s.selectionMoveOrigin != nil || s.opacityEditLayerID != nil {
+        if s.shapeDraft != nil || s.lassoDraft != nil || s.guideDrag != nil || s.selectionMoveOrigin != nil || s.opacityEditLayerID != nil
+            || s.propertyEdit != nil {
             return "Something is being dragged or edited on the canvas."
         }
         if s.renamingLayerID != nil { return "A layer is being renamed." }

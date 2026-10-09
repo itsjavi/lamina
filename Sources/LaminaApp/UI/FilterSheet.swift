@@ -16,10 +16,6 @@ struct FilterSheet: View {
     }
 
     private var kind: FilterKind { edit?.kind ?? .gaussianBlur }
-    /// Editing an adjustment layer previews in the composite, not on a layer of its own, so there's nothing to crop.
-    private var showsPreviewWell: Bool { kind.showsDialogPreview && session.adjustmentOriginal == nil }
-    /// The widest slider title in the dialog, so every slider starts and ends in the same place.
-    @State private var labelWidth: CGFloat = 60
     static let settingsWidth: CGFloat = 340
 
     private var preview: Binding<Bool> {
@@ -52,12 +48,12 @@ struct FilterSheet: View {
         DialogLayout(defaultDisabled: okDisabled, preview: preview, status: status, reservesStatus: kind.isAutomatic,
                      confirm: { Task { await session.commitFilter() } }, cancel: { session.cancelFilter() }) {
             VStack(alignment: .leading, spacing: 12) {
-                if showsPreviewWell { FilterPreview(session: session).padding(.bottom, 4) }
-                controls
+                if kind.showsDialogPreview { FilterPreview(session: session).padding(.bottom, 4) }
+                FilterControls(kind: kind, settings: Binding(get: { settings }, set: { session.updateFilter($0, preview: edit?.preview ?? true) }),
+                               session: session, pickGradientMapColor: { session.openGradientMapColorPicker(highlights: $0) })
                 notes
             }
             .frame(width: Self.settingsWidth, alignment: .leading)
-            .onPreferenceChange(LabelWidthKey.self) { labelWidth = max(60, $0) }
         } extras: {
             if kind == .curves {
                 DialogButton("Reset") { update { $0.curves.channels[$0.curves.channel.index] = [CurvePoint(x: 0, y: 0), CurvePoint(x: 255, y: 255)] } }
@@ -94,23 +90,47 @@ struct FilterSheet: View {
         if let error = edit?.previewError {
             Text(error).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
         }
-        if session.adjustmentOriginal == nil && session.selection != nil {
+        if session.selection != nil {
             Text("Limited to the selection").font(.callout).foregroundStyle(.secondary)
         }
     }
+}
 
-    /// Each filter's settings, familiar ones first and Lamina's own after them.
+/// A filter's settings, familiar ones first and Lamina's own after them: the Filter menu's and Image ▸ Adjustments'
+/// dialogs show them, and so does an adjustment layer's Properties, `compact`, with each slider's title above it.
+struct FilterControls: View {
+    let kind: FilterKind
+    @Binding var settings: FilterSettings
+    let session: EditorSession
+    var compact = false
+    /// Opens the color picker on a Gradient Map end: false for Shadows, true for Highlights.
+    var pickGradientMapColor: (Bool) -> Void = { _ in }
+    /// The widest slider title in the dialog, so every slider starts and ends in the same place.
+    @State private var labelWidth: CGFloat = 60
+
+    private func update(_ change: (inout FilterSettings) -> Void) {
+        var value = settings
+        change(&value)
+        settings = value
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: compact ? 8 : 12) { controls }
+            .onPreferenceChange(LabelWidthKey.self) { labelWidth = max(60, $0) }
+    }
+
     @ViewBuilder private var controls: some View {
         switch kind {
         case .curves:
-            CurvesControls(settings: Binding(get: { settings.curves }, set: { new in update { $0.curves = new } }))
+            CurvesControls(settings: Binding(get: { settings.curves }, set: { new in update { $0.curves = new } }),
+                           graphHeight: compact ? 200 : 260)
         case .exposure:
             control("Exposure", \.exposure.exposure, range: ExposureSettings.exposureRange, unit: "", decimals: 2, logarithmic: false)
             control("Offset", \.exposure.offset, range: ExposureSettings.offsetRange, unit: "", decimals: 4, logarithmic: false)
             control("Gamma Correction", \.exposure.gamma, range: ExposureSettings.gammaRange, unit: "", decimals: 2, logarithmic: true)
         case .gradientMap:
             GradientMapControls(settings: Binding(get: { settings.gradientMap }, set: { new in update { $0.gradientMap = new } }),
-                                pick: { session.openGradientMapColorPicker(highlights: $0) })
+                                pick: pickGradientMapColor)
         case .blackWhite:
             // Each slider says how bright that family of colors becomes, as Photoshop's do.
             control("Reds", \.blackWhite.reds, range: BlackWhiteSettings.range, unit: "%", decimals: 0, logarithmic: false, track: .luminance(0))
@@ -371,12 +391,14 @@ struct FilterSheet: View {
                          help: String? = nil) -> some View {
         let step = pow(10, Double(decimals))
         let reset = { update { $0 = Self.resetting(key, in: $0) } }
-        return HStack(spacing: 8) {
-            label(title)
-                .onTapGesture(count: 2) { if track != nil { reset() } }
-                .scrubbable(sensitivity: 1 / step,
-                            value: Binding(get: { settings[keyPath: key] }, set: { value in update { $0[keyPath: key] = value } }),
-                            range: range)
+        let heading = Group {
+            if compact { Text(title).foregroundStyle(ColorRole.secondaryText.color) } else { label(title) }
+        }
+            .onTapGesture(count: 2) { if track != nil { reset() } }
+            .scrubbable(sensitivity: 1 / step,
+                        value: Binding(get: { settings[keyPath: key] }, set: { value in update { $0[keyPath: key] = value } }),
+                        range: range)
+        let row = HStack(spacing: 8) {
             if let track {
                 CameraRawSlider(value: settings[keyPath: key], range: range, track: track,
                                 help: "\(title). Double-click to reset.",
@@ -392,7 +414,14 @@ struct FilterSheet: View {
                 TextField(title, value: Binding(get: { settings[keyPath: key] }, set: { value in update { $0[keyPath: key] = value } }),
                           format: .number.precision(.fractionLength(0...decimals)))
                     .frame(width: 56).textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing)
-                Text(unit).frame(width: Self.unitWidth, alignment: .leading)
+                Text(unit).frame(width: compact ? 36 : Self.unitWidth, alignment: .leading)
+            }
+        }
+        return Group {
+            if compact {
+                VStack(alignment: .leading, spacing: 2) { heading; row }
+            } else {
+                HStack(spacing: 8) { heading; row }
             }
         }
         .help(help ?? "")

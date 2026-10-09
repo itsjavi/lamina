@@ -5,74 +5,29 @@ struct LevelsSheet: View {
     @Bindable var session: EditorSession
     private var edit: LevelsEdit? { session.levels }
     private var settings: LevelsSettings { edit?.settings ?? LevelsSettings() }
-    private var current: LevelRange { settings.current }
     private func update(_ change: (inout LevelsSettings) -> Void) {
         var value = settings; change(&value)
         session.updateLevels(value, preview: edit?.preview ?? true)
-    }
-    private func value(_ key: WritableKeyPath<LevelRange, Double>) -> Binding<Double> {
-        Binding(get: { current[keyPath: key] }, set: { newValue in
-            update { var range = $0.current; range[keyPath: key] = newValue; $0.current = range }
-        })
     }
     var body: some View {
         DialogLayout(preview: Binding(get: { edit?.preview ?? true }, set: { session.updateLevels(settings, preview: $0) }),
                      status: edit?.committing == true ? "Applying…" : nil,
                      confirm: { Task { await session.commitLevels() } }, cancel: { session.cancelLevels() }) {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
-                    Text("Channel:")
-                    Picker("Channel", selection: Binding(get: { settings.channel }, set: { channel in update { $0.channel = channel } })) {
-                        ForEach(LevelsChannel.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-                    }
-                    .labelsHidden().fixedSize()
-                }
-                Text("Input Levels:").padding(.top, 4)
-                VStack(spacing: 0) {
-                    histogram.frame(height: 130).background(ColorRole.field.color)
-                        .overlay { Rectangle().strokeBorder(ColorRole.edge.color) }
-                        .overlay(alignment: .topLeading) {
-                            if edit?.histogramReady != true { Text("Loading histogram…").font(.caption).padding(8) }
-                        }
-                    handles(output: false).frame(height: 20)
-                }
-                HStack {
-                    field("Input black", value(\.black), decimals: 0)
-                    Spacer()
-                    field("Gamma", value(\.gamma), decimals: 2)
-                    Spacer()
-                    field("Input white", value(\.white), decimals: 0)
-                }
-                Text("Output Levels:").padding(.top, 6)
-                VStack(spacing: 0) {
-                    LinearGradient(colors: [.black, .white], startPoint: .leading, endPoint: .trailing).frame(height: 14)
-                        .overlay { Rectangle().strokeBorder(ColorRole.edge.color) }
-                    handles(output: true).frame(height: 20)
-                }
-                HStack {
-                    field("Output black", value(\.outputBlack), decimals: 0)
-                    Spacer()
-                    field("Output white", value(\.outputWhite), decimals: 0)
-                }
+                LevelsControls(settings: Binding(get: { settings }, set: { value in update { $0 = value } }),
+                               histogram: edit?.histogramReady == true ? edit?.histogram : nil)
                 // Lamina's own: what the eyedroppers do and what the histogram counts.
                 if let mode = edit?.sampleMode {
                     Text("Click the original layer to set the \(mode.rawValue.lowercased()) point. Click the eyedropper again to stop.")
                         .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
-                Text(session.adjustmentOriginal != nil ? "Underlying pixels · alpha-weighted histogram" : session.selection == nil ? "Original pixels · alpha-weighted histogram" : "Original pixels · selection and alpha-weighted histogram")
+                Text(session.selection == nil ? "Original pixels · alpha-weighted histogram" : "Original pixels · selection and alpha-weighted histogram")
                     .font(.caption).foregroundStyle(.secondary)
             }
             .frame(width: 300)
         } extras: {
             // Auto applies the contrast stretch, as Photoshop's Auto does; its menu offers Lamina's other methods.
-            Menu {
-                ForEach(LevelsAuto.allCases, id: \.self) { mode in
-                    Button(mode.rawValue) { session.autoLevels(mode) }
-                }
-            } label: { Text("Auto") } primaryAction: { session.autoLevels(.contrast) }
-                .frame(maxWidth: .infinity)
-                .disabled(edit?.histogramReady != true)
-                .help("Stretch the tones to fill the range. Hold the arrow for other methods.")
+            LevelsAutoButton(enabled: edit?.histogramReady == true) { session.autoLevels($0) }
             DialogButton("Reset") { edit?.sampleMode = nil; update { $0 = LevelsSettings() } }
             HStack(spacing: 4) {
                 ForEach(LevelsSample.allCases, id: \.self) { mode in
@@ -101,6 +56,80 @@ struct LevelsSheet: View {
         }
         .frame(width: 26, height: 22)
     }
+}
+
+/// Levels' Auto: a click stretches the tones to fill the range (Contrast), as Photoshop's Auto does; its menu offers
+/// Lamina's other methods.
+struct LevelsAutoButton: View {
+    let enabled: Bool
+    let apply: (LevelsAuto) -> Void
+
+    var body: some View {
+        Menu {
+            ForEach(LevelsAuto.allCases, id: \.self) { mode in
+                Button(mode.rawValue) { apply(mode) }
+            }
+        } label: { Text("Auto") } primaryAction: { apply(.contrast) }
+            .frame(maxWidth: .infinity)
+            .disabled(!enabled)
+            .help("Stretch the tones to fill the range. Hold the arrow for other methods.")
+    }
+}
+
+/// Levels' settings: the channel, the input histogram with its black, gray and white sliders and their fields, then
+/// the output sliders and fields. Image ▸ Adjustments ▸ Levels… and a Levels layer's Properties both show them.
+struct LevelsControls: View {
+    @Binding var settings: LevelsSettings
+    /// What the histogram counts, per channel (RGB, red, green, blue); nil while it is being counted.
+    let histogram: [[Double]]?
+    private var current: LevelRange { settings.current }
+    private func update(_ change: (inout LevelsSettings) -> Void) {
+        var value = settings; change(&value)
+        settings = value
+    }
+    private func value(_ key: WritableKeyPath<LevelRange, Double>) -> Binding<Double> {
+        Binding(get: { current[keyPath: key] }, set: { newValue in
+            update { var range = $0.current; range[keyPath: key] = newValue; $0.current = range }
+        })
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Text("Channel:")
+                Picker("Channel", selection: Binding(get: { settings.channel }, set: { channel in update { $0.channel = channel } })) {
+                    ForEach(LevelsChannel.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                }
+                .labelsHidden().fixedSize()
+            }
+            Text("Input Levels:").padding(.top, 4)
+            VStack(spacing: 0) {
+                histogramView.frame(height: 130).background(ColorRole.field.color)
+                    .overlay { Rectangle().strokeBorder(ColorRole.edge.color) }
+                    .overlay(alignment: .topLeading) {
+                        if histogram == nil { Text("Loading histogram…").font(.caption).padding(8) }
+                    }
+                handles(output: false).frame(height: 20)
+            }
+            HStack {
+                field("Input black", value(\.black), decimals: 0)
+                Spacer()
+                field("Gamma", value(\.gamma), decimals: 2)
+                Spacer()
+                field("Input white", value(\.white), decimals: 0)
+            }
+            Text("Output Levels:").padding(.top, 6)
+            VStack(spacing: 0) {
+                LinearGradient(colors: [.black, .white], startPoint: .leading, endPoint: .trailing).frame(height: 14)
+                    .overlay { Rectangle().strokeBorder(ColorRole.edge.color) }
+                handles(output: true).frame(height: 20)
+            }
+            HStack {
+                field("Output black", value(\.outputBlack), decimals: 0)
+                Spacer()
+                field("Output white", value(\.outputWhite), decimals: 0)
+            }
+        }
+    }
     /// A level's exact value under its slider, as Photoshop's: the handle above it is what drags.
     private func field(_ name: String, _ binding: Binding<Double>, decimals: Int) -> some View {
         TextField(name, value: binding, format: .number.precision(.fractionLength(decimals)))
@@ -108,9 +137,9 @@ struct LevelsSheet: View {
             .help(name)
             .accessibilityIdentifier("levels\(name.replacingOccurrences(of: " ", with: ""))")
     }
-    private var histogram: some View {
+    private var histogramView: some View {
         Canvas { context, size in
-            let bins = edit?.histogram[settings.channel.index] ?? Array(repeating: 0, count: 256)
+            let bins = histogram?[settings.channel.index] ?? Array(repeating: 0, count: 256)
             let peak = LevelsHistogramDisplay.scale(for: bins)
             guard peak > 0 else { return }
             var path = Path()

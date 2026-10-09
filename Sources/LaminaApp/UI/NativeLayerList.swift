@@ -458,12 +458,13 @@ struct NativeLayerList: NSViewRepresentable {
             let id = rows[table.clickedRow].id
             session.activeLayerID = id
             // On the thumbnail (or another of the row's controls) a double-click opens what the layer holds: its
-            // text, or an adjustment's settings. On the name it renames the layer, as it does for every other layer.
+            // text, or an adjustment's settings in Properties. On the name it renames the layer, as it does for every
+            // other layer.
             let point = NSApp.currentEvent?.locationInWindow ?? .zero
             let cell = table.view(atColumn: 0, row: table.clickedRow, makeIfNecessary: false) as? LayerCell
             if cell?.isOnControl(point) == true {
                 if rows[table.clickedRow].liveText != nil { session.editActiveText(); return }
-                if rows[table.clickedRow].adjustment?.kind.isEditable == true { session.adjustmentEditingID = id; return }
+                if rows[table.clickedRow].adjustment != nil { session.showProperties(); return }
             }
             session.renamingLayerID = id
         }

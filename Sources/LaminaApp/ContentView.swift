@@ -111,7 +111,7 @@ struct ContentView: View {
                 }
                 .modifier(HistoryFlyout(session: session, layout: dockLayout))
                 Divider()
-                DockArea(session: session, layout: dockLayout)
+                DockArea(session: session, layout: dockLayout, projects: applicationDelegate?.projects)
             }
         }
         .modifier(WidthReader(width: $windowWidth))

@@ -124,6 +124,7 @@ extension EditorSession {
             case .dialog:
                 dialogColorChange?(commit ? colorPicker.color : colorPicker.original)
                 dialogColorChange = nil
+                if dialogColorStep { dialogColorStep = false; endEdit() }
             }
         }
         colorPicker = nil
@@ -168,8 +169,15 @@ extension EditorSession {
     }
     /// Opens the app's picker on a dialog's color. `change` hears the working color as it moves, the chosen one on OK,
     /// and the original again on Cancel.
-    func openDialogColorPicker(title: String, color: PaletteColor, change: @escaping (PaletteColor) -> Void) {
+    /// With `undoName`, everything the picker changes, the working colors and the one chosen, is one undo step, and
+    /// Cancel leaves none.
+    func openDialogColorPicker(title: String, color: PaletteColor, undoName: String? = nil, change: @escaping (PaletteColor) -> Void) {
         guard colorPicker == nil else { return }
+        if let undoName {
+            finishPropertyChange()
+            beginEdit(undoName)
+            dialogColorStep = true
+        }
         dialogColorChange = change
         colorPicker = ColorPickerState(target: .dialog(title: title), original: color)
     }

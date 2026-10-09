@@ -94,8 +94,6 @@ final class EditorSession {
     var document: CanvasDocument?
     var canvasFocusRequest = 0
     var showsSampleRing = true
-    var adjustmentOriginal: LayerAdjustment?
-    var adjustmentEditingID: UUID? { didSet { resumeFileRequests() } }
     /// The open Layer Style dialog (LayerStyle.swift).
     var layerStyle: LayerStyleEdit? { didSet { if (layerStyle == nil) != (oldValue == nil) { resumeFileRequests() } } }
     var effectSelection: LayerEffectSelection?
@@ -144,7 +142,7 @@ final class EditorSession {
     private var fileRequestWaiters: [CheckedContinuation<Void, Never>] = []
     var canStartProjectOperation: Bool {
         _ = showsBusy // Re-evaluate in the UI when a long operation starts or ends.
-        return selectionAmountOperation == nil && colorRange == nil && textDraft == nil && !isProjectBusy && !isImporting && brushStroke == nil && warpStroke == nil && levels == nil && layerStyle == nil && !showsNewDocument && !showsImporter && renamingLayerID == nil && importError == nil && adjustmentEditingID == nil && !showsConversionSheet
+        return selectionAmountOperation == nil && colorRange == nil && textDraft == nil && !isProjectBusy && !isImporting && brushStroke == nil && warpStroke == nil && levels == nil && layerStyle == nil && !showsNewDocument && !showsImporter && renamingLayerID == nil && importError == nil && !showsConversionSheet
     }
     func waitForFileRequest() async {
         while !canStartProjectOperation {
@@ -331,6 +329,8 @@ final class EditorSession {
     var colorRange: ColorRangeEdit? { didSet { resumeFileRequests() } }
     /// The dialog whose color the picker is open on (`ColorPickerTarget.dialog`).
     @ObservationIgnored var dialogColorChange: ((PaletteColor) -> Void)?
+    /// The picker holds an undo step open for its color, closed with it (`openDialogColorPicker(undoName:)`).
+    @ObservationIgnored var dialogColorStep = false
     /// A dialog with its own zoomable preview (Export JPEG) is open: the View menu's zoom commands zoom that instead.
     @ObservationIgnored var previewZoom: ((PreviewZoomCommand) -> Void)?
     /// The text's style before the font menu started previewing faces on it (see `previewFont`).
@@ -367,6 +367,10 @@ final class EditorSession {
     /// User guides. Hidden extras do not snap.
     var showsGuides = ToolDefaults.bool("guides", true) { didSet { ToolDefaults.set(showsGuides, "guides") } }
     var showsRulers = ToolDefaults.bool("rulers", false) { didSet { ToolDefaults.set(showsRulers, "rulers") } }
+    /// What the rulers and Properties' Canvas fields measure in (Properties ▸ Rulers & Grids), the person's own.
+    var rulerUnits = SizeUnit(rawValue: ToolDefaults.string("rulerUnits", "")).flatMap { SizeUnit.rulerUnits.contains($0) ? $0 : nil } ?? .pixels {
+        didSet { ToolDefaults.set(rulerUnits.rawValue, "rulerUnits") }
+    }
     /// Master snap switch (View > Snap). On so today's layer/canvas snap keeps working.
     var snapEnabled = ToolDefaults.bool("snap", true) { didSet { ToolDefaults.set(snapEnabled, "snap") } }
     var snapToGuides = ToolDefaults.bool("snapGuides", true) { didSet { ToolDefaults.set(snapToGuides, "snapGuides") } }
@@ -632,6 +636,13 @@ final class EditorSession {
     /// Cancel pressed while a Photoshop file was still being read.
     @ObservationIgnored private var conversionCancelled = false
     var opacityEditLayerID: UUID?
+    /// The Properties edit a held mouse button keeps open, by its undo name (`changeProperty`).
+    @ObservationIgnored var propertyEdit: String?
+    @ObservationIgnored var propertyRelease: Task<Void, Never>?
+    /// Whether the mouse button is down, which keeps a Properties edit open; tests stand in for the mouse.
+    @ObservationIgnored var isPointerHeld: () -> Bool = { NSEvent.pressedMouseButtons & 1 != 0 }
+    /// Bumped to bring the Properties panel forward in the dock (`showProperties`).
+    var propertiesRequest = 0
     var blendPreview: (layerID: UUID, mode: LayerBlendMode)?
     @ObservationIgnored var refreshCanvasPreview: (() -> Void)?
     var isMaskSelected = false { didSet { if !isMaskSelected { viewsMaskAlone = false } } }
@@ -700,7 +711,7 @@ final class EditorSession {
     var activeLayer: ImageLayer? { document?.layers.first { $0.id == activeLayerID } }
     var canEditLayers: Bool {
         _ = showsBusy
-        return selectionAmountOperation == nil && colorRange == nil && textDraft == nil && document != nil && brushStroke == nil && warpStroke == nil && !isProjectBusy && !isImporting && !showsNewDocument && !showsImporter && renamingLayerID == nil && transformEdit == nil && cropRect == nil && gradientEdit == nil && pixelMove == nil && hueSaturation == nil && levels == nil && filterEdit == nil && adjustmentEditingID == nil && layerStyle == nil
+        return selectionAmountOperation == nil && colorRange == nil && textDraft == nil && document != nil && brushStroke == nil && warpStroke == nil && !isProjectBusy && !isImporting && !showsNewDocument && !showsImporter && renamingLayerID == nil && transformEdit == nil && cropRect == nil && gradientEdit == nil && pixelMove == nil && hueSaturation == nil && levels == nil && filterEdit == nil && layerStyle == nil
     }
 
     func addBlankLayer() {

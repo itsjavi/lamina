@@ -19,8 +19,8 @@ nonisolated extension AdjustmentKind {
         case .colorBalance: return "scale.3d"
         }
     }
-    /// The filter panel that edits this kind; Levels and Hue/Saturation have panels of their own.
-    /// Every kind but Invert opens an editor when its layer is double-clicked.
+    /// The filter whose settings (and controls, in Properties) this kind shares; Levels and Hue/Saturation have
+    /// controls of their own. Every kind but Invert has settings to edit.
     var isEditable: Bool { self != .invert }
     var filterKind: FilterKind? {
         switch self {
@@ -39,6 +39,43 @@ nonisolated extension AdjustmentKind {
     }
 }
 nonisolated extension LayerAdjustment {
+    /// The settings the filter dialogs' controls edit, for the kinds that share them (`AdjustmentKind.filterKind`).
+    var filterSettings: FilterSettings {
+        var settings = FilterSettings()
+        settings.curves = curves
+        settings.exposure = exposure
+        settings.gradientMap = gradientMap
+        settings.grain = grain
+        settings.blackWhite = blackWhite
+        settings.colorBalance = colorBalance
+        settings.radius = gaussianRadius
+        settings.angle = resolvedMotionAngle
+        settings.distance = resolvedMotionDistance
+        settings.amount = resolvedNoiseAmount
+        settings.gaussian = resolvedNoiseGaussian
+        settings.monochromatic = resolvedNoiseMonochromatic
+        return settings
+    }
+    /// Takes back what those controls changed, for this layer's kind.
+    mutating func take(_ settings: FilterSettings) {
+        switch kind {
+        case .curves: curves = settings.curves
+        case .exposure: exposure = settings.exposure
+        case .gradientMap: gradientMap = settings.gradientMap
+        case .grain: grain = settings.grain
+        case .blackWhite: blackWhite = settings.blackWhite
+        case .colorBalance: colorBalance = settings.colorBalance
+        case .gaussianBlur: gaussianRadius = settings.radius
+        case .motionBlur:
+            resolvedMotionAngle = settings.angle
+            resolvedMotionDistance = settings.distance
+        case .addNoise:
+            resolvedNoiseAmount = settings.amount
+            resolvedNoiseGaussian = settings.gaussian
+            resolvedNoiseMonochromatic = settings.monochromatic
+        case .levels, .hsv, .invert: break
+        }
+    }
     /// Document-pixel halo needed so a partial canvas redraw can sample beyond its dirty rectangle.
     var samplingMargin: CGFloat {
         switch kind {
@@ -91,18 +128,22 @@ nonisolated extension LayerAdjustment {
 }
 
 extension EditorSession {
-    func addAdjustment(_ kind: AdjustmentKind) {
-        guard canEditLayers, let document, document.layers.count < 10_000 else { return }
-        var layer = ImageLayer(name: kind.rawValue, blankSize: document.size)
+    /// What a new layer of `kind` starts with. A Gradient Map runs from the foreground to the background color, as
+    /// in Photoshop; each Grain and Add Noise layer gets a pattern of its own.
+    func newAdjustment(_ kind: AdjustmentKind) -> LayerAdjustment {
         var adjustment = LayerAdjustment(kind: kind)
-        // A new Gradient Map runs from the foreground to the background color, as in Photoshop;
-        // each Grain layer gets a pattern of its own.
         if kind == .gradientMap {
             adjustment.gradientMap = GradientMapSettings(shadows: AdjustmentColor(foregroundColor), highlights: AdjustmentColor(backgroundColor))
         }
         if kind == .grain { adjustment.grain.seed = .random(in: .min ... .max) }
         if kind == .addNoise { adjustment.resolvedNoiseSeed = .random(in: .min ... .max) }
-        layer.adjustment = adjustment
+        return adjustment
+    }
+    /// Adds the layer above the active one and shows its settings in Properties.
+    func addAdjustment(_ kind: AdjustmentKind) {
+        guard canEditLayers, let document, document.layers.count < 10_000 else { return }
+        var layer = ImageLayer(name: kind.rawValue, blankSize: document.size)
+        layer.adjustment = newAdjustment(kind)
         layer.parentID = activeLayer?.isGroup == true ? activeLayerID : activeLayer?.parentID
         let index = document.layers.firstIndex { $0.id == activeLayerID }.map { $0 + 1 } ?? document.layers.count
         beginEdit("New \(kind.rawValue) Adjustment")
@@ -110,8 +151,7 @@ extension EditorSession {
         if let parent = layer.parentID { collapsedGroupIDs.remove(parent) }
         activeLayerID = layer.id
         endEdit()
-        // Invert has nothing to set, so the new layer just applies rather than opening an editor.
-        if kind.isEditable { adjustmentEditingID = layer.id }
+        showProperties()
     }
     func updateAdjustment(_ id: UUID, value: LayerAdjustment) {
         guard let index = document?.layers.firstIndex(where: { $0.id == id }), value.isValid else { return }

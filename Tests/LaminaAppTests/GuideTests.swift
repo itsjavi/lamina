@@ -216,10 +216,15 @@ struct GuideTests {
     }
 
     @Test func rulerStepUsesNicePixelIntervals() {
-        #expect(CanvasRulerNSView.majorStep(pointsPerPixel: 1) == 100)
-        #expect(CanvasRulerNSView.majorStep(pointsPerPixel: 8) == 10)
+        #expect(CanvasRulerNSView.majorStep(pointsPerUnit: 1) == 100)
+        #expect(CanvasRulerNSView.majorStep(pointsPerUnit: 8) == 10)
         #expect(CanvasRulerNSView.label(0) as String == "0")
         #expect(CanvasRulerNSView.label(250) as String == "250")
+        // In inches at 72 ppi and 100%, an inch is 72 points: one numbered tick per inch; zoomed out, fractions
+        // never come in, and zoomed in they do.
+        #expect(CanvasRulerNSView.majorStep(pointsPerUnit: 72, fractions: true) == 1)
+        #expect(CanvasRulerNSView.majorStep(pointsPerUnit: 720, fractions: true) == 0.1)
+        #expect(CanvasRulerNSView.label(0.25) as String == "0.25")
     }
 
     @Test func drawnPointsSnapToTheSnapToTargets() throws {

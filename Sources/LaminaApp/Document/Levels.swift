@@ -127,7 +127,6 @@ extension EditorSession {
     func updateLevels(_ settings: LevelsSettings, preview: Bool) {
         guard let edit = levels, !edit.committing else { return }
         edit.settings = settings; edit.preview = preview
-        if previewAdjustmentEditing(preview: preview) { return }
         if !preview || settings.isIdentity {
             edit.previewTask?.cancel(); edit.previewTask = nil; edit.pending = nil
             edit.preparedPreview = nil; brushRevision += 1
@@ -148,13 +147,11 @@ extension EditorSession {
         }
     }
     func cancelLevels() {
-        if finishAdjustmentEditing(commit: false) { return }
         guard let edit = levels, !edit.committing else { return }
         edit.previewTask?.cancel(); edit.histogramTask?.cancel()
         levels = nil; brushRevision += 1
     }
     func commitLevels() async {
-        if finishAdjustmentEditing(commit: true) { return }
         guard let edit = levels, !edit.committing else { return }
         if edit.settings.isIdentity { cancelLevels(); return }
         edit.committing = true

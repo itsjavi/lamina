@@ -373,9 +373,9 @@ struct LaminaMain: App {
                                 .assignableShortcut("Layer › New Adjustment Layer › \(kind.rawValue)")
                         }
                     }.disabled(!session.canEditLayers || session.document == nil)
-                    Button("Edit Adjustment…") {
-                        session.adjustmentEditingID = session.activeLayerID
-                    }.assignableShortcut("Layer › Edit Adjustment…").disabled(!session.canEditLayers || session.activeLayer?.adjustment == nil)
+                    // Photoshop's name: an adjustment layer's settings, which show in Properties.
+                    Button("Layer Content Options…") { session.showProperties() }
+                        .assignableShortcut("Layer › Layer Content Options…").disabled(session.activeLayer?.adjustment == nil)
                     Divider()
                     Button(session.selection == nil ? "Duplicate Layer" : "Layer via Copy") { session.layerViaCopy() }
                         .configuredKeyboardShortcut("j").disabled(!session.canCopyPixels && !(session.selection == nil && session.canEditLayers && session.activeLayer != nil))

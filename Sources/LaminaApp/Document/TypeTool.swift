@@ -67,8 +67,9 @@ extension EditorSession {
         textDraft = TextDraft(documentID: document.id, layerID: layer.id, origin: layer.origin, transform: layer.transform, style: text.style)
     }
 
+    /// `refocus` hands the keys back to the canvas afterwards; a Properties field still being typed in keeps them.
     @discardableResult
-    func applyText(_ draft: TextDraft) -> Bool {
+    func applyText(_ draft: TextDraft, refocus: Bool = true) -> Bool {
         guard document?.id == draft.documentID, draft.style.isValid else { return false }
         let pending = textDraft
         textDraft = nil
@@ -113,7 +114,7 @@ extension EditorSession {
             textDefaults.colorRuns = nil
             textDefaults.fontRuns = nil
             textDraft = nil
-            canvasFocusRequest += 1
+            if refocus { canvasFocusRequest += 1 }
             return true
         } catch {
             brushError = error.localizedDescription

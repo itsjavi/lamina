@@ -197,10 +197,12 @@ final class EditorSession {
     /// The last rounded rectangle drawn for a transform in progress, by layer, with the size it was drawn at.
     @ObservationIgnored var shapeTransformPreviewCache: [UUID: (size: CGSize, image: CGImage)] = [:]
     var locksTransformRatio = true
+    /// The Free Transform bar's reference point, a place on the box (unit square): see `LayerTransform.moving`.
+    var transformReference = LayerTransform.centerReference
     /// Off by default: a Move-tool press drags the active layer; hold Cmd (or turn this on) to pick the layer under the pointer.
     var transformAutoSelect = ToolDefaults.bool("autoSelect", false) { didSet { ToolDefaults.set(transformAutoSelect, "autoSelect") } }
-    /// The Move tool's transform box and handles (⌘H). Hidden, a drag anywhere just moves the layer;
-    /// a pending ⌘T transform still shows its box.
+    /// The Move tool's transform box and handles (the Move bar's Show Transform Controls). Hidden, a drag anywhere
+    /// just moves the layer; a pending Free Transform still shows its box.
     var showsTransformControls = ToolDefaults.bool("transformControls", true) { didSet { ToolDefaults.set(showsTransformControls, "transformControls") } }
     /// The copies an Option-drag made, and what was selected before it, so Escape can take them away again.
     @ObservationIgnored var transformDuplicate: (copies: [UUID], source: Set<UUID>, primary: UUID?)?
@@ -516,7 +518,7 @@ final class EditorSession {
             beginEdit("Transform Layers")
             for (id, original) in group.originals {
                 guard let index = document?.layers.firstIndex(where: { $0.id == id }) else { continue }
-                let moved = original.following(from: group.box, to: edit.draft)
+                let moved = group.carried(original, to: edit.draft)
                 guard moved.isValid else { continue }
                 if let mask = document?.layers[index].mask {
                     document?.layers[index].mask?.placement = mask.placement(movingLayer: original, to: moved)
@@ -577,7 +579,7 @@ final class EditorSession {
     /// each layer of a group; nil when the edit doesn't move it.
     func pendingTransform(for layer: ImageLayer) -> LayerTransform? {
         guard let edit = transformEdit, !edit.mask else { return nil }
-        if let group = edit.group { return group.originals[layer.id].map { $0.following(from: group.box, to: edit.draft) } }
+        if let group = edit.group { return group.originals[layer.id].map { group.carried($0, to: edit.draft) } }
         return edit.layerID == layer.id ? edit.draft : nil
     }
     func nudgeLayer(dx: CGFloat, dy: CGFloat) {

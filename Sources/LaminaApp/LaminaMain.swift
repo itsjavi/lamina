@@ -140,7 +140,8 @@ struct LaminaMain: App {
                             .assignableShortcut("View › Snap")
                         Toggle("Show Transform Controls", isOn: Binding(get: { session.showsTransformControls },
                                                                           set: { session.showsTransformControls = $0 }))
-                            .configuredKeyboardShortcut("h").disabled(session.tool != .move || session.document == nil)
+                            .assignableShortcut("View › Show Transform Controls")
+                            .disabled(session.tool != .move || session.document == nil)
                         Group {
                             Divider()
                             Menu("Show") {
@@ -180,8 +181,8 @@ struct LaminaMain: App {
                                 .disabled(!session.canClearGuides)
                         }
                     }
-                    // ⌘H toggles the Move tool's transform controls instead of hiding the app, so Hide keeps its
-                    // place in the app menu without the shortcut.
+                    // ⌘H is kept for View ▸ Extras (docs/DESIGN.md, Shortcut changes), so Hide keeps its place in the
+                    // app menu without the shortcut.
                     CommandGroup(replacing: .appVisibility) {
                         Button("Hide Lamina") { NSApp.hide(nil) }
                             .assignableShortcut("Lamina › Hide Lamina")
@@ -243,6 +244,22 @@ struct LaminaMain: App {
                         .disabled(!session.canStrokeSelection)
                     Button("Content-Aware Fill…") { session.beginFilter(.contentAwareFill) }
                         .configuredKeyboardShortcut(.delete, modifiers: .shift).disabled(!session.canContentAwareFill)
+                    Divider()
+                    // The selected pixels when there is a selection, else the layer (or the selected layers).
+                    Button("Free Transform") { session.transformCommand() }
+                        .configuredKeyboardShortcut("t").disabled(!session.canTransform && !session.canTransformSelection)
+                    Menu("Transform") {
+                        Button("Distort") { Task { await session.distortCommand() } }
+                            .assignableShortcut("Edit › Transform › Distort")
+                            .disabled(!session.canDistort)
+                        Divider()
+                        Button("Flip Horizontal") { session.flipTransform(horizontally: true) }
+                            .assignableShortcut("Edit › Transform › Flip Horizontal")
+                            .disabled(!session.canFlipTransform)
+                        Button("Flip Vertical") { session.flipTransform(horizontally: false) }
+                            .assignableShortcut("Edit › Transform › Flip Vertical")
+                            .disabled(!session.canFlipTransform)
+                    }
                 }
                 CommandMenu("Select") {
                     // A field being edited keeps its own Select All: offer it to the responder chain
@@ -357,8 +374,6 @@ struct LaminaMain: App {
                         session.adjustmentEditingID = session.activeLayerID
                     }.assignableShortcut("Layer › Edit Adjustment…").disabled(!session.canEditLayers || session.activeLayer?.adjustment == nil)
                     Divider()
-                    Button(session.canTransformSelection ? "Transform Selection" : "Transform Layer") { session.transformCommand() }
-                        .configuredKeyboardShortcut("t").disabled(!session.canTransform && !session.canTransformSelection)
                     Button(session.selection == nil ? "Duplicate Layer" : "Layer via Copy") { session.layerViaCopy() }
                         .configuredKeyboardShortcut("j").disabled(!session.canCopyPixels && !(session.selection == nil && session.canEditLayers && session.activeLayer != nil))
                     Divider()
@@ -406,12 +421,6 @@ struct LaminaMain: App {
                             .assignableShortcut("Layer › Flatten Image")
                             .disabled(!session.canFlattenImage)
                         Divider()
-                        Button("Flip Layer Horizontal") { session.flipLayers(horizontally: true) }
-                            .assignableShortcut("Layer › Flip Layer Horizontal")
-                            .disabled(!session.canTransform)
-                        Button("Flip Layer Vertical") { session.flipLayers(horizontally: false) }
-                            .assignableShortcut("Layer › Flip Layer Vertical")
-                            .disabled(!session.canTransform)
                         Menu("Align") {
                             ForEach(LayerAlignment.allCases, id: \.self) { alignment in
                                 Button(alignment.rawValue) { session.alignLayers(alignment) }

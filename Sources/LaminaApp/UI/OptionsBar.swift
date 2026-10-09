@@ -25,3 +25,24 @@ enum OptionsBarStyle {
     /// The toolbar's width in docs/DESIGN.md, so the icon sits over the column it was picked from.
     static let iconSlotWidth: CGFloat = 44
 }
+
+/// The 1 × 20 pt line between a bar's groups.
+struct OptionsBarDivider: View {
+    var body: some View { ColorRole.separator.color.frame(width: 1, height: 20) }
+}
+
+/// A bar's icon button, 24 × 22: the symbol alone, with its name as the help tag and accessibility label.
+struct OptionsBarIconButton: View {
+    let title: String
+    let symbol: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol).frame(width: 24, height: 22).contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .help(title)
+        .accessibilityLabel(title)
+    }
+}

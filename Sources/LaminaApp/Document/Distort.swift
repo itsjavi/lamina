@@ -265,6 +265,20 @@ extension EditorSession {
                                       corners: DistortWarp.corners(of: edit.draft), mask: edit.mask, group: edit.group)
     }
 
+    /// Edit ▸ Transform ▸ Distort: what Cmd-dragging a handle does, without the drag. It starts a Free Transform first
+    /// when none is in progress (of the selected pixels when there is a selection, as ⌘T does), and from then on
+    /// every handle moves its corner freely.
+    var canDistort: Bool {
+        if let edit = transformEdit { return edit.corners == nil }
+        return canTransform || canTransformSelection
+    }
+    func distortCommand() async {
+        if transformEdit == nil {
+            if canTransformSelection { await beginSelectionTransform() } else { beginTransform() }
+        }
+        beginDistort()
+    }
+
     /// Moves the distortion's corners; a twisted or collapsed shape is ignored.
     func previewCorners(_ corners: [CGPoint]) {
         guard transformEdit?.corners != nil, DistortWarp.isUsable(corners) else { return }

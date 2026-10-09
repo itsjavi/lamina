@@ -77,7 +77,7 @@ struct KeyboardShortcutTests {
             #expect(titles.contains("Layer › New Adjustment Layer › \(kind.rawValue)"), "\(kind.rawValue)")
         }
         #expect(titles.contains("Select › Color Range…"))
-        // The app menu's and Open Recent's commands too; ⌘H belongs to Show Transform Controls, so Hide needs this.
+        // The app menu's and Open Recent's commands too; ⌘H is kept for View ▸ Extras, so Hide needs this.
         for title in ["Lamina › Check for Updates…", "Lamina › Hide Lamina", "Lamina › Show All",
                       "File › Open Recent › Clear Menu"] {
             #expect(titles.contains(title), "\(title)")
@@ -92,6 +92,25 @@ struct KeyboardShortcutTests {
         #expect(settings.assigned("Select › Color Range…") == ShortcutChord("k", 5))
         settings.save([:])
         #expect(settings.assigned("Select › Color Range…").isNone, "Restore Defaults clears it again")
+    }
+
+    /// The transform commands moved to the Edit menu and Show Transform Controls gave up ⌘H: keys people set for
+    /// them under their old names stay with them, and ⌘H belongs to no menu item.
+    @Test func movedTransformCommandsKeepTheirCustomKeys() {
+        let defaults = UserDefaults(suiteName: "KeyboardShortcutTests-\(UUID().uuidString)")!
+        let more = ShortcutDefinition.moreGroup
+        let saved = ["Menus:Transform Layer / Selection": ShortcutChord("t", 3),
+                     "Menus:Show Transform Controls": ShortcutChord("h", 5),
+                     "\(more):Layer › Flip Layer Horizontal": ShortcutChord("f", 5),
+                     "\(more):Layer › Flip Layer Vertical": ShortcutChord("v", 5)]
+        defaults.set(try! JSONEncoder().encode(saved), forKey: "keyboardShortcuts.v1")
+        let settings = ShortcutSettings(defaults: defaults)
+        #expect(settings.menu("t", modifiers: .command) == ShortcutChord("t", 3), "Edit › Free Transform")
+        #expect(settings.assigned("View › Show Transform Controls") == ShortcutChord("h", 5))
+        #expect(settings.assigned("Edit › Transform › Flip Horizontal") == ShortcutChord("f", 5))
+        #expect(settings.assigned("Edit › Transform › Flip Vertical") == ShortcutChord("v", 5))
+        #expect(settings.assigned("Edit › Transform › Distort").isNone)
+        #expect(!ShortcutDefinition.all.contains { $0.isMenu && $0.original == ShortcutChord("h", 1) }, "⌘H is free")
     }
 
     @Test func menuShortcutsNeedCommandOptionOrControl() {

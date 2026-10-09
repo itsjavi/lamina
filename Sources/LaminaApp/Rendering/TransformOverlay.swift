@@ -359,6 +359,18 @@ final class TransformOverlay: NSView {
             context.fill(rect)
             context.stroke(rect)
         }
+        // During a Free Transform, the reference point that typed values and rotation turn about: a ringed cross.
+        if let edit = session.transformEdit, edit.persistent, edit.corners == nil, let document = session.document {
+            let point = session.viewport.viewPoint(from: edit.draft.point(session.transformReference), documentSize: document.size)
+            let cross = CGMutablePath()
+            cross.move(to: CGPoint(x: point.x - 7, y: point.y))
+            cross.addLine(to: CGPoint(x: point.x + 7, y: point.y))
+            cross.move(to: CGPoint(x: point.x, y: point.y - 7))
+            cross.addLine(to: CGPoint(x: point.x, y: point.y + 7))
+            cross.addEllipse(in: CGRect(x: point.x - 4, y: point.y - 4, width: 8, height: 8))
+            context.addPath(cross)
+            context.strokePath()
+        }
         guard geometry.showsRotation else { return }
         let point = geometry.rotationHandle
         let rect = CGRect(x: point.x - 4, y: point.y - 4, width: 8, height: 8)

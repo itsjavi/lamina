@@ -19,6 +19,20 @@ extension LayerTransform {
 }
 
 extension EditorSession {
+    /// Edit ▸ Transform ▸ Flip Horizontal or Flip Vertical. During a Free Transform the box turns over across the
+    /// reference point, as part of that edit; otherwise the layers flip at once (`flipLayers`). A distortion has no
+    /// box to turn over.
+    var canFlipTransform: Bool {
+        if let edit = transformEdit, edit.persistent { return edit.corners == nil }
+        return canTransform
+    }
+    func flipTransform(horizontally: Bool) {
+        guard let edit = transformEdit, edit.persistent else { flipLayers(horizontally: horizontally); return }
+        guard edit.corners == nil else { NSSound.beep(); return }
+        let pivot = edit.draft.point(transformReference)
+        previewTransform(edit.draft.mirrored(horizontally: horizontally, across: horizontally ? pivot.x : pivot.y))
+    }
+
     /// Flips the selected layer about its own middle — or several selected layers, or a folder's contents, about
     /// the middle of the box around them — as one undo step. Masks follow the link: a linked mask flips with its
     /// layer, an unlinked one stays where it is.

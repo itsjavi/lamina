@@ -10,6 +10,44 @@ nonisolated extension LayerSampling {
         case .high: return .high
         }
     }
+    /// The Free Transform bar's names for these, as familiar editors call them. Display only: a saved project keeps
+    /// the raw values it always had.
+    var interpolationName: String {
+        switch self {
+        case .nearest: return "Nearest Neighbor"
+        case .smooth: return "Bilinear"
+        case .high: return "Bicubic"
+        }
+    }
+}
+
+/// The Free Transform bar's reference point: a place on the box (unit square, y down) that typed positions refer to,
+/// and that typed sizes, typed angles and rotation drags keep where it is.
+nonisolated extension LayerTransform {
+    /// Its nine places, in reading order: the corners, the middles of the edges, and the center.
+    static let referencePoints: [CGPoint] = [0, 0.5, 1].flatMap { y in [0, 0.5, 1].map { CGPoint(x: $0, y: y) } }
+    static let centerReference = CGPoint(x: 0.5, y: 0.5)
+
+    /// The same box moved so that its point at `unit` lands on `target`.
+    func moving(_ unit: CGPoint, to target: CGPoint) -> LayerTransform {
+        var result = self
+        let current = point(unit)
+        result.origin.x += target.x - current.x
+        result.origin.y += target.y - current.y
+        return result
+    }
+    /// Resized to `size`, with its point at `unit` staying put.
+    func resized(to size: CGSize, keeping unit: CGPoint) -> LayerTransform {
+        var result = self
+        result.size = size
+        return result.moving(unit, to: point(unit))
+    }
+    /// Turned to `degrees`, about its point at `unit`.
+    func rotated(to degrees: CGFloat, about unit: CGPoint) -> LayerTransform {
+        var result = self
+        result.rotation = degrees
+        return result.moving(unit, to: point(unit))
+    }
 }
 
 /// Several layers transformed together: the upright box around them when the edit began (what the draft edits),
@@ -17,6 +55,14 @@ nonisolated extension LayerSampling {
 struct TransformGroup {
     let box: LayerTransform
     let originals: [UUID: LayerTransform]
+
+    /// Where `original` goes as the box goes to `draft`: carried along, taking the box's interpolation once the Free
+    /// Transform bar has changed it (until then each layer keeps its own).
+    func carried(_ original: LayerTransform, to draft: LayerTransform) -> LayerTransform {
+        var result = original.following(from: box, to: draft)
+        if draft.sampling != box.sampling { result.sampling = draft.sampling }
+        return result
+    }
 }
 
 struct TransformEdit {
@@ -32,8 +78,8 @@ struct TransformEdit {
     var mask = false
     /// Set when several layers are selected: the draft is the box around them all, and each follows it.
     var group: TransformGroup? = nil
-    /// Opened by the Move bar's fields, for a value being typed or dragged: applied, one undo step, once they're done
-    /// with it — the drag let go, or the field left.
+    /// Opened by a transform field while nothing was being transformed, for a value being typed or dragged: applied,
+    /// one undo step, once the field is done with it — the drag let go, or the field left (`changeTransformValue`).
     var fromFields = false
 }
 
@@ -44,6 +90,8 @@ struct TransformDrag {
     let mode: Mode
     /// The distortion's corners when the drag began; nil for an ordinary transform.
     var originalCorners: [CGPoint]? = nil
+    /// What a rotation turns about: the Free Transform bar's reference point (unit square), the middle by default.
+    var pivot = LayerTransform.centerReference
 
     /// Corners after dragging to `point`: a corner handle moves its corner, an edge handle both of
     /// that edge's corners, and the body the whole shape. Nil when the drag isn't distorting.
@@ -76,11 +124,12 @@ struct TransformDrag {
             result.origin.x += dx
             result.origin.y += dy
         case .rotate:
-            let center = original.center
+            let center = original.point(pivot)
             let delta = atan2(point.y - center.y, point.x - center.x)
                 - atan2(start.y - center.y, start.x - center.x)
-            result.rotation += delta * 180 / .pi
-            if shift { result.rotation = (result.rotation / 15).rounded() * 15 }
+            var degrees = original.rotation + delta * 180 / .pi
+            if shift { degrees = (degrees / 15).rounded() * 15 }
+            result = original.rotated(to: degrees, about: pivot)
         case .resize(let index):
             let handle = LayerTransform.handles[index]
             let anchorUnit = option ? CGPoint(x: 0.5, y: 0.5) : CGPoint(x: 1 - handle.x, y: 1 - handle.y)
@@ -125,6 +174,27 @@ struct TransformDrag {
             result.origin = CGPoint(x: center.x - width / 2, y: center.y - height / 2)
         }
         return result.isValid ? result : original
+    }
+}
+
+extension EditorSession {
+    /// A value typed, stepped or dragged in a transform field shows on the canvas as it changes. A Free Transform in
+    /// progress takes it as part of that edit, applied with the rest by Commit. With nothing being transformed, the
+    /// field opens an edit of its own, applied as one undo step once the field is done with it
+    /// (`finishTransformValues`), as a move is when it's let go.
+    func changeTransformValue(_ update: (inout LayerTransform) -> Void) {
+        if transformEdit == nil {
+            beginTransform(persistent: false)
+            transformEdit?.fromFields = true
+        }
+        guard var value = transformEdit?.draft else { return }
+        update(&value)
+        previewTransform(value)
+    }
+    /// A field done with its value — a drag on its label let go, or the field left (Return, Tab, a click elsewhere):
+    /// what a field changed on its own is applied, one undo step.
+    func finishTransformValues() {
+        if transformEdit?.fromFields == true { commitTransform() }
     }
 }
 

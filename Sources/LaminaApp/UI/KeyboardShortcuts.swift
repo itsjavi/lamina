@@ -91,7 +91,8 @@ struct ShortcutDefinition: Identifiable {
             "Lamina › Check for Updates…", "Lamina › Hide Lamina", "Lamina › Show All",
             "File › Open Recent › Clear Menu", "File › Import Images…", "File › Export As…",
             "Edit › Keyboard Shortcuts…", "Edit › Clear Selection Pixels", "Edit › Stroke…",
-            "View › Pixel Grid", "View › Snap", "View › Grid Settings…", "View › Clear Guides",
+            "Edit › Transform › Distort", "Edit › Transform › Flip Horizontal", "Edit › Transform › Flip Vertical",
+            "View › Pixel Grid", "View › Snap", "View › Show Transform Controls", "View › Grid Settings…", "View › Clear Guides",
             "View › Snap To › Guides", "View › Snap To › Grid", "View › Snap To › Layers", "View › Snap To › Document Bounds",
             "Select › Layer's Pixels", "Select › Color Range…", "Select › Mask's Black Areas",
             "Select › Expand…", "Select › Contract…", "Select › Feather…",
@@ -99,7 +100,6 @@ struct ShortcutDefinition: Identifiable {
             "Layer › Edit Adjustment…", "Layer › Move Out of Folder", "Layer › Rename Layer…",
             "Layer › Show or Hide Layer", "Layer › Show or Hide All Other Layers",
             "Layer › Apply Layer Mask", "Layer › Merge Visible", "Layer › Flatten Image",
-            "Layer › Flip Layer Horizontal", "Layer › Flip Layer Vertical",
             "Layer › Layer Style › Copy Layer Style", "Layer › Layer Style › Paste Layer Style",
             "Layer › Layer Style › Clear Layer Style",
             "Layer › Delete Layer",
@@ -125,8 +125,7 @@ struct ShortcutDefinition: Identifiable {
             entry("Export PNG", "e", 9, menu: true), entry("Export JPEG", "s", 11, menu: true),
             entry("Close Project", "w", 1, menu: true), entry("Fit Canvas", "0", 1, menu: true),
             entry("Actual Pixels", "1", 1, menu: true), entry("Zoom In", "=", 1, menu: true),
-            entry("Zoom Out", "-", 1, menu: true), entry("Show Transform Controls", "h", 1, menu: true),
-            entry("Hide Others", "h", 3, menu: true), entry("Cut", "x", 1, menu: true),
+            entry("Zoom Out", "-", 1, menu: true), entry("Hide Others", "h", 3, menu: true), entry("Cut", "x", 1, menu: true),
             entry("Copy", "c", 1, menu: true), entry("Copy Merged", "c", 9, menu: true),
             entry("Paste", "v", 1, menu: true), entry("Fill with Foreground", "\u{7f}", 2, menu: true),
             entry("Fill with Background", "\u{7f}", 1, menu: true), entry("Content-Aware Fill", "\u{7f}", 8, menu: true),
@@ -135,7 +134,7 @@ struct ShortcutDefinition: Identifiable {
             entry("Last Filter", "f", 1, menu: true), entry("Curves", "m", 1, menu: true), entry("Levels", "l", 1, menu: true),
             entry("Hue/Saturation", "u", 1, menu: true), entry("Invert Pixels / Mask", "i", 1, menu: true),
             entry("Canvas Size", "c", 3, menu: true), entry("Image Size", "i", 3, menu: true),
-            entry("Transform Layer / Selection", "t", 1, menu: true), entry("Duplicate / Layer via Copy", "j", 1, menu: true),
+            entry("Free Transform", "t", 1, menu: true), entry("Duplicate / Layer via Copy", "j", 1, menu: true),
             entry("Toggle Clipping Mask", "g", 3, menu: true), entry("Group Layers", "g", 1, menu: true),
             entry("Ungroup Layers", "g", 9, menu: true),
             entry("New Blank Layer", "n", 9, menu: true), entry("Move Layer Up", "]", 1, menu: true),
@@ -191,8 +190,14 @@ final class ShortcutSettings {
         let chord: ShortcutChord?
         init(from decoder: Decoder) throws { chord = try? ShortcutChord(from: decoder) }
     }
-    /// Entries renamed since earlier versions saved them (the tools split apart): a key set for the old name carries over.
+    /// Entries renamed since earlier versions saved them (the tools split apart, the transform commands moved to the
+    /// Edit menu): a key set for the old name carries over.
     static let renamedIDs = [
+        "Menus:Transform Layer / Selection": "Menus:Free Transform",
+        // ⌘H went to View ▸ Extras; a key the person gave Show Transform Controls stays with it.
+        "Menus:Show Transform Controls": "\(ShortcutDefinition.moreGroup):View › Show Transform Controls",
+        "\(ShortcutDefinition.moreGroup):Layer › Flip Layer Horizontal": "\(ShortcutDefinition.moreGroup):Edit › Transform › Flip Horizontal",
+        "\(ShortcutDefinition.moreGroup):Layer › Flip Layer Vertical": "\(ShortcutDefinition.moreGroup):Edit › Transform › Flip Vertical",
         "Canvas & Layers:Marquee / cycle shape": "Canvas & Layers:Rectangular / Elliptical Marquee",
         "Canvas & Layers:Magic": "Canvas & Layers:Object Selection / Magic Wand",
         "Canvas & Layers:Lasso / cycle mode": "Canvas & Layers:Lasso / Polygonal Lasso",

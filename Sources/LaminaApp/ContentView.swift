@@ -27,8 +27,12 @@ struct ContentView: View {
     /// The active tool's settings, which the options bar shows after the tool's icon.
     @ViewBuilder private var toolHeaders: some View {
         Group {
-            if session.tool == .move {
-                TransformInspector(session: session).id(session.activeLayerID)
+            // A Free Transform waiting for Commit or Cancel turns the Move bar into the Free Transform bar; a drag
+            // that applies itself when let go (a move, a nudge) leaves the Move bar in place.
+            if session.tool == .move, session.transformEdit?.persistent == true {
+                FreeTransformBar(session: session).id(session.activeLayerID)
+            } else if session.tool == .move {
+                MoveToolBar(session: session)
             }
             if session.tool.isBrushTool {
                 BrushControls(session: session)

@@ -7,7 +7,8 @@ struct EditorCanvas: NSViewRepresentable {
     func makeNSView(context: Context) -> CanvasView { CanvasView(session: session) }
     func updateNSView(_ view: CanvasView, context: Context) {
         view.consumeFocusRequest(session.canvasFocusRequest)
-        _ = session.showsTransformControls // observed here so ⌘H redraws the transform box at once
+        _ = session.showsTransformControls // observed here so Show Transform Controls redraws the box at once
+        _ = session.transformReference
         _ = session.showsGrid
         _ = session.layoutGrid
         _ = session.gridAppearance
@@ -2550,14 +2551,20 @@ final class CanvasView: NSView {
         else { duplicatesTransformOnDrag = false }
         // A value the Move bar's fields were still changing is applied first: this drag is an edit of its own.
         if session.transformEdit?.fromFields == true { session.commitTransform() }
-        if session.transformEdit == nil { session.beginTransform(persistent: false) }
+        // A handle starts a Free Transform, as in familiar editors: the bar turns into the Free Transform bar and the
+        // edit waits for Commit (Return) or Cancel (Escape), however many drags it takes, as one undo step. A press
+        // on the layer itself only moves it, applied when it's let go.
+        if session.transformEdit == nil {
+            if case .move = mode { session.beginTransform(persistent: false) } else { session.beginTransform(persistent: true) }
+        }
         // Cmd-dragging a handle distorts, as in Photoshop; once distorted, handles keep distorting.
         if case .resize(let index) = mode, modifiers.contains(.command) || session.transformEdit?.corners != nil {
             session.beginDistort()
             if session.transformEdit?.corners != nil { mode = .distort(index) }
         }
         guard let transform = session.transformEdit?.draft else { return }
-        transformDrag = TransformDrag(original: transform, start: pixel, mode: mode, originalCorners: session.transformEdit?.corners)
+        transformDrag = TransformDrag(original: transform, start: pixel, mode: mode, originalCorners: session.transformEdit?.corners,
+                                      pivot: session.transformReference)
         switch mode {
         case .resize(let index): dragCursor = transformOverlay.geometry?.resizeCursor(for: index) ?? .arrow
         case .rotate: dragCursor = Self.rotationCursor

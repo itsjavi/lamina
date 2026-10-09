@@ -52,6 +52,29 @@ struct TypeToolTests {
         #expect(session.activeLayer?.liveText != nil)
     }
 
+    /// The Type bar shows one face as two pop-ups: the family, which keeps the style when changed, and the family's
+    /// styles. Both act on the selected letters.
+    @Test func fontFamilyAndStyleAreSeparatePopUpsOverOneFace() throws {
+        let session = makeSession()
+        beginEditingText(in: session)
+        session.setTextFont("HelveticaNeue-Bold")
+        #expect(session.textFontName == "HelveticaNeue-Bold")
+        #expect(FontFaces.family(of: session.textFontName) == "Helvetica Neue")
+        let bold = try #require(session.textFace(inFamily: "Avenir Next"))
+        #expect(bold == "AvenirNext-Bold", "a new family keeps the style")
+        session.setTextFont(bold)
+        #expect(session.textDraft?.style.fontName == "AvenirNext-Bold")
+        let styles = FontMenuPicker.styleItems(family: "Avenir Next")
+        #expect(styles.contains { $0.title == "Regular" && $0.value == "AvenirNext-Regular" })
+        #expect(FontMenuPicker.familyItems().contains { $0.title == "Avenir Next" && $0.value == "Avenir Next" })
+        session.textDraft?.selection = NSRange(location: 0, length: 2)
+        session.setTextFont("AvenirNext-Regular")
+        #expect(session.textFontName == "AvenirNext-Regular", "the selected letters take the style")
+        session.textDraft?.selection = NSRange(location: 0, length: 4)
+        #expect(session.textFontName == "", "letters in two faces: both pop-ups say (Multiple)")
+        #expect(session.textFace(inFamily: "Helvetica Neue") == "HelveticaNeue", "they go by the first letter's style")
+    }
+
     @Test func textColorPickerPreviewsAndRestoresDraft() throws {
         let session = makeSession()
         session.beginText(at: CGPoint(x: 30, y: 40))

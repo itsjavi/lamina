@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-09 02:14'
-updated_date: '2026-10-09 06:56'
+updated_date: '2026-10-09 07:01'
 labels: []
 milestone: m-5
 dependencies:
@@ -66,4 +66,6 @@ Painting tools: BrushPicker (tip preview + size; pop-over with Size in square-ro
 Crop: Ratio pop-up shows CropRatio.title (Free → Ratio, Original → Original Ratio, 1:1 → 1:1 (Square)); 9:20 and 2.39:1 joined the built-ins. W ⇄ H fields (cropRatioSides, swapCropRatio, clearCropRatio) replace the Custom… pop-over: typing both sides + Return chooses and remembers the ratio. The crop's pixel size stays after Clear as a readout. Cancel/Commit icons only while cropRect exists; Return/Escape stay with the canvas. The Custom… window test went with the pop-over; CropRatioTests covers names, sides, swap and clear.
 
 Gradient: preset swatch pop-over (GradientSwatch per GradientStyle), Linear/Radial as GradientShapeIcon icon buttons, Opacity PercentField, Reverse, ⊘/✓ while gradientEdit is pending (was Cancel/Apply text). Paint Bucket: Fill: Foreground pop-up (one item), Opacity, Tolerance, Anti-alias, Contiguous, All Layers checkbox.
+
+Rebased onto main after TASK-59 landed (Properties ▸ Character, with its own FontFaces and FontFamilyPopUp): the Type bar uses that FontFaces (family(of:), styles(of:), face(in:like:)) instead of a second copy. Type: FontMenuPicker (generalized from TypeFontPicker: family list loaded once, styles rebuilt per open, names drawn in their faces via StyledName, hover previews kept), size with a textformat.size label, alignment icon buttons, color, Character panel button (DockLayout.shared.show(.properties)), ⊘/✓ while textDraft exists. Edit Text button dropped (clicking text, double-click in Layers edit it). EditorSession.textFontName / textFace(inFamily:) / setTextFont back both pop-ups.
 <!-- SECTION:NOTES:END -->

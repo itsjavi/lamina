@@ -294,7 +294,7 @@ divider and 24 × 22 icon button).
 | Blur / Smudge | brush picker │ Strength: · Radius: px (Blur only, Lamina) |
 | Liquify (Filter ▸ Liquify…) | brush picker │ Strength: │ … Cancel ⊘ · Commit ✓ |
 | Dodge / Burn | brush picker │ Range: Shadows, Midtones, Highlights · Exposure: │ pressure for size |
-| Horizontal Type | font family · font style · size │ Left, Center, Right · color · Character panel │ … Cancel · Commit (leading and tracking are in Properties ▸ Character, shipping with TASK-59) |
+| Horizontal Type | font family · font style · size px │ Left, Center, Right · color · Character panel │ … Cancel ⊘ · Commit ✓ (while editing; leading and tracking are in Properties ▸ Character, TASK-59) |
 | Rectangle / Ellipse / Line | Fill swatch · Stroke swatch and width (in progress, TASK-32) · stroke options (in progress, TASK-34) │ path operations (in progress, TASK-34) │ Radius (Rectangle) or Weight (Line). This order and the placeholders ship with TASK-53 (the stroke swatch shows "none": an empty `field` well crossed by a `secondaryText` line; the width reads "1 px"); the labels keep today's wording, without colons, until TASK-57 |
 | Hand | 100% · Fit Screen · Fill Screen (shipping, TASK-52) |
 | Zoom | Zoom In, Zoom Out │ Scrubby Zoom │ 100% · Fit Screen · Fill Screen (the three buttons ship with TASK-52; the rest is TASK-57) |
@@ -316,6 +316,13 @@ checkerboard, with a chevron); a click opens a pop-over of the two presets, each
 Radial are custom icons (`GradientShapeIcon`: a square fading across, or out from its middle, in `icon`). Cancel ⊘ and
 Commit ✓ show while a drawn gradient waits for Return. The Paint Bucket's Fill: pop-up offers Foreground alone (no
 Pattern until Lamina has patterns), and All Layers is a checkbox where the bar had a This Layer / All Layers picker.
+
+The Type bar (`TypeControls`, **shipping**, TASK-57) splits the face into two pop-ups (`FontMenuPicker`, each name set in
+its own face, trying faces on the text while open): the family, which keeps the style when changed (`FontFaces`), and
+that family's styles. Letters in several faces show (Multiple). The size field takes `textformat.size` as its label;
+the alignments are icon buttons, then the color swatch and the Character panel button (`character.textbox`), which
+brings Properties to the front. Cancel ⊘ and Commit ✓ show while text is being edited (Escape and ⌘Return on the
+canvas); the bar has no Edit Text button, since a click on the text edits it.
 
 The painting bars (`BrushControls`, **shipping**, TASK-57) start with the brush picker (`BrushPicker`,
 `UI/BrushPicker.swift`): the tip drawn in `text`, solid to its hardness and fading to its edge, with the size in pixels

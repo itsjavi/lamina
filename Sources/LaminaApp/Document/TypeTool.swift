@@ -161,6 +161,32 @@ extension EditorSession {
 
     var currentTextStyle: LayerTextStyle { textDraft?.style ?? activeLayer?.liveText?.style ?? textDefaults }
 
+    /// The face the Type bar shows: the selected letters' (empty when they are in more than one), the face typing at
+    /// the caret gives (the letter before it), or the next text's.
+    var textFontName: String { textFontName(in: textDraft?.style) }
+
+    private func textFontName(in style: LayerTextStyle?) -> String {
+        guard let draft = textDraft, let style else { return currentTextStyle.fontName }
+        let selection = draft.selection
+        if selection.length == 0 { return style.fontName(at: max(0, selection.location - 1)) }
+        return style.uniformFontName(in: selection) ?? ""
+    }
+
+    /// The face choosing `family` in the Type bar gives: the same style in that family, as near as it has one. Letters in
+    /// several faces go by the first; a face being previewed by the one it stands in for.
+    func textFace(inFamily family: String) -> String? {
+        var basis = textFontName(in: fontPreviewOriginal ?? textDraft?.style)
+        if basis.isEmpty, let draft = textDraft { basis = draft.style.fontName(at: draft.selection.location) }
+        return FontFaces.face(in: family, like: basis)
+    }
+
+    /// The Type bar's family and style pop-ups both end here, with the face to use: on the selected letters, or all the
+    /// text when none are selected.
+    func setTextFont(_ name: String) {
+        let selection = textDraft?.selection ?? NSRange()
+        changeTextStyle { $0.setFont(name, in: selection) }
+    }
+
     /// While the font menu is open, the text being edited shows the face under the pointer; `endFontPreview` puts it
     /// back. Only text already being edited: a selected text layer isn't opened for a preview.
     func previewFont(_ name: String) {

@@ -234,7 +234,7 @@ extension EditorSession {
         return (width, height)
     }
     /// ⇄: the same ratio turned on its side, 4:3 to 3:4.
-    func swapCropRatio(remembering ratios: CustomCropRatios = .shared) {
+    func swapCropRatio(remembering ratios: CustomCropRatios) {
         guard let sides = cropRatioSides else { return }
         useCustomCropRatio(width: sides.height, height: sides.width, remembering: ratios)
     }

@@ -336,9 +336,10 @@ Status: the frame is **shipping** (TASK-58); the panels' contents are **m-5** (T
   section (Lamina): Gaussian Blur, Motion Blur, Add Noise.
 - **Layers** (TASK-61): blend mode menu and Opacity on top; one-line 32 pt rows (eye, thumbnail, link, mask thumbnail,
   name, fx badge); clicking the layer or mask thumbnail picks what edits target; styled layers list an "Effects" row and
-  one 22 pt row per effect, each with an eye. Footer, left to right: Add a layer style (menu: Blending Options…, Stroke,
-  Inner Shadow, Inner Glow, Color Overlay, Outer Glow, Drop Shadow), Add layer mask, New fill or adjustment layer, New
-  group, New layer, Delete.
+  one 22 pt row per effect, each with an eye. Footer, left to right: Add a layer style (menu: Blending Options… │
+  Stroke… · Inner Shadow… · Inner Glow… · Color Overlay… · Outer Glow… · Drop Shadow…, each opening the Layer Style
+  dialog on its page; **shipping**, TASK-64, in today's footer), Add layer mask, New fill or adjustment layer, New
+  group, New layer, Delete. Double-clicking an effect row opens the Layer Style dialog on that effect (**shipping**).
 - **History** lives in the panel icon column. Clicking its icon opens it as a floating panel, 240 pt wide and up to
   420 pt high, at the top right of the canvas column against the icon column (`panel` with an `edge` outline, 6 pt
   corners and the system shadow), with a History tab row and its panel menu; it stays open while you work and closes
@@ -355,7 +356,9 @@ otherwise it flips the selected layers about their middle at once. Until TASK-62
 in the View menu with no shortcut. The in-progress menu items ship with TASK-53 in today's menus, as close to these
 places as today's order allows: Save a Copy… after Save As…, Rasterize and Convert to Editable Vectors after Apply
 Layer Mask, Combine Shapes ▸ and Release to Layers after Move Layer Down, and in Window, Contextual Task Bar between
-the panels and the open documents (in `DockCommands`). TASK-62 moves them with the rest.
+the panels and the open documents (in `DockCommands`). TASK-62 moves them with the rest. Layer ▸ Layer Style ▸
+(Blending Options… │ the six effects │ Copy, Paste and Clear Layer Style) is **shipping** (TASK-64); the new items have
+no keys and can be given one (Keyboard Shortcuts, More Menu Commands).
 
 - **Lamina:** About Lamina · Check for Updates… │ Settings… ⌘K │ Services ▸ │ Hide Lamina ⌃⌘H · Hide Others ⌥⌘H · Show All │ Quit Lamina ⌘Q
 - **File:** New… ⌘N · New from Clipboard ⌥⌘N · Open… ⌘O · Open Recent ▸ │ Close ⌘W │ Save ⌘S · Save As… ⇧⌘S · Save a Copy… ⌥⌘S (in progress: layered Photoshop files, TASK-27) │ Export ▸ (Quick Export as PNG │ Export As… ⌥⇧⌘W) │ Place Embedded…
@@ -400,14 +403,16 @@ What changes from the shortcuts Lamina shipped before m-5 (applied by TASK-62; c
   100 pt column on the right, 18 pt from the settings, inside 20 pt margins. This applies to adjustment, filter,
   selection (Expand, Contract, Feather, Color Range, Load Selection), Stroke, Fill, Trim, Canvas Size and Layer Style
   dialogs. **Shipping** (TASK-63) for Levels, Curves, Hue/Saturation, Exposure, Black & White, Color Balance, Gradient
-  Map, Grain, every Filter menu dialog, Color Range, Expand, Contract, Feather, Stroke, Trim and Canvas Size.
+  Map, Grain, every Filter menu dialog, Color Range, Expand, Contract, Feather, Stroke, Trim and Canvas Size, and for
+  Layer Style (TASK-64).
 - Image Size puts Cancel and OK in a row at the bottom right (**shipping**, TASK-63); New Document and Export As follow
   (TASK-65).
 - One layout in code: `DialogLayout` (`Sources/LaminaApp/UI/DialogLayout.swift`) takes the settings, `confirm` and
   `cancel`, and optionally `extras` (column buttons and controls), a `preview` binding, a `status` line ("Applying…"
   with a spinner), a `title` heading for dialogs shown as sheets (which have no title bar), `defaultTitle` and
   `placement: .bottom`. `DialogButton` is a column-wide button, `DialogRow` a right-aligned "Label:" row and
-  `DialogGroup` a titled group box. Floating panels (adjustments, filters, Color Range, Expand/Contract/Feather) and
+  `DialogGroup` a titled group box; `DialogPreviewToggle` is the Preview checkbox, for a dialog that puts it in its
+  extras with something under it (Layer Style's swatch). Floating panels (adjustments, filters, Color Range, Expand/Contract/Feather) and
   window sheets (Stroke, Trim, Canvas Size, Image Size) keep their presentation and share the layout.
 - Column contents, top to bottom: Levels has OK, Cancel, Auto (click for Contrast; its menu has Color and Color +
   neutral midtones), Reset, the black, gray and white point eyedroppers, Preview. Curves has OK, Cancel, Reset, Preview.
@@ -434,8 +439,29 @@ What changes from the shortcuts Lamina shipped before m-5 (applied by TASK-62; c
   Stroke has Width (px) and Color (Foreground Color or Background Color) under Stroke, Inside, Center and Outside under
   Location, and Opacity (%) under Blending. Canvas Size's units menu sits beside both Width and Height and changes
   both; Image Size's Constrain aspect ratio is a link toggle between Width and Height.
-- Layer Style is one dialog: effects listed on the left with checkboxes, the selected effect's settings in the middle,
-  buttons and a preview swatch on the right (TASK-64).
+- Layer Style is one dialog (**shipping**, TASK-64; `LayerStyleDialog` in a floating panel, model in
+  `Document/LayerStyle.swift`). On the left a 170 pt list: Blending Options, a separator, then Stroke, Inner Shadow,
+  Inner Glow, Color Overlay, Outer Glow and Drop Shadow, each with a checkbox; the selected row is `selection`. In the
+  middle the page's title and its settings in titled groups:
+  - Blending Options: General Blending with Blend Mode (grouped as the Layers panel's menu) and Opacity, the layer's own.
+  - Stroke: Structure with Size, Position (Outside, Inside), Opacity and Color.
+  - Inner Shadow and Drop Shadow: Structure with Opacity, Angle, Distance, Size (the blur) and Color.
+  - Inner Glow and Outer Glow: Structure with Opacity and Color, then Elements with Size.
+  - Color Overlay: Color with Color and Opacity.
+
+  Sliders pair with a field and a unit column (%, px, °); a typed value past the slider's end is kept. Angle is a
+  28 pt dial (drag to point it at the light) and a field, -180° to 180°. Color is an `edge`-bordered well that opens
+  the app's color picker, previewing as it changes. The column holds OK, Cancel, Preview and, under it, a 64 pt swatch:
+  the style drawn on a gray square on white, its sizes scaled down when they would overflow. The dialog keeps one size
+  whatever the page.
+- In Layer Style, a checkbox turns its effect on (at the defaults: a new stroke or color overlay takes the background
+  color) or off without changing the page; clicking an effect's name shows its page and turns it on, as Photoshop
+  does, and so does opening the dialog on an effect (its menu item, the fx menu, a double-click on its row). Every
+  change previews on the canvas; Preview off shows the layer as it was. OK applies everything as one "Layer Style"
+  undo step (none when nothing changed); an effect turned on and off again in the dialog isn't kept, while one the
+  layer already had and the dialog turned off stays, hidden, as its eye would leave it. Cancel or closing the panel
+  puts the layer's effects, blend mode and opacity back exactly. While it is open other layer edits, Undo, saving and
+  `lamina` edits wait ("The Layer Style dialog is open.").
 - Return confirms, Escape cancels, ⌥P toggles Preview, and the canvas previews live while a dialog is open.
 
 ### Contextual Task Bar

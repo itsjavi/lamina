@@ -10,8 +10,8 @@ struct LayerStyleDialog: View {
     static let listWidth: CGFloat = 170
     static let pageWidth: CGFloat = 372
     /// Tall enough for the longest page, so the dialog keeps its size as pages change.
-    static let height: CGFloat = 262
-    private static let labelWidth: CGFloat = 70
+    static let height: CGFloat = 232
+    private static let labelWidth: CGFloat = 82
 
     var body: some View {
         if let edit = session.layerStyle {
@@ -54,15 +54,17 @@ struct LayerStyleDialog: View {
                     .toggleStyle(.checkbox).labelsHidden()
             }
             // The name selects the page; the checkbox only turns the effect on or off, as in Photoshop.
-            HStack(spacing: 0) {
-                Text(page.title).fontWeight(page == .blendingOptions ? .semibold : .regular)
-                Spacer(minLength: 0)
+            Button { session.selectLayerStylePage(page) } label: {
+                HStack(spacing: 0) {
+                    Text(page.title).fontWeight(page == .blendingOptions ? .semibold : .regular)
+                    Spacer(minLength: 0)
+                }
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
             }
-            .contentShape(Rectangle())
-            .onTapGesture { session.selectLayerStylePage(page) }
-            .accessibilityElement(children: .combine)
-            .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
-            .accessibilityAction { session.selectLayerStylePage(page) }
+            .buttonStyle(.plain)
+            .accessibilityLabel(page.title)
+            .accessibilityAddTraits(selected ? .isSelected : [])
         }
         .padding(.horizontal, 8)
         .frame(height: 24)
@@ -203,7 +205,7 @@ struct LayerStyleDialog: View {
         }
         return DialogRow(label, labelWidth: Self.labelWidth) {
             Slider(value: Binding(get: { min(range.upperBound, max(range.lowerBound, value)) }, set: change), in: range)
-                .frame(width: 170).accessibilityLabel(name)
+                .frame(width: 160).accessibilityLabel(name)
             TextField(name, value: Binding(get: { value }, set: change), format: .number.precision(.fractionLength(0)))
                 .frame(width: 52).textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing)
                 .arrowSteps(value: { value }, change: change)

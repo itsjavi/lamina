@@ -338,6 +338,8 @@ final class EditorSession {
     /// The text's style before the font menu started previewing faces on it (see `previewFont`).
     @ObservationIgnored var fontPreviewOriginal: LayerTextStyle?
     var selectionFeatherAmount = 2
+    /// The marquee and lasso bars' Feather: how soft the edge of the next outline drawn is, in document pixels.
+    var selectionToolFeather: CGFloat = 0
     /// Edit › Stroke's settings, kept for the next time.
     var strokeOptions = StrokeOptions()
     var wandSettings = WandSettings()

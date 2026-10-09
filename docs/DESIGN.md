@@ -279,6 +279,36 @@ divider and 24 × 22 icon button).
 | --- | --- |
 | Move | Auto-Select ☐ · Show Transform Controls ☑ │ Align Left, Horizontal Centers, Right · Distribute Vertically · Align Top, Vertical Centers, Bottom · Distribute Horizontally · ••• Align & Distribute menu |
 | Free Transform (while transforming) | Reference point │ X px · Y px │ W % · link · H % │ angle ° │ Interpolation: Nearest Neighbor, Bilinear, Bicubic │ … Cancel ⊘ · Commit ✓ |
+| Rectangular / Elliptical Marquee | New, Add, Subtract selection icons │ Feather: 0 px (for the next selection) · Anti-alias (dimmed for rectangles) |
+| Lasso / Polygonal Lasso | selection icons │ Feather: · Anti-alias |
+| Object Selection | selection icons │ Sample All Layers · Edge: px (Lamina) · Anti-alias │ Select Subject |
+| Magic Wand | selection icons │ Sample Size: · Tolerance: · Anti-alias · Contiguous · Sample All Layers │ Select Subject |
+| Crop | Ratio (Ratio, Original Ratio, 1:1 (Square), 4:3, 16:9, …) · W ⇄ H · Clear │ … Cancel · Commit |
+| Eyedropper | Show Sampling Ring |
+| Spot Healing Brush | brush picker │ Type: Content-Aware \| Create Texture \| Proximity Match │ pressure for size |
+| Brush | brush picker (Size, Hardness; bristle presets in progress, TASK-46, shipping as a Presets pop-up at the start of today's bar until TASK-57 builds the picker) │ Opacity · pressure for opacity · Flow │ Smoothing │ pressure for size |
+| Clone Stamp | brush picker │ Opacity · pressure for opacity │ Aligned · Sample: Current Layer, All Layers │ pressure for size |
+| Eraser | brush picker │ Opacity · pressure for opacity · Flow · Smoothing │ pressure for size |
+| Gradient | gradient preset picker · Linear, Radial │ Opacity · Reverse |
+| Paint Bucket | Fill: Foreground │ Opacity · Tolerance · Anti-alias · Contiguous · All Layers |
+| Blur / Smudge | brush picker │ Strength · Radius (Blur only, Lamina) │ pressure for size |
+| Dodge / Burn | brush picker │ Range: Shadows, Midtones, Highlights · Exposure │ pressure for size |
+| Horizontal Type | font family · font style · size │ Left, Center, Right · color · Character panel │ … Cancel · Commit (leading and tracking are in Properties ▸ Character, shipping with TASK-59) |
+| Rectangle / Ellipse / Line | Fill swatch · Stroke swatch and width (in progress, TASK-32) · stroke options (in progress, TASK-34) │ path operations (in progress, TASK-34) │ Radius (Rectangle) or Weight (Line). This order and the placeholders ship with TASK-53 (the stroke swatch shows "none": an empty `field` well crossed by a `secondaryText` line; the width reads "1 px"); the labels keep today's wording, without colons, until TASK-57 |
+| Hand | 100% · Fit Screen · Fill Screen (shipping, TASK-52) |
+| Zoom | Zoom In, Zoom Out │ Scrubby Zoom │ 100% · Fit Screen · Fill Screen (the three buttons ship with TASK-52; the rest is TASK-57) |
+
+The painting bars carry no color swatch: color comes from the toolbar's swatches, black and white for masks included.
+
+The selection tools' bars (`LassoControls`, **shipping**, TASK-57) start with New Selection (`square`), Add to
+Selection (`plus.square`) and Subtract from Selection (`minus.square`), icon buttons that show the mode pressed:
+held Shift (add) or Option (subtract), or an outline being drawn, shows pressed while it applies, and a click sets
+the mode the tool goes back to. Lamina has no Intersect, so there is no fourth button. Feather (0–250 px, 0 by
+default) softens the edge of the next marquee or lasso outline drawn, not the selection there is (Select ▸ Modify ▸
+Feather… does that, with its own amount). A selection has one edge softness, so an outline added to or subtracted
+from a softer selection keeps the softer edge. Select Subject runs Select ▸ Subject, adding or subtracting with Shift
+or Option held. The bar has no Deselect button or selection readout: ⌘D and the Select menu cover them, and Expand and
+Contract live in Select ▸ Modify.
 
 The Move bar's align buttons are dimmed until two or more layers are selected, or a selection is there to line one
 layer up with; the distribute buttons (vertical and horizontal spacing) until three are. The ••• menu has every Align
@@ -296,26 +326,6 @@ pixels drawn 1:1 (of the box when several layers are transformed), and the link 
 it during a handle drag). Interpolation names Lamina's per-layer sampling (Nearest, Smooth, High quality) for display
 only: saved projects don't change; chosen for several layers, it goes to each of them. While distorting, the numbers
 are dimmed: the corner handles are the controls.
-| Rectangular / Elliptical Marquee | New, Add, Subtract selection icons │ Feather: 0 px (for the next selection) · Anti-alias (dimmed for rectangles) |
-| Lasso / Polygonal Lasso | selection icons │ Feather · Anti-alias |
-| Object Selection | selection icons │ Sample All Layers · Edge (Lamina) │ Select Subject |
-| Magic Wand | selection icons │ Sample Size · Tolerance · Anti-alias · Contiguous · Sample All Layers │ Select Subject |
-| Crop | Ratio (Ratio, Original Ratio, 1:1 (Square), 4:3, 16:9, …) · W ⇄ H · Clear │ … Cancel · Commit |
-| Eyedropper | Show Sampling Ring |
-| Spot Healing Brush | brush picker │ Type: Content-Aware \| Create Texture \| Proximity Match │ pressure for size |
-| Brush | brush picker (Size, Hardness; bristle presets in progress, TASK-46, shipping as a Presets pop-up at the start of today's bar until TASK-57 builds the picker) │ Opacity · pressure for opacity · Flow │ Smoothing │ pressure for size |
-| Clone Stamp | brush picker │ Opacity · pressure for opacity │ Aligned · Sample: Current Layer, All Layers │ pressure for size |
-| Eraser | brush picker │ Opacity · pressure for opacity · Flow · Smoothing │ pressure for size |
-| Gradient | gradient preset picker · Linear, Radial │ Opacity · Reverse |
-| Paint Bucket | Fill: Foreground │ Opacity · Tolerance · Anti-alias · Contiguous · All Layers |
-| Blur / Smudge | brush picker │ Strength · Radius (Blur only, Lamina) │ pressure for size |
-| Dodge / Burn | brush picker │ Range: Shadows, Midtones, Highlights · Exposure │ pressure for size |
-| Horizontal Type | font family · font style · size │ Left, Center, Right · color · Character panel │ … Cancel · Commit (leading and tracking are in Properties ▸ Character, shipping with TASK-59) |
-| Rectangle / Ellipse / Line | Fill swatch · Stroke swatch and width (in progress, TASK-32) · stroke options (in progress, TASK-34) │ path operations (in progress, TASK-34) │ Radius (Rectangle) or Weight (Line). This order and the placeholders ship with TASK-53 (the stroke swatch shows "none": an empty `field` well crossed by a `secondaryText` line; the width reads "1 px"); the labels keep today's wording, without colons, until TASK-57 |
-| Hand | 100% · Fit Screen · Fill Screen (shipping, TASK-52) |
-| Zoom | Zoom In, Zoom Out │ Scrubby Zoom │ 100% · Fit Screen · Fill Screen (the three buttons ship with TASK-52; the rest is TASK-57) |
-
-The painting bars carry no color swatch: color comes from the toolbar's swatches, black and white for masks included.
 
 ### Dock and panels
 

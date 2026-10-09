@@ -219,6 +219,27 @@ struct SelectionTests {
         #expect(abs(try #require(session.selection).path.boundingBoxOfPath.width - 30) < 0.01)
     }
 
+    /// The bar's Feather softens the next outline drawn, not the selection there is; Select ▸ Modify ▸ Feather… still
+    /// softens that one.
+    @Test func barFeatherSoftensTheNextOutlineAndModifyFeatherTheCurrentOne() throws {
+        let session = makeSession()
+        lasso(session, square(10, 10, 30))
+        session.selectionToolFeather = 6
+        #expect(session.selection?.feather == 0, "setting it leaves the selection as it is")
+        lasso(session, square(50, 50, 30))
+        #expect(session.selection?.feather == 6)
+        #expect(try coverage(session, 50, 65) < 200 && coverage(session, 65, 65) == 255, "a soft edge, a solid middle")
+        session.selectionToolFeather = 0
+        lasso(session, square(10, 10, 20), mode: .add)
+        #expect(session.selection?.feather == 6, "an outline added to a softer selection keeps its edge")
+        lasso(session, square(10, 10, 20))
+        #expect(session.selection?.feather == 0)
+        session.selectionAmountOperation = .feather
+        session.confirmSelectionAmount(4)
+        #expect(session.selection?.feather == 4 && session.history.undoName == "Feather Selection")
+        #expect(session.selectionToolFeather == 0, "the menu's amount is its own")
+    }
+
     @Test func expandStaysOnCanvasAndContractCanEmptyTheSelection() throws {
         let session = makeSession()
         session.selectAll()

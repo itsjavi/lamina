@@ -1,126 +1,113 @@
 import SwiftUI
 
+/// The selection tools' bar: New, Add and Subtract, then each tool's settings in the order familiar editors give them
+/// (docs/DESIGN.md, Options bars). Select ▸ Modify covers Expand, Contract and feathering an existing selection.
 struct LassoControls: View {
     @Bindable var session: EditorSession
 
     var body: some View {
-        HStack(spacing: 12) {
-            // Shows held Shift/Option (or an outline's mode) live; clicking sets the choice.
-            Picker("Mode", selection: Binding(get: { session.displayedSelectionMode },
-                                              set: { session.selectionModeChoice = $0 })) {
-                ForEach(SelectionMode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-            }
-            .pickerStyle(.segmented).labelsHidden().fixedSize()
-            .help("Hold Shift to add or Option to subtract for one outline")
-            if session.tool == .magicWand { wandControls }
-            if session.tool == .objectSelection { objectSelectionControls }
-            // Rectangles snap to whole pixels, so smoothing doesn't apply (as in Photoshop); ellipses curve.
-            if session.tool != .rectangularMarquee {
-                Toggle("Anti-alias", isOn: $session.selectionAntialiased)
-                    .help(session.tool == .objectSelection ? "Smooth the detected object outline; turn off for the raw pixel mask" : "Smooth selection edges; turn off for hard pixel edges")
-            }
-            Divider().frame(height: 18)
-            modifyControl("Expand", amount: $session.selectionExpandAmount) {
-                session.expandSelection(by: session.selectionExpandAmount)
-            }
-            modifyControl("Contract", amount: $session.selectionContractAmount) {
-                session.contractSelection(by: session.selectionContractAmount)
-            }
-            // Softens the selection's edge, as Select → Feather does.
-            HStack(spacing: 5) {
-                Button("Feather") { session.featherSelection(by: session.selectionFeatherAmount) }
-                    .disabled(!session.canModifySelection)
-                    .help("Fade the edge of the selection by this many pixels")
-                TextField("Feather", value: Binding(get: { Double(session.selectionFeatherAmount) },
-                                                    set: { session.selectionFeatherAmount = $0.isFinite ? Int(min(250, max(1, $0))) : 2 }),
-                          format: .number.precision(.fractionLength(0)))
-                    .frame(width: 48).textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing)
-                    .arrowSteps(value: { Double(session.selectionFeatherAmount) },
-                                change: { session.selectionFeatherAmount = Int(min(250, max(1, $0))) })
-                    .unitSuffix("px", scrubValue: $session.selectionFeatherAmount,
-                                sensitivity: 1, range: 1...250)
-            }
-            Spacer(minLength: 0)
-            if let selection = session.selection {
-                if selection.isEmpty { Text("Empty selection").foregroundStyle(.secondary) }
-                Button("Deselect") { session.deselect() }.disabled(!session.canEditSelection)
+        OptionsBarRow {
+            SelectionModeButtons(session: session)
+            OptionsBarDivider()
+            switch session.tool {
+            case .objectSelection: objectSelectionControls
+            case .magicWand: wandControls
+            default: outlineControls
             }
         }
-        .padding(.horizontal, 18).toolHeaderBar().releasesFocusOnCommit(session)
+        .releasesFocusOnCommit(session)
         .disabled(session.showsBusy || session.document == nil)
     }
 
-    /// Tolerance, sample size, which pixels to read, and whether matches must connect.
-    private var wandControls: some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 6) {
-                Text("Tolerance").scrubbable(sensitivity: 1, value: $session.wandSettings.tolerance, range: 0...255)
-                TextField("Tolerance", value: Binding(get: { session.wandSettings.tolerance },
-                                                      set: { session.wandSettings.tolerance = min(255, max(0, $0)) }),
-                          format: .number)
-                    .frame(width: 44).textFieldStyle(.roundedBorder)
-                    .multilineTextAlignment(.trailing)
-                    .arrowSteps(value: { Double(session.wandSettings.tolerance) },
-                                change: { session.wandSettings.tolerance = Int(min(255, max(0, $0.rounded()))) })
-            }
+    /// The marquees and lassos: the feather of the next outline, and its anti-aliasing.
+    @ViewBuilder private var outlineControls: some View {
+        OptionsBarField(label: "Feather", value: $session.selectionToolFeather, range: 0...250, unit: "px")
+            .help("Soften the edge of the next selection you draw by this many pixels. Select ▸ Modify ▸ Feather… softens the one there is.")
+            .accessibilityIdentifier("selectionFeather")
+        antialias
+    }
+
+    /// Rectangles snap to whole pixels, so smoothing doesn't apply (as in familiar editors) and the box is dimmed.
+    private var antialias: some View {
+        Toggle("Anti-alias", isOn: Binding(get: { session.tool != .rectangularMarquee && session.selectionAntialiased },
+                                           set: { session.selectionAntialiased = $0 }))
+            .toggleStyle(.checkbox)
+            .disabled(session.tool == .rectangularMarquee)
+            .help(session.tool == .objectSelection ? "Smooth the detected object outline; turn off for the raw pixel mask"
+                  : "Smooth selection edges; turn off for hard pixel edges")
+    }
+
+    /// Sample Size, Tolerance, Anti-alias, Contiguous, Sample All Layers, then Select Subject.
+    @ViewBuilder private var wandControls: some View {
+        OptionsBarPicker(label: "Sample Size", selection: $session.wandSettings.sampleSize) {
+            ForEach(WandSampleSize.allCases, id: \.self) { Text($0.title).tag($0) }
+        }
+        .help("Match the clicked pixel, or the average of the pixels around it")
+        OptionsBarField(label: "Tolerance", value: $session.wandSettings.tolerance, range: 0...255, width: 40)
             .help("How far each color channel (0–255) can differ from the clicked color and still be selected")
-            Picker("Sample Size", selection: $session.wandSettings.sampleSize) {
-                ForEach(WandSampleSize.allCases, id: \.self) { Text($0.title).tag($0) }
-            }
-            .labelsHidden().fixedSize()
-            .help("Match the clicked pixel, or the average of the pixels around it")
-            Picker("Sample", selection: $session.wandSettings.sampleAllLayers) {
-                Text("This Layer").tag(false)
-                Text("All Layers").tag(true)
-            }
-            .pickerStyle(.segmented).labelsHidden().fixedSize()
-            .help("Read colors from the active layer only, or from every visible layer as shown")
-            Toggle("Contiguous", isOn: $session.wandSettings.contiguous)
-                .help("Select only similar pixels connected to the one you click; off selects them everywhere")
-        }
+        antialias
+        Toggle("Contiguous", isOn: $session.wandSettings.contiguous).toggleStyle(.checkbox)
+            .help("Select only similar pixels connected to the one you click; off selects them everywhere")
+        Toggle("Sample All Layers", isOn: $session.wandSettings.sampleAllLayers).toggleStyle(.checkbox)
+            .help("Read colors from every visible layer as shown; off reads the active layer only")
+        OptionsBarDivider()
+        selectSubject
     }
 
-    private var objectSelectionControls: some View {
-        HStack(spacing: 12) {
-            Picker("Sample", selection: $session.objectSelectionSettings.sampleAllLayers) {
-                Text("This Layer").tag(false)
-                Text("All Layers").tag(true)
-            }
-            .pickerStyle(.segmented).labelsHidden().fixedSize()
-            .help("Analyze the active layer only, or every visible layer as shown")
-            HStack(spacing: 6) {
-                Text("Edge").scrubbable(sensitivity: 1, value: $session.objectSelectionSettings.edgeOffset, range: -10...10)
-                TextField("Edge", value: Binding(get: { session.objectSelectionSettings.edgeOffset },
-                                                 set: { session.objectSelectionSettings.edgeOffset = min(10, max(-10, $0)) }),
-                          format: .number)
-                    .frame(width: 40).textFieldStyle(.roundedBorder)
-                    .multilineTextAlignment(.trailing)
-                    .arrowSteps(value: { Double(session.objectSelectionSettings.edgeOffset) },
-                                change: { session.objectSelectionSettings.edgeOffset = Int(min(10, max(-10, $0.rounded()))) })
-                    .unitSuffix("px")
-            }
-            // The bar squeezes text before controls, so without this the label and unit collapse to
-            // nothing the moment a selection adds its own buttons, leaving an unlabelled number box.
-            .fixedSize()
+    /// Sample All Layers and Lamina's edge offset, then Select Subject.
+    @ViewBuilder private var objectSelectionControls: some View {
+        Toggle("Sample All Layers", isOn: $session.objectSelectionSettings.sampleAllLayers).toggleStyle(.checkbox)
+            .help("Analyze every visible layer as shown; off analyzes the active layer only")
+        OptionsBarField(label: "Edge", value: $session.objectSelectionSettings.edgeOffset, range: -10...10, unit: "px", width: 40)
             .help("Positive values tighten the detected mask inward; negative values expand it outward")
+        antialias
+        OptionsBarDivider()
+        selectSubject
+    }
+
+    /// Select ▸ Subject, in the bar where familiar editors offer it too; Shift and Option add and subtract as they do
+    /// for a click.
+    private var selectSubject: some View {
+        Button("Select Subject") { Task { await session.selectSubject(mode: session.displayedSelectionMode) } }
+            .disabled(!session.canSelectSubject)
+            .help("Select the main subject of the image, as Select ▸ Subject does")
+            .accessibilityIdentifier("selectSubject")
+    }
+}
+
+/// New, Add to and Subtract from Selection. The held Shift or Option key (or an outline being drawn) shows pressed
+/// for as long as it applies; clicking sets the mode the tool goes back to.
+struct SelectionModeButtons: View {
+    let session: EditorSession
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(SelectionMode.allCases, id: \.self) { mode in
+                OptionsBarIconButton(title: mode.title, symbol: mode.symbol, isPressed: session.displayedSelectionMode == mode) {
+                    session.selectionModeChoice = mode
+                }
+            }
+        }
+        .help("Hold Shift to add or Option to subtract for one outline")
+    }
+}
+
+extension SelectionMode {
+    /// The button's name, as familiar editors have it.
+    var title: String {
+        switch self {
+        case .replace: "New Selection"
+        case .add: "Add to Selection"
+        case .subtract: "Subtract from Selection"
         }
     }
 
-    /// A button plus its pixel amount (1–500, default 1); both disabled without a selection.
-    private func modifyControl(_ title: String, amount: Binding<Int>, action: @escaping () -> Void) -> some View {
-        HStack(spacing: 5) {
-            Button(title, action: action)
-            TextField(title, value: Binding(get: { amount.wrappedValue },
-                                            set: { amount.wrappedValue = min(500, max(1, $0)) }),
-                      format: .number)
-                .frame(width: 40).textFieldStyle(.roundedBorder)
-                .multilineTextAlignment(.trailing)
-                .arrowSteps(value: { Double(amount.wrappedValue) },
-                            change: { amount.wrappedValue = Int(min(500, max(1, $0.rounded()))) })
-                .unitSuffix("px", scrubValue: amount, sensitivity: 1, range: 1...500)
+    var symbol: String {
+        switch self {
+        case .replace: "square"
+        case .add: "plus.square"
+        case .subtract: "minus.square"
         }
-        .disabled(!session.canModifySelection)
-        .help("\(title) the selection by this many pixels")
     }
 }
 

@@ -31,18 +31,65 @@ struct OptionsBarDivider: View {
     var body: some View { ColorRole.separator.color.frame(width: 1, height: 20) }
 }
 
-/// A bar's icon button, 24 × 22: the symbol alone, with its name as the help tag and accessibility label.
-struct OptionsBarIconButton: View {
+/// A bar's icon button, 24 × 22: the icon alone, with its name as the help tag and accessibility label. A pressed one
+/// (the chosen selection mode, a pressure toggle that is on) sits on `activeTool`.
+struct OptionsBarIconButton<Icon: View>: View {
     let title: String
-    let symbol: String
+    var isPressed = false
     let action: () -> Void
+    @ViewBuilder let icon: Icon
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: symbol).frame(width: 24, height: 22).contentShape(Rectangle())
+            icon.frame(width: 24, height: 22)
+                .background(isPressed ? ColorRole.activeTool.color : .clear, in: RoundedRectangle(cornerRadius: 5))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.borderless)
         .help(title)
         .accessibilityLabel(title)
+        .accessibilityAddTraits(isPressed ? .isSelected : [])
+    }
+}
+
+extension OptionsBarIconButton where Icon == Image {
+    init(title: String, symbol: String, isPressed: Bool = false, action: @escaping () -> Void) {
+        self.init(title: title, isPressed: isPressed, action: action) { Image(systemName: symbol) }
+    }
+}
+
+/// A tool's settings, left to right. While an edit is in progress, its Cancel ⊘ and Commit ✓ sit at the far right,
+/// after a divider, where the Free Transform bar has them.
+struct OptionsBarRow<Content: View>: View {
+    var commit: OptionsBarCommitButtons? = nil
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        HStack(spacing: 0) {
+            HStack(spacing: 10) { content }.padding(.horizontal, 12)
+            Spacer(minLength: 0)
+            if let commit {
+                OptionsBarDivider()
+                commit.padding(.horizontal, 8)
+            }
+        }
+        .toolHeaderBar()
+    }
+}
+
+/// Cancel ⊘ and Commit ✓, the end of every bar with an edit in progress. Return and Escape stay with the canvas.
+struct OptionsBarCommitButtons: View {
+    let cancelTitle: String
+    let commitTitle: String
+    let cancel: () -> Void
+    let commit: () -> Void
+
+    var body: some View {
+        HStack(spacing: 4) {
+            OptionsBarIconButton(title: cancelTitle, symbol: "nosign", action: cancel)
+                .accessibilityIdentifier("optionsBarCancel")
+            OptionsBarIconButton(title: commitTitle, symbol: "checkmark", action: commit)
+                .accessibilityIdentifier("optionsBarCommit")
+        }
     }
 }

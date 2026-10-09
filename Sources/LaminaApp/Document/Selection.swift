@@ -191,10 +191,13 @@ extension EditorSession {
         }
         applySelection(outline, mode: draft.mode,
                        name: draft.kind == .freehand ? "Lasso" : draft.kind == .polygonal ? "Polygonal Lasso"
-                           : draft.kind == .ellipse ? "Elliptical Marquee" : "Rectangular Marquee")
+                           : draft.kind == .ellipse ? "Elliptical Marquee" : "Rectangular Marquee",
+                       feather: selectionToolFeather)
     }
 
-    func applySelection(_ shape: CGPath, mode: SelectionMode, name: String) {
+    /// `feather` softens the outline's edge, as the bar's Feather does for the next outline drawn. A selection has one
+    /// edge softness, so adding to or subtracting from a softer one keeps the softer edge.
+    func applySelection(_ shape: CGPath, mode: SelectionMode, name: String, feather: CGFloat = 0) {
         guard let document, canEditSelection else { return }
         let canvas = CGPath(rect: CGRect(origin: .zero, size: document.size), transform: nil)
         let clipped = shape.intersection(canvas, using: .winding)
@@ -207,7 +210,8 @@ extension EditorSession {
             guard let current = selection else { return }
             result = current.path.subtracting(clipped, using: .winding)
         }
-        setSelection(DocumentSelection(path: result, antialiased: selectionAntialiased), name: name)
+        let edge = mode == .replace ? feather : max(feather, selection?.feather ?? 0)
+        setSelection(DocumentSelection(path: result, antialiased: selectionAntialiased, feather: min(250, edge)), name: name)
     }
 
     func setSelection(_ value: DocumentSelection?, name: String) {

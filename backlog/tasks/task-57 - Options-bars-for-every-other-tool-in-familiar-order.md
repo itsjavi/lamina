@@ -1,9 +1,11 @@
 ---
 id: TASK-57
 title: Options bars for every other tool in familiar order
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-09 02:14'
+updated_date: '2026-10-09 06:47'
 labels: []
 milestone: m-5
 dependencies:
@@ -39,3 +41,23 @@ Each tool's bar orders and names its controls its own way: a Mode picker instead
 <!-- DOD:BEGIN -->
 - [ ] #1 docs/DESIGN.md matches what shipped
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Shared bar pieces in UI/OptionsBar.swift (or a sibling file): OptionsBarToggleButton (24x22 icon toggle on activeTool), OptionsBarCommitButtons (Cancel ⊘ / Commit ✓ at the right end), PercentField (label: scrubbable, field + %, chevron opening a slider pop-up), OptionsBarNumberField (label:, field, unit), BrushPicker (tip preview with size under it; pop-up with Size and Hardness, plus the bristle presets as in-progress entries for the Brush).
+2. Selection tools: New/Add/Subtract icon buttons; Feather: N px for the next marquee or lasso outline (new session value, default 0, applied in finishLasso; Select ▸ Modify ▸ Feather… unchanged); Anti-alias (dimmed for rectangles); Object Selection: Sample All Layers, Edge, Select Subject; Magic Wand: Sample Size, Tolerance, Anti-alias, Contiguous, Sample All Layers, Select Subject. Drop Expand/Contract/Feather buttons, Deselect and the empty readout.
+3. Painting tools: one BrushControls built from the shared pieces in the spec's order per tool; no Color swatch, no mask Black/White picker. Mask painting uses the foreground color's gray value (maskPaintWhite goes; swatches show gray while a mask is targeted; D/X give black and white). Liquify's Cancel/Done become icon buttons.
+4. Crop: Ratio pop-up with familiar names (built-ins + 9:20, 2.39:1, then remembered ratios), W ⇄ H fields with swap and Clear replacing Custom…, Cancel/Commit icons while a crop is pending.
+5. Gradient: preset swatch pop-up, Linear/Radial icon buttons, Opacity, Reverse, Cancel/Commit icons while pending. Paint Bucket: Fill: Foreground, Opacity, Tolerance, Anti-alias, Contiguous, All Layers.
+6. Type: font family and style pop-ups (split TypeFontPicker), size, alignment icons, color, Character panel button (DockLayout.show(.properties)), Cancel/Commit icons while editing. Leave Tracking/Leading lines for TASK-59.
+7. Shapes: Fill: swatch, stroke placeholders, path operations, Radius: / Weight:. Colons on every label.
+8. Navigation: Zoom In/Out icon buttons (session zoomsOut; Option flips), Scrubby Zoom checkbox (persisted; off = a drag zooms one step like a click), 100%/Fit/Fill. Eyedropper: Show Sampling Ring.
+9. Tests: feather for next selection, mask gray painting, crop ratio names/sides/swap/clear, font family/style split, zoom direction, keyboard (digits, brackets) still drive the bar's values. DESIGN.md table and notes updated per slice; screenshots in backlog/assets/task-57/.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Selection tools: SelectionModeButtons (New/Add/Subtract icons, pressed while Shift/Option or an outline applies), Feather: px sets EditorSession.selectionToolFeather for the next marquee/lasso outline (applySelection(feather:)); adding to or subtracting from a softer selection keeps the softer edge, since a selection has one edge softness. Expand/Contract/Feather buttons, Deselect and the empty-selection readout left the bar (Select ▸ Modify and ⌘D cover them). Object Selection keeps Anti-alias (it changes the result) as a Lamina extra. Shared pieces: OptionsBarRow, OptionsBarCommitButtons, OptionsBarIconButton (now generic, with isPressed), OptionsBarField, PercentField, OptionsBarPicker (UI/OptionsBar.swift, UI/OptionsBarFields.swift).
+<!-- SECTION:NOTES:END -->

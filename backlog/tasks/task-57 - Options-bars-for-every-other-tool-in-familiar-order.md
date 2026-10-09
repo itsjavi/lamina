@@ -1,7 +1,7 @@
 ---
 id: TASK-57
 title: Options bars for every other tool in familiar order
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-09 02:14'
@@ -29,17 +29,17 @@ Each tool's bar orders and names its controls its own way: a Mode picker instead
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every tool's bar shows the controls, order and names in docs/DESIGN.md, including its in-progress placeholders
-- [ ] #2 Selection tools use the New, Add and Subtract icon buttons; Feather sets the feather for the next selection, while Select ▸ Modify ▸ Feather… still feathers an existing one; the Object Selection and Magic Wand bars include Select Subject
-- [ ] #3 Painting tools share a brush picker pop-up holding Size and Hardness; Opacity, Flow, Smoothing and Strength are percent fields with a slider pop-up; the brush bar no longer shows a color swatch or the mask Black / White picker
-- [ ] #4 Crop, Type and any edit in progress end with Cancel and Commit icon buttons; the Type bar splits font family and style and opens Properties ▸ Character for leading and tracking
-- [ ] #5 The Hand and Zoom bars offer 100%, Fit Screen and Fill Screen, and the Zoom bar adds zoom in and out and Scrubby Zoom
-- [ ] #6 Keyboard behavior (1–0 opacity, [ and ] size, Return and Escape) is unchanged and covered by tests
+- [x] #1 Every tool's bar shows the controls, order and names in docs/DESIGN.md, including its in-progress placeholders
+- [x] #2 Selection tools use the New, Add and Subtract icon buttons; Feather sets the feather for the next selection, while Select ▸ Modify ▸ Feather… still feathers an existing one; the Object Selection and Magic Wand bars include Select Subject
+- [x] #3 Painting tools share a brush picker pop-up holding Size and Hardness; Opacity, Flow, Smoothing and Strength are percent fields with a slider pop-up; the brush bar no longer shows a color swatch or the mask Black / White picker
+- [x] #4 Crop, Type and any edit in progress end with Cancel and Commit icon buttons; the Type bar splits font family and style and opens Properties ▸ Character for leading and tracking
+- [x] #5 The Hand and Zoom bars offer 100%, Fit Screen and Fill Screen, and the Zoom bar adds zoom in and out and Scrubby Zoom
+- [x] #6 Keyboard behavior (1–0 opacity, [ and ] size, Return and Escape) is unchanged and covered by tests
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 docs/DESIGN.md matches what shipped
+- [x] #1 docs/DESIGN.md matches what shipped
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -75,3 +75,9 @@ Navigation: Zoom In/Out icon buttons set zoomToolZoomsOut (a click's direction, 
 
 Visual check: make dev, launched on scripts/demo-project.swift's project at 1500 × 860, tools chosen through Accessibility (toolbar buttons and their flyouts), each window captured with screencapture -l and cropped to the bar, dark and light (light via the -appearance launch argument, so no Dev defaults changed). Found and fixed a crash: the Type bar's font pop-ups asked an empty menu for item 0 (NSRangeException) — now guarded, with typeBarLaysOutWithItsFontPopUps covering it; the brush picker's px unit was truncated (fixed with fixedSize). Screenshots in backlog/assets/task-57/: <tool>-bar-dark.png and -light.png for the marquee, lasso, Object Selection, Magic Wand, Crop, Eyedropper, Spot Healing, Brush, Clone Stamp, Eraser, Gradient, Paint Bucket, Dodge, Type, Rectangle, Hand and Zoom, blur-bar-dark.png, and the brush picker, gradient presets and Opacity slider pop-overs (light). The Elliptical Marquee, Smudge and Line flyout choices didn't take through Accessibility in this run; their bars differ from the captured ones only by Anti-alias enabled, no Radius, and Weight: instead of Radius:. Not done here: README/website/screenshots (TASK-66 depends on this task for that). Follow-ups worth considering: a zoom-rectangle drag when Scrubby Zoom is off; CharacterProperties (TASK-59) could use EditorSession.textFontName instead of its own faceName.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Rebuilt every tool's options bar (except Move/Free Transform) in the order and names of docs/DESIGN.md, from shared pieces: OptionsBarRow, OptionsBarCommitButtons (⊘/✓ at the right end while an edit is pending), OptionsBarIconButton (now with a pressed state), OptionsBarField, PercentField (field + slider pop-over) and OptionsBarPicker. Selection tools: New/Add/Subtract icons, Feather for the next marquee/lasso outline (Select ▸ Modify ▸ Feather… unchanged), Select Subject on Object Selection and Magic Wand. Painting tools: a shared BrushPicker (Size, Hardness, bristle presets in progress for the Brush), percent fields, no swatch or mask Black/White picker; masks paint the foreground's gray and the swatches show gray. Dodge/Burn use Exposure alone (1–0 set it). Crop: familiar ratio names, W ⇄ H, Clear, ⊘/✓. Gradient: preset pop-over, Linear/Radial icons. Paint Bucket: Fill:, All Layers checkbox. Type: family and style pop-ups (TASK-59's FontFaces), alignment icons, Character panel button, ⊘/✓. Shapes: Fill:/Stroke:/Radius:/Weight:. Zoom: Zoom In/Out, Scrubby Zoom; Eyedropper: Show Sampling Ring. DESIGN.md's Options bars section rewritten to match (table, shared pieces, per-bar notes). Verified with swift test (764 tests, new ones for feather, mask gray, crop ratios/swap/clear and Return/Escape, font family/style split and the Type bar's layout, zoom direction, Dodge's number keys) and window captures of each bar in dark and light (backlog/assets/task-57).
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -1,11 +1,11 @@
 ---
 id: TASK-66
 title: 'README, website and screenshots for the familiar workspace'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-09 02:14'
-updated_date: '2026-10-09 07:38'
+updated_date: '2026-10-09 07:51'
 labels: []
 milestone: m-5
 dependencies:
@@ -41,9 +41,9 @@ brand/README.md: a substantial UI change means recapturing screenshots and updat
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every screenshot in web/assets shows the new workspace, and the social card is regenerated
-- [ ] #2 README and website copy name tools, menus and panels as the app now does
-- [ ] #3 Nothing published shows interface that no longer exists
+- [x] #1 Every screenshot in web/assets shows the new workspace, and the social card is regenerated
+- [x] #2 README and website copy name tools, menus and panels as the app now does
+- [x] #3 Nothing published shows interface that no longer exists
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -57,3 +57,19 @@ brand/README.md: a substantial UI change means recapturing screenshots and updat
 6. Grep docs/ and scripts/ for stale interface names (folder, Smear, Magic (W), Export PNG..., Export JPEG..., Import Images..., Transform Layer, Fit Canvas, Actual Pixels, Edit Adjustment...) and fix the ones describing the current app.
 7. Check each image against the current app, check the site in headless Chrome (light and dark), commit each slice.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Captures (Dev build of this worktree, 1500 x 860 pt window per DESIGN.md, rulers on, grid off, launched with open -g -n -a, captured by pid with scripts/window-screenshot.swift --pid): screenshot.webp (dark, Golden Hour as it opens, Properties showing the Type Layer), camera-raw.webp (dark, Sky selected with lamina select-layer, Filter > Camera Raw Filter... chosen with Accessibility's press action, --panels), curves.webp (light, Warm grade selected, Curves in Properties), oil-painting.webp (dark, seascape as it opens). Each image checked by eye against the running app: toolbar with flyout corners, options bar, status bar, Properties | Adjustments over Layers, groups, fx rows.
+Decisions: one light shot (curves) and the rest dark instead of light/dark pairs, so the pages show both appearances without doubling the assets (total webp ~426 KB, was ~429 KB). Curves is captured in Properties (adjustment layers are edited there) rather than the Image > Adjustments dialog. The website gets a new first feature row, 'A layout you already know', using screenshot.webp (until now only the README and social card used it), so the familiar layout is presented as a feature in decision-7's tone (what Lamina does, no comparisons beyond 'as in Photoshop, Affinity and similar editors'). Export copy is written for TASK-65's end state (File > Export > Quick Export as PNG, Export As... with a Format menu and preview); no export dialog is shown.
+Scripts: window-screenshot.swift takes --pid (another agent's Dev copy can run at the same time); new scripts/menu-command.swift chooses a menu command through Accessibility (no mouse or key events); demo-project.swift says group; brand/README.md's procedure and shot table updated (window frame, appearance default, lamina select-layer, restoring defaults).
+Docs: project-format.md and writing-lamina-projects.md say group for layer groups and name the shape tools; no other stale names (Smear, Magic (W), Export PNG..., Export JPEG..., Import Images..., Transform Layer, Fit Canvas, Actual Pixels, Edit Adjustment...) in docs/ or scripts/ outside DESIGN.md's history notes.
+Checks: swiftc -typecheck on the three changed or new scripts; website rendered in headless Chrome in light and dark (images load, sizes match the new 2400x1376 and 1600x918 files); social card re-rendered and viewed. Dev app defaults restored (window frame, tool.grid, appearance key deleted). make test-ui not run (docs task).
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Recaptured every web/assets screenshot from the Dev build in the familiar workspace (hero, Camera Raw and seascape in dark, Curves in Properties in light) and regenerated the social card. README and website now present the familiar layout as a feature and name tools, menus, panels and dialogs as the app does (groups, Eraser and Dodge/Burn tools, Filter > Liquify..., Properties and Adjustments panels, Layer Style dialog, Fill and Load Selection, light and dark, Quick Export as PNG and Export As...). Screenshot scripts pick a Dev copy by pid and choose menu commands through Accessibility; brand/README.md documents it; format docs say group. Verified by viewing each capture and the social card, headless Chrome renders of the site in light and dark, and swiftc -typecheck of the scripts.
+<!-- SECTION:FINAL_SUMMARY:END -->

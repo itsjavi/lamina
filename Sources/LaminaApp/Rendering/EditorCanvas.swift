@@ -13,6 +13,7 @@ struct EditorCanvas: NSViewRepresentable {
         _ = session.layoutGrid
         _ = session.gridAppearance
         _ = session.showsGuides
+        _ = session.showsExtras
         _ = session.guideDrag
         _ = session.document?.guides
         view.synchronizeDisplay()
@@ -567,7 +568,7 @@ final class CanvasView: NSView {
         // Worked out once: each asks for the whole layer hierarchy, which on a document of hundreds of layers is too much
         // to redo for every layer on every event.
         let visible = document?.effectiveVisibleIDs ?? []
-        let state = DisplayState(brushRevision: session.brushRevision, pixelGrid: session.showsPixelGrid, documentID: document?.id, size: document?.size, renderBounds: renderBounds, viewport: session.viewport,
+        let state = DisplayState(brushRevision: session.brushRevision, pixelGrid: session.pixelGridVisible, documentID: document?.id, size: document?.size, renderBounds: renderBounds, viewport: session.viewport,
             layers: (document.map { $0.layers.contains(where: { $0.maskSourceID != nil }) ? $0.layers : $0.renderLayers } ?? []).filter { $0.asset != nil || $0.adjustment != nil }.map {
                 DisplayState.Layer(id: $0.id, transform: session.displayedTransform(for: $0),
                                    imageID: $0.asset.map { ObjectIdentifier($0.image) }, maskID: $0.mask?.enabledImage.map { ObjectIdentifier($0) }, maskSourceID: $0.maskSourceID, parentID: $0.parentID, visible: visible.contains($0.id), opacity: opacities[$0.id] ?? $0.opacity, blendMode: session.displayedBlendMode(for: $0), adjustment: $0.adjustment, effects: $0.effects,
@@ -1407,7 +1408,7 @@ final class CanvasView: NSView {
     /// What the lines overlay draws: the pixel grid, from 800%, and the frame of new text being dragged out.
     private func drawLines(in dirtyRect: NSRect) {
         guard let document = session.document, let context = NSGraphicsContext.current?.cgContext else { return }
-        if session.showsPixelGrid, session.viewport.zoom >= Self.pixelGridZoom {
+        if session.pixelGridVisible, session.viewport.zoom >= Self.pixelGridZoom {
             let pixels = renderBounds ?? CGRect(origin: .zero, size: document.size)
             let rect = CGRect(origin: session.viewport.viewPoint(from: pixels.origin, documentSize: document.size),
                               size: CGSize(width: pixels.width * session.viewport.pointsPerPixel,
@@ -2408,9 +2409,9 @@ final class CanvasView: NSView {
         synchronizeDisplay()
     }
 
-    /// Marching ants animate only while a visible selection exists.
+    /// Marching ants animate only while a visible selection exists (View › Extras shows its edges).
     private func updateAntsTimer() {
-        let active = session.selection?.isEmpty == false && window != nil
+        let active = session.selection?.isEmpty == false && session.selectionEdgesVisible && window != nil
         if active, antsTimer == nil {
             let timer = Timer(timeInterval: 0.12, repeats: true) { [weak self] _ in
                 // A redraw still pending skips this tick: a slow outline stutters rather than queuing redraws forever.
@@ -2492,7 +2493,7 @@ final class CanvasView: NSView {
         let pixel = session.viewport.documentPoint(from: point, documentSize: documentSize)
         let symmetric = flags.contains(.option)
         var next = drag.updated(to: pixel, ratio: session.cropRatio, symmetric: symmetric)
-        if let cropSnap, session.snappingEnabled, !flags.contains(.control) {
+        if let cropSnap, session.snapEnabled, !flags.contains(.control) {
             next = cropSnap.apply(next, drag: drag, point: pixel, ratio: session.cropRatio, symmetric: symmetric)
         }
         if CropGeometry.valid(next) { session.cropRect = next }

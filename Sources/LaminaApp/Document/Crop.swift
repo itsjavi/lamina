@@ -121,7 +121,7 @@ extension EditorSession {
     /// `draft` nudged so the layer it places lines up with a nearby edge or center; `moving` is what is being
     /// dragged, and `tolerance` is in document pixels.
     func snappedMove(_ draft: LayerTransform, moving: Set<UUID>, tolerance: CGFloat) -> LayerTransform {
-        guard snappingEnabled else { snapGuides = ([], []); return draft }
+        guard snapEnabled else { snapGuides = ([], []); return draft }
         let corners = DistortWarp.corners(of: draft)
         let cornerXs = corners.map(\.x), cornerYs = corners.map(\.y)
         guard let minX = cornerXs.min(), let maxX = cornerXs.max(),
@@ -143,7 +143,7 @@ extension EditorSession {
     /// upright layer only: a turned one's edges don't run along the targets.
     func snappedResizePoint(_ point: CGPoint, drag: TransformDrag, proportional: Bool, moving: Set<UUID>, tolerance: CGFloat,
                             update: (CGPoint) -> LayerTransform) -> CGPoint {
-        guard snappingEnabled, case .resize(let index) = drag.mode, drag.original.radians == 0 else {
+        guard snapEnabled, case .resize(let index) = drag.mode, drag.original.radians == 0 else {
             snapGuides = ([], [])
             return point
         }
@@ -185,7 +185,7 @@ extension EditorSession {
     /// `point` moved onto the nearest crop target within `tolerance` document pixels, each axis on its own: where a
     /// Marquee or a shape starts and where its corner is dragged to.
     func snappedPoint(_ point: CGPoint, tolerance: CGFloat) -> CGPoint {
-        guard snappingEnabled else { snapGuides = ([], []); return point }
+        guard snapEnabled else { snapGuides = ([], []); return point }
         let targets = cropSnapTargets()
         func nearest(_ value: CGFloat, in lines: [CGFloat]) -> CGFloat? {
             lines.filter { abs($0 - value) <= tolerance }.min { abs($0 - value) < abs($1 - value) }
@@ -198,7 +198,7 @@ extension EditorSession {
     /// A selection being moved by `offset` from where it started, nudged so its edges or middle meet a nearby target
     /// within `tolerance` document pixels, each axis on its own. An axis Shift has locked doesn't snap.
     func snappedSelectionOffset(_ offset: CGSize, tolerance: CGFloat, horizontal: Bool = true, vertical: Bool = true) -> CGSize {
-        guard snappingEnabled, let origin = selectionMoveOrigin else { snapGuides = ([], []); return offset }
+        guard snapEnabled, let origin = selectionMoveOrigin else { snapGuides = ([], []); return offset }
         let box = origin.path.boundingBoxOfPath.offsetBy(dx: offset.width.rounded(), dy: offset.height.rounded())
         let targets = cropSnapTargets()
         let snap = TransformSnap.offset(for: box, xs: horizontal ? targets.xs : [], ys: vertical ? targets.ys : [], tolerance: tolerance)

@@ -236,11 +236,46 @@ struct GuideTests {
         #expect(session.snappedPoint(CGPoint(x: 62, y: 20), tolerance: 3) == CGPoint(x: 64, y: 20))
         #expect(session.snappedPoint(CGPoint(x: 397.5, y: 9), tolerance: 3) == CGPoint(x: 400, y: 8))
         #expect(session.snapGuides.xs == [400] && session.snapGuides.ys == [8], "the lines met are shown")
-        session.snappingEnabled = false
+        // A hidden grid isn't snapped to: View › Extras off hides it, its own setting kept.
+        session.showsExtras = false
+        #expect(session.showsGrid && !session.gridVisible)
         #expect(session.snappedPoint(CGPoint(x: 62, y: 20), tolerance: 3) == CGPoint(x: 62, y: 20))
-        session.snappingEnabled = true
+        session.showsExtras = true
+        // View's one Snap turns it all off, and the lines shown go with it.
+        _ = session.snappedPoint(CGPoint(x: 62, y: 20), tolerance: 3)
         session.snapEnabled = false
-        #expect(session.snappedPoint(CGPoint(x: 62, y: 20), tolerance: 3) == CGPoint(x: 62, y: 20))
         #expect(session.snapGuides.xs.isEmpty && session.snapGuides.ys.isEmpty)
+        #expect(session.snappedPoint(CGPoint(x: 62, y: 20), tolerance: 3) == CGPoint(x: 62, y: 20))
+        #expect(session.snappedPoint(CGPoint(x: 397.5, y: 9), tolerance: 3) == CGPoint(x: 397.5, y: 9))
+    }
+
+    /// One Snap for everything: moves, resizes and crops (which had a Snap toggle of their own) stop snapping with it.
+    @Test func viewSnapStopsLayerMovesSnappingToo() throws {
+        let session = try paintedSession()
+        let id = try #require(session.activeLayerID)
+        let layer = try #require(session.activeLayer)
+        var draft = layer.transform
+        draft.origin.x = 2
+        #expect(session.snappedMove(draft, moving: [id], tolerance: 4).origin.x == 0, "snaps to the canvas edge")
+        session.snapEnabled = false
+        #expect(session.snappedMove(draft, moving: [id], tolerance: 4).origin.x == 2)
+    }
+
+    /// View › Extras hides guides as it hides the grid: they can't be grabbed, and they show again with Extras.
+    @Test func extrasHideGuidesWithoutForgettingThem() throws {
+        let session = try paintedSession()
+        session.addGuide(CanvasGuide(id: UUID(), axis: .vertical, position: 100))
+        let document = try #require(session.document)
+        let x = session.viewport.viewPoint(from: CGPoint(x: 100, y: 0), documentSize: document.size).x
+        #expect(session.hitGuide(at: CGPoint(x: x, y: 10)) != nil)
+        session.showsExtras = false
+        #expect(session.showsGuides && !session.guidesVisible && session.hitGuide(at: CGPoint(x: x, y: 10)) == nil)
+        // Turning Guides back on shows Extras again, as Photoshop does; so does a new guide.
+        session.showsGuides = false
+        session.showsGuides = true
+        #expect(session.showsExtras && session.guidesVisible)
+        session.showsExtras = false
+        session.addGuide(CanvasGuide(id: UUID(), axis: .horizontal, position: 50))
+        #expect(session.showsExtras)
     }
 }

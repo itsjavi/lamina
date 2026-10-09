@@ -125,7 +125,7 @@ extension EditorSession {
     }
 
     func hitGuide(at viewPoint: CGPoint, tolerance: CGFloat = guideHitDistance) -> CanvasGuide? {
-        guard showsGuides, !locksGuides, let document else { return nil }
+        guard guidesVisible, !locksGuides, let document else { return nil }
         var best: (guide: CanvasGuide, distance: CGFloat)?
         for guide in displayedGuides {
             let distance: CGFloat
@@ -145,7 +145,9 @@ extension EditorSession {
 
     func beginGuideCreation(axis: CanvasGuide.Axis, at position: Double) {
         guard canEditGuides else { return }
+        // A new guide shows, even with View › Extras off.
         showsGuides = true
+        showsExtras = true
         guideDrag = GuideDrag(id: UUID(), axis: axis, position: snappedGuidePosition(position, axis: axis, excluding: nil),
                               isNew: true, original: nil)
         refreshCanvasPreview?()
@@ -208,7 +210,9 @@ extension EditorSession {
 
     func addGuide(_ guide: CanvasGuide) {
         guard canEditGuides else { return }
+        // A new guide shows, even with View › Extras off.
         showsGuides = true
+        showsExtras = true
         beginEdit("New Guide")
         document?.guides.append(guide)
         endEdit()
@@ -242,11 +246,11 @@ extension EditorSession {
             }
         }
         // Hidden extras do not snap, matching Photoshop.
-        if snapToGrid, showsGrid {
+        if snapToGrid, gridVisible {
             xs += layoutGrid.lines(along: document.size.width)
             ys += layoutGrid.lines(along: document.size.height)
         }
-        if snapToGuides, showsGuides {
+        if snapToGuides, guidesVisible {
             for guide in displayedGuides {
                 if guide.axis == .vertical { xs.append(CGFloat(guide.position)) }
                 else { ys.append(CGFloat(guide.position)) }
@@ -260,8 +264,8 @@ extension EditorSession {
         let tolerance = TransformSnap.distance / max(viewport.pointsPerPixel, 0.0001)
         var targets: [CGFloat] = []
         let length = axis == .vertical ? document.size.width : document.size.height
-        if snapToGrid, showsGrid { targets += layoutGrid.lines(along: length) }
-        if snapToGuides, showsGuides {
+        if snapToGrid, gridVisible { targets += layoutGrid.lines(along: length) }
+        if snapToGuides, guidesVisible {
             targets += displayedGuides.filter { $0.axis == axis && $0.id != excluding }.map { CGFloat($0.position) }
         }
         if snapToDocumentBounds {

@@ -187,12 +187,6 @@ final class EditorSession {
     @ObservationIgnored var distortEffectsCache: [UUID: DistortEffectsCache] = [:]
     /// Document positions a move has just snapped to, drawn as guides while it lasts.
     @ObservationIgnored var snapGuides: (xs: [CGFloat], ys: [CGFloat]) = ([], [])
-    var snappingEnabled = true {
-        didSet {
-            if !snappingEnabled { snapGuides = ([], []) }
-            refreshCanvasPreview?()
-        }
-    }
     /// Where the last brush stroke ended, so a Shift-click paints a straight line on from it.
     @ObservationIgnored var lastBrushPoint: (point: CGPoint, layerID: UUID, mask: Bool)?
     /// Where the brush is while Smoothing trails it behind the pointer (see `smoothed`).
@@ -349,9 +343,28 @@ final class EditorSession {
     var wandSettings = WandSettings()
     var bucketSettings = BucketSettings()
     var objectSelectionSettings = ObjectSelectionSettings()
-    var showsPixelGrid = ToolDefaults.bool("pixelGrid", true) { didSet { ToolDefaults.set(showsPixelGrid, "pixelGrid") } }
+    /// View › Extras: shows or hides the grid, guides, pixel grid and selection edges together, each keeping its own
+    /// setting (`showsGrid`, `showsGuides`, `showsPixelGrid`) for when Extras is on again. Turning one of those on
+    /// turns Extras on too, so it shows, as in Photoshop.
+    var showsExtras = ToolDefaults.bool("extras", true) {
+        didSet {
+            ToolDefaults.set(showsExtras, "extras")
+            refreshCanvasPreview?()
+        }
+    }
+    var showsPixelGrid = ToolDefaults.bool("pixelGrid", true) {
+        didSet {
+            ToolDefaults.set(showsPixelGrid, "pixelGrid")
+            if showsPixelGrid, !oldValue { showsExtras = true }
+        }
+    }
     /// Layout grid (View > Show > Grid). Off until turned on; independent of the 800% pixel grid.
-    var showsGrid = ToolDefaults.bool("grid", false) { didSet { ToolDefaults.set(showsGrid, "grid") } }
+    var showsGrid = ToolDefaults.bool("grid", false) {
+        didSet {
+            ToolDefaults.set(showsGrid, "grid")
+            if showsGrid, !oldValue { showsExtras = true }
+        }
+    }
     /// The layout grid's spacing and subdivisions (View > Grid Settings…). The person's, not the project's.
     var layoutGrid = LayoutGrid(spacing: ToolDefaults.int("gridSpacing", 64), subdivisions: ToolDefaults.int("gridSubdivisions", 8)) {
         didSet {
@@ -373,14 +386,32 @@ final class EditorSession {
         }
     }
     /// User guides. Hidden extras do not snap.
-    var showsGuides = ToolDefaults.bool("guides", true) { didSet { ToolDefaults.set(showsGuides, "guides") } }
+    var showsGuides = ToolDefaults.bool("guides", true) {
+        didSet {
+            ToolDefaults.set(showsGuides, "guides")
+            if showsGuides, !oldValue { showsExtras = true }
+        }
+    }
+    /// What the canvas shows, draws and snaps to of each extra: its own setting, while View › Extras is on.
+    var gridVisible: Bool { showsExtras && showsGrid }
+    var guidesVisible: Bool { showsExtras && showsGuides }
+    var pixelGridVisible: Bool { showsExtras && showsPixelGrid }
+    var selectionEdgesVisible: Bool { showsExtras }
     var showsRulers = ToolDefaults.bool("rulers", false) { didSet { ToolDefaults.set(showsRulers, "rulers") } }
     /// What the rulers and Properties' Canvas fields measure in (Properties ▸ Rulers & Grids), the person's own.
     var rulerUnits = SizeUnit(rawValue: ToolDefaults.string("rulerUnits", "")).flatMap { SizeUnit.rulerUnits.contains($0) ? $0 : nil } ?? .pixels {
         didSet { ToolDefaults.set(rulerUnits.rawValue, "rulerUnits") }
     }
-    /// Master snap switch (View > Snap). On so today's layer/canvas snap keeps working.
-    var snapEnabled = ToolDefaults.bool("snap", true) { didSet { ToolDefaults.set(snapEnabled, "snap") } }
+    /// View › Snap: the one switch for everything that snaps (moves, resizes, crops, marquees, shapes, guides) to
+    /// what View › Snap To picks. Saved as "snap", as the View menu's master switch always was; the second Snap
+    /// toggle View had before TASK-62, which lasted the session and covered moves and crops, folded into it.
+    var snapEnabled = ToolDefaults.bool("snap", true) {
+        didSet {
+            ToolDefaults.set(snapEnabled, "snap")
+            if !snapEnabled { snapGuides = ([], []) }
+            refreshCanvasPreview?()
+        }
+    }
     var snapToGuides = ToolDefaults.bool("snapGuides", true) { didSet { ToolDefaults.set(snapToGuides, "snapGuides") } }
     var snapToGrid = ToolDefaults.bool("snapGrid", false) { didSet { ToolDefaults.set(snapToGrid, "snapGrid") } }
     var snapToLayers = ToolDefaults.bool("snapLayers", true) { didSet { ToolDefaults.set(snapToLayers, "snapLayers") } }

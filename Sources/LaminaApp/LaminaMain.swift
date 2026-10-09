@@ -137,9 +137,6 @@ struct LaminaMain: App {
                         Toggle("Pixel Grid (800% and above)", isOn: Binding(get: { session.showsPixelGrid },
                                                                               set: { session.showsPixelGrid = $0 }))
                             .assignableShortcut("View › Pixel Grid")
-                        Toggle("Snap", isOn: Binding(get: { session.snappingEnabled },
-                                                     set: { session.snappingEnabled = $0 }))
-                            .assignableShortcut("View › Snap")
                         Toggle("Show Transform Controls", isOn: Binding(get: { session.showsTransformControls },
                                                                           set: { session.showsTransformControls = $0 }))
                             .assignableShortcut("View › Show Transform Controls")

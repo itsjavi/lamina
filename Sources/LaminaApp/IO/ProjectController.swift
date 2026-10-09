@@ -179,8 +179,10 @@ final class ProjectController {
     /// grid shows while the sheet is open, changing as it's edited, and goes back to how it was on Cancel.
     func gridSettings() async {
         guard let window, window.attachedSheet == nil else { return }
-        let original = (grid: session.layoutGrid, appearance: session.gridAppearance, shown: session.showsGrid)
+        let original = (grid: session.layoutGrid, appearance: session.gridAppearance, shown: session.showsGrid,
+                        extras: session.showsExtras)
         session.showsGrid = true
+        session.showsExtras = true
         let settings: (LayoutGrid, GridAppearance)? = await withCheckedContinuation { continuation in
             let sheet = NSWindow()
             sheet.styleMask = [.titled, .fullSizeContentView]
@@ -199,6 +201,7 @@ final class ProjectController {
             window.beginSheet(sheet)
         }
         session.showsGrid = original.shown
+        session.showsExtras = original.extras
         session.layoutGrid = settings?.0 ?? original.grid
         session.gridAppearance = settings?.1 ?? original.appearance
     }

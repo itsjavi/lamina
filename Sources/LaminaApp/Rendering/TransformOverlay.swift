@@ -191,7 +191,7 @@ final class TransformOverlay: NSView {
     /// Non-printing layout grid over the document: majors in the chosen style, dotted subdivisions, both in the
     /// chosen color.
     private func drawLayoutGrid() {
-        guard session.showsGrid, let document = session.document, let transform = documentToView,
+        guard session.gridVisible, let document = session.document, let transform = documentToView,
               let context = NSGraphicsContext.current?.cgContext else { return }
         let grid = session.layoutGrid
         let appearance = session.gridAppearance
@@ -236,7 +236,7 @@ final class TransformOverlay: NSView {
 
     /// User guides span the whole view, including the pasteboard.
     private func drawGuides() {
-        guard session.showsGuides, let document = session.document,
+        guard session.guidesVisible, let document = session.document,
               let context = NSGraphicsContext.current?.cgContext else { return }
         let guides = session.displayedGuides
         guard !guides.isEmpty else { return }
@@ -285,9 +285,10 @@ final class TransformOverlay: NSView {
         return CGAffineTransform(translationX: origin.x, y: origin.y).scaledBy(x: scale, y: scale)
     }
 
-    /// Marching ants: a white line under an animated black dash.
+    /// Marching ants: a white line under an animated black dash. View › Extras off hides them; the selection stays.
     private func drawSelection() {
-        guard let selection = session.displayedSelection, !selection.isEmpty, var transform = documentToView,
+        guard session.selectionEdgesVisible, let selection = session.displayedSelection, !selection.isEmpty,
+              var transform = documentToView,
               let outline = antsOutline(for: selection.path),
               let path = outline.copy(using: &transform), let context = NSGraphicsContext.current?.cgContext else { return }
         context.saveGState()

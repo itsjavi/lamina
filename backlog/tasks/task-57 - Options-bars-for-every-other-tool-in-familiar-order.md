@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-09 02:14'
-updated_date: '2026-10-09 07:05'
+updated_date: '2026-10-09 07:23'
 labels: []
 milestone: m-5
 dependencies:
@@ -72,4 +72,6 @@ Rebased onto main after TASK-59 landed (Properties ▸ Character, with its own F
 Shapes: Fill: swatch, Stroke: placeholders (colon added), path operations, then Radius: or Weight: (was Width) as OptionsBarField; the sliders went, like every other bar's px fields. ShapeStrokePlaceholders no longer ends with a divider, so the Ellipse bar doesn't end on one.
 
 Navigation: Zoom In/Out icon buttons set zoomToolZoomsOut (a click's direction, Option flips; cursor follows via zoomClickFactor), Scrubby Zoom checkbox (ToolDefaults scrubbyZoom, on by default). Decision: with Scrubby Zoom off a drag zooms one step where it began, like a click; no zoom-rectangle drag (Lamina has no overlay for it; possible follow-up). Hand: 100%/Fit/Fill unchanged. Eyedropper: Show Sampling Ring checkbox. Full swift test: 762 tests passed (after updating SelectionEditTests' mask fill to press D first, since masks now paint the foreground's gray).
+
+Visual check: make dev, launched on scripts/demo-project.swift's project at 1500 × 860, tools chosen through Accessibility (toolbar buttons and their flyouts), each window captured with screencapture -l and cropped to the bar, dark and light (light via the -appearance launch argument, so no Dev defaults changed). Found and fixed a crash: the Type bar's font pop-ups asked an empty menu for item 0 (NSRangeException) — now guarded, with typeBarLaysOutWithItsFontPopUps covering it; the brush picker's px unit was truncated (fixed with fixedSize). Screenshots in backlog/assets/task-57/: <tool>-bar-dark.png and -light.png for the marquee, lasso, Object Selection, Magic Wand, Crop, Eyedropper, Spot Healing, Brush, Clone Stamp, Eraser, Gradient, Paint Bucket, Dodge, Type, Rectangle, Hand and Zoom, blur-bar-dark.png, and the brush picker, gradient presets and Opacity slider pop-overs (light). The Elliptical Marquee, Smudge and Line flyout choices didn't take through Accessibility in this run; their bars differ from the captured ones only by Anti-alias enabled, no Radius, and Weight: instead of Radius:. Not done here: README/website/screenshots (TASK-66 depends on this task for that). Follow-ups worth considering: a zoom-rectangle drag when Scrubby Zoom is off; CharacterProperties (TASK-59) could use EditorSession.textFontName instead of its own faceName.
 <!-- SECTION:NOTES:END -->

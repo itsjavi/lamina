@@ -49,7 +49,7 @@ struct BrushPickerPanel: View {
                         .frame(width: 48).textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing)
                         .arrowSteps(value: { Double(session.brushSettings.diameter) },
                                     change: { session.brushSettings.diameter = CGFloat(min(2000, max(1, $0))) })
-                        .unitSuffix("px")
+                        .unitSuffix("px").fixedSize()
                 }
                 GridRow {
                     Text("Hardness:")
@@ -61,7 +61,7 @@ struct BrushPickerPanel: View {
                         .frame(width: 48).textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing)
                         .arrowSteps(value: { Double(session.brushSettings.hardness * 100) },
                                     change: { session.brushSettings.hardness = CGFloat(min(100, max(0, $0)) / 100) })
-                        .unitSuffix("%")
+                        .unitSuffix("%").fixedSize()
                 }
             }
             if session.tool == .brush {

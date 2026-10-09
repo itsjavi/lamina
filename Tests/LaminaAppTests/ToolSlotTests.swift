@@ -114,7 +114,8 @@ struct ToolSlotTests {
         let wand = try #require(ShortcutDefinition.all.first { $0.title == "Object Selection / Magic Wand" })
         let shapes = try #require(ShortcutDefinition.all.first { $0.title == "Next shape tool" })
         #expect(settings.chord(wand) == ShortcutChord("q") && settings.chord(shapes) == ShortcutChord("y", 8))
-        #expect(!ShortcutDefinition.all.contains { $0.original == ShortcutChord("\t") }, "Tab picks nothing")
+        #expect(ShortcutDefinition.all.filter { $0.original == ShortcutChord("\t") }.map(\.title) == ["Show or hide panels"],
+                "Tab picks no tool: it hides the panels, as in Photoshop")
         #expect(ShortcutDefinition.all.contains { $0.title == "Dodge / Burn" && $0.original == ShortcutChord("o") })
     }
 }

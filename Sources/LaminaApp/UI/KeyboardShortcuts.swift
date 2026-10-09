@@ -180,6 +180,9 @@ struct ShortcutDefinition: Identifiable {
             ("Decrease brush size", "["), ("Increase brush size", "]")] {
             result.append(entry(title, key))
         }
+        // Photoshop's screen-mode and panel keys, for screen modes and hiding the panels (in progress, TASK-78).
+        result += [entry("Next screen mode", "f"), entry("Previous screen mode", "f", 8),
+                   entry("Show or hide panels", "\t"), entry("Show or hide panels but the toolbar", "\t", 8)]
         result += [entry("Decrease brush hardness", "[", 8), entry("Increase brush hardness", "]", 8),
                    entry("Previous blend mode", "-", 8), entry("Next blend mode", "=", 8)]
         // Shift and the key of a slot with several tools: the slot's next tool (`EditorSession.pressToolKey`).

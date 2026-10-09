@@ -616,7 +616,7 @@ named). Keyboard Shortcuts lists every one; function keys show as F1 to F12, and
 | File ▸ Save a Copy… / Pen Tool | none | ⌥⌘S / P (shipping as placeholders, TASK-53) |
 | Tools (shipped with TASK-54) | B with Tab cycling modes, R for Smear | E Eraser, O Dodge and Burn, R Blur and Smudge, Shift plus key cycles a slot |
 | Edit ▸ Search / View ▸ Proof Colors / View ▸ Gamut Warning (placeholders, TASK-79 and TASK-89) | none | ⌘F / ⌘Y / ⇧⌘Y |
-| Screen modes and hiding the panels (placeholders on the canvas, TASK-78) | Tab did nothing on the canvas | F and Shift-F (the next and previous screen mode) and Tab and Shift-Tab (Hide Panels) show their in-progress message; not in Keyboard Shortcuts until they ship |
+| Screen modes and hiding the panels (placeholders on the canvas, TASK-78) | Tab did nothing on the canvas | F and Shift-F (the next and previous screen mode) and Tab and Shift-Tab (Hide Panels) show their in-progress message; Keyboard Shortcuts lists them under Canvas & Layers (Next and Previous screen mode, Show or hide panels, Show or hide panels but the toolbar) |
 
 ### Dialogs
 

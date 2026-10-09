@@ -900,7 +900,9 @@ final class CanvasView: NSView {
                                        height: pixels.height * session.viewport.pointsPerPixel))
         guard rect.intersects(bounds), rect.intersects(dirtyRect) else { return }
         context.saveGState()
-        context.setShadow(offset: CGSize(width: 0, height: 3), blur: 14,
+        // 3 points down, as on the GPU: a shadow's offset is in the context's base space, which points up whatever
+        // the view's flip.
+        context.setShadow(offset: CGSize(width: 0, height: -3), blur: 14,
                           color: NSColor.black.withAlphaComponent(0.35).cgColor)
         context.setFillColor(NSColor(white: 0.26, alpha: 1).cgColor)
         context.fill(rect)

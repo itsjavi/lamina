@@ -144,8 +144,10 @@ struct ToolbarTests {
         try await settle()
         let control = try #require(descendants(host).compactMap { $0 as? ToolSlotControl }.first { $0.slot == .gradient })
         control.showFlyout()
-        try await settle()
+        // Measured before anything else runs on the main actor: a click another test sends meanwhile would close the
+        // flyout, as any click outside it does.
         let popoverWindow = try #require(control.flyoutWindow)
+        popoverWindow.contentView?.layoutSubtreeIfNeeded()
         let slot = window.convertToScreen(control.convert(control.bounds, to: nil))
         #expect(abs(popoverWindow.frame.midY - slot.midY) < 4, "popover \(popoverWindow.frame) beside slot \(slot)")
         #expect(popoverWindow.frame.minX >= slot.maxX - 1)

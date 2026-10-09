@@ -78,6 +78,8 @@ import LaminaCore
     private func compare(_ session: EditorSession, name: String, width points: Int = 500, height pointsHigh: Int = 400,
                          backingScale: Int = 2, inWindow: Bool = false) throws -> Difference {
         let canvas = CanvasView(session: session)
+        // Light whatever the Mac is set to: the document's shadow barely shows on the dark pasteboard.
+        canvas.appearance = NSAppearance(named: .aqua)
         canvas.frame = CGRect(x: 0, y: 0, width: points, height: pointsHigh)
         // Text being typed draws only with its editor, which lives in a window.
         var window: NSWindow?
@@ -89,10 +91,14 @@ import LaminaCore
         }
         defer { _ = window }
         let width = points * backingScale, height = pointsHigh * backingScale
-        let cpu = try #require(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
-            space: CGColorSpace(name: CGColorSpace.sRGB)!,
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue))
-        cpu.translateBy(x: 0, y: CGFloat(height)); cpu.scaleBy(x: CGFloat(backingScale), y: -CGFloat(backingScale))
+        // Sized in points, as a window's backing is: AppKit then puts the backing scale in the context's base space,
+        // where shadows are measured, so the document's shadow comes out as in the app.
+        let rep = try #require(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height, bitsPerSample: 8,
+            samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: width * 4,
+            bitsPerPixel: 32)?.retagging(with: .sRGB))
+        rep.size = CGSize(width: points, height: pointsHigh)
+        let cpu = try #require(NSGraphicsContext(bitmapImageRep: rep)).cgContext
+        cpu.translateBy(x: 0, y: CGFloat(pointsHigh)); cpu.scaleBy(x: 1, y: -1)
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = NSGraphicsContext(cgContext: cpu, flipped: true)
         canvas.allowsGPU = false
@@ -112,7 +118,7 @@ import LaminaCore
         var gpu = [UInt8](repeating: 0, count: width * height * 4)
         texture.getBytes(&gpu, bytesPerRow: width * 4, from: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0)
 
-        let reference = cpu.data!.assumingMemoryBound(to: UInt8.self)
+        let reference = try #require(rep.bitmapData)
         var total = 0.0, over = 0
         test_difference_stats(reference, gpu, width * height, 12, &total, &over)
         // Side by side for looking at: Core Graphics on the left, the GPU on the right.
@@ -122,7 +128,7 @@ import LaminaCore
             space: CGColorSpace(name: CGColorSpace.sRGB)!,
             bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue),
             provider: CGDataProvider(data: gpuData as CFData)!, decode: nil, shouldInterpolate: false, intent: .defaultIntent)!
-        BrushRaster.draw(cpu.makeImage()!, in: CGRect(x: 0, y: 0, width: width, height: height), mask: false, context: pair)
+        BrushRaster.draw(try #require(rep.cgImage), in: CGRect(x: 0, y: 0, width: width, height: height), mask: false, context: pair)
         BrushRaster.draw(gpuImage, in: CGRect(x: width, y: 0, width: width, height: height), mask: false, context: pair)
         if let png = NSBitmapImageRep(cgImage: pair.makeImage()!).representation(using: .png, properties: [:]) {
             Attachment.record(png, named: "\(name).png")

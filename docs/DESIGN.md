@@ -320,8 +320,8 @@ The painting bars carry no color swatch: color comes from the toolbar's swatches
 ### Dock and panels
 
 Tab groups with a 26 pt tab row and a panel menu (≡) at the right; the active tab is `text` with an underline.
-Status: the frame is **shipping** (TASK-58); Adjustments' grid (TASK-60) and Properties (TASK-59) are **shipping**;
-Layers' contents are **m-5** (TASK-61).
+Status: the frame is **shipping** (TASK-58); Adjustments' grid (TASK-60), Properties (TASK-59) and Layers (TASK-61)
+are **shipping**.
 
 - Right of the canvas: the 34 pt panel icon column (`chrome`, 28 pt buttons with 16 pt icons, the open panel's
   button on `activeTool`), then the dock, 292 pt wide by default and 240–360 pt by dragging its left edge. Properties
@@ -338,8 +338,8 @@ Layers' contents are **m-5** (TASK-61).
   it and brings it to the front. Window ▸ Workspace ▸ Essentials (Default) is the only workspace and always checked;
   Reset Essentials restores the default width and split, opens every dock panel with Properties in front, and closes
   History. All of them take a shortcut in Keyboard Shortcuts; none has a default key.
-- Layers moved in unchanged, its own title row included, until TASK-61. Properties reads "No properties" only before a
-  document exists.
+- No panel repeats its tab's name in a title row of its own. Properties reads "No properties" only before a document
+  exists.
 - Code: `UI/Dock.swift` (`DockArea`, `Dock`, `DockGroup`, `PanelIconColumn`, `HistoryFlyout`, `DockResizeEdge`),
   `UI/DockLayout.swift` (`DockLayout.shared`, `DockPanel`), `UI/DockCommands.swift` (the Window items). A panel fills
   its tab through `Dock`'s content builder: `PropertiesPanel` (`UI/PropertiesPanel.swift`), `AdjustmentsPanel`
@@ -405,12 +405,51 @@ Layers' contents are **m-5** (TASK-61).
   | Color Balance | `slider.horizontal.3` | Add Noise | `aqi.medium` |
 
   Code: `UI/AdjustmentsPanel.swift` (`AdjustmentsPanel.adjustments`, `filterLayers`, `AdjustmentKind.panelSymbol`).
-- **Layers** (TASK-61): blend mode menu and Opacity on top; one-line 32 pt rows (eye, thumbnail, link, mask thumbnail,
-  name, fx badge); clicking the layer or mask thumbnail picks what edits target; styled layers list an "Effects" row and
-  one 22 pt row per effect, each with an eye. Footer, left to right: Add a layer style (menu: Blending Options… │
-  Stroke… · Inner Shadow… · Inner Glow… · Color Overlay… · Outer Glow… · Drop Shadow…, each opening the Layer Style
-  dialog on its page; **shipping**, TASK-64, in today's footer), Add layer mask, New fill or adjustment layer, New
-  group, New layer, Delete. Double-clicking an effect row opens the Layer Style dialog on that effect (**shipping**).
+- **Layers** (**shipping**, TASK-61), top to bottom:
+  - The top row (6 pt above and below, 8 pt at the sides): the blend mode pop-up, as wide as the row leaves it
+    (grouped as the Layer Style dialog's), then "Opacity:" (dragging it scrubs) and a 48 pt percent field ("100%";
+    Return or leaving it applies, Up and Down step 1%, Shift 10%) whose chevron pops up a 0–100% slider. The blend
+    mode is off for groups and multiple selections, Opacity for multiple selections. A `separator` line under it.
+  - The list. Each layer is a one-line 32 pt row: a 26 pt eye column (12 pt `eye` / `eye.slash` in `icon`, a
+    `separator` line at its right; dragging down the eyes shows or hides each), then, stepped in 14 pt per group level
+    (and 14 pt more for a clipped layer, whose name starts "↳ "): a group's disclosure triangle (8 pt chevron) and
+    16 pt `folder`, or the layer's thumbnail; then, with a mask, the link glyph (the chain while linked, a click
+    links or unlinks) and the mask thumbnail; the name (12 pt, truncated); and, on a styled layer, an "fx" badge
+    (12 pt italic serif, `icon`) with an 8 pt triangle at the right. Thumbnails fit a 24 pt square: pixel layers and
+    masks show the whole canvas, edged in `edge`; adjustment layers their Adjustments panel symbol (15 pt) and type
+    layers a serif "T" (15 pt semibold, `text`), each on a 24 pt `control` plate. A `separator` hairline under every
+    row and sub-row; rows hidden by a hidden group show at 35%.
+  - Clicking the layer thumbnail targets the layer, clicking the mask thumbnail targets the mask (what Properties
+    shows and what brushes and filters edit); clicking the name targets the layer. The targeted thumbnail of the one
+    selected layer has a 2 pt `text` outline 1 pt off it (pictures, and any layer with a mask; a mask shown alone on
+    the canvas is outlined in the accent instead). The selected rows' line is on `selection`, its text unchanged.
+  - A styled layer lists an "Effects" row and one 22 pt row per effect, in the Layer Style dialog's order (Stroke,
+    Inner Shadow, Inner Glow, Color Overlay, Outer Glow, Drop Shadow), 11 pt `secondaryText` (`tertiaryText` while
+    hidden), "Effects" lined up with the names and the effects 14 pt further in. Each has an eye in the eye column:
+    an effect's shows or hides that effect, the Effects row's hides them all (or shows them all when all are hidden),
+    one undo step each. Clicking an effect row selects it (on `selection`; Delete removes it), double-clicking opens
+    the Layer Style dialog on it, Option-dragging copies it to another layer; double-clicking the Effects row opens
+    the dialog on Blending Options. The fx badge's triangle folds the effect rows away and back (not saved, not an
+    undo step; Photoshop's default is unfolded).
+  - Clicks as before: Shift and Command extend the selection, dragging reorders (onto a group puts the layers in
+    it, Option copies), double-clicking a name renames it in place, Option-clicking the bottom 8 pt of a row creates
+    or releases a clipping mask, Command-clicking a thumbnail loads it as a selection, Option-clicking a mask
+    thumbnail shows the mask alone, Shift-clicking it disables or enables it; right-clicking opens the layer's menu.
+  - The footer (the Properties footer's: 30 pt, 15 pt icons in 26 × 24 pt targets, right-aligned, help tags as
+    labels), left to right: Add a layer style (an italic serif "fx"; menu: Blending Options… │ Stroke… · Inner
+    Shadow… · Inner Glow… · Color Overlay… · Outer Glow… · Drop Shadow…, each opening the Layer Style dialog on its
+    page), Add layer mask (`rectangle.inset.filled`; revealing the selection when there is one, Option-click for the
+    opposite), Create new fill or adjustment layer (`circle.lefthalf.filled`; menu in the Layer menu's order and
+    groups: Grain… │ Levels… · Curves… · Exposure… │ Hue/Saturation… · Color Balance… · Black & White… │ Invert ·
+    Gradient Map… │ Gaussian Blur… · Motion Blur… · Add Noise…, which also brings Properties forward), Create a new
+    group (`folder`: an empty group above the active layer; Group Layers ⌘G groups the selection), Create a new
+    layer (`plus.square`, ⇧⌘N), Delete (`trash`: the selected effect, the targeted mask, or the selected layers).
+  - New groups are named "Group 1", "Group 2"…; "group" is the word everywhere the interface names one (the row's
+    menu reads Move Out of Group, and alerts, help tags and VoiceOver labels say group).
+  - Code: `UI/LayersPanel.swift` (panel, footer, `adjustmentMenu`), `UI/LayerAppearanceControls.swift` (top row),
+    `UI/BlendModePicker.swift`, `UI/LayerMaskMenu.swift`, `UI/NativeLayerList.swift` (`LayerTableView`, `LayerCell`,
+    `LayerRowView`, `LayerEffectsHeader`, `LayerEffectRow`, `LayerThumbnailButton`), `UI/CanvasThumbnail.swift`;
+    the fold state is `EditorSession.collapsedEffectLayerIDs`. Tests: `LayersPanelTests`.
 - **History** lives in the panel icon column. Clicking its icon opens it as a floating panel, 240 pt wide and up to
   420 pt high, at the top right of the canvas column against the icon column (`panel` with an `edge` outline, 6 pt
   corners and the system shadow), with a History tab row and its panel menu; it stays open while you work and closes

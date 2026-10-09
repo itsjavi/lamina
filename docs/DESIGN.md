@@ -238,12 +238,31 @@ accessibility label; no tool name is written out), then groups separated by 1 ×
 Fit Screen fits the document with a margin, as View ▸ Fit Canvas does; Fill Screen zooms until the document covers the
 whole canvas area, centered. Controls: icon
 buttons 24 × 22, pop-ups and fields 22 high, percent fields with a slider pop-up. Edits in progress end with Cancel and
-Commit icon buttons at the far right. Status: **m-5** (TASK-56 for Move and Free Transform, TASK-57 for the rest).
+Commit icon buttons at the far right. Status: **m-5** (TASK-57 for the rest); the Move and Free Transform bars are
+**shipping** (TASK-56: `MoveToolBar`, `FreeTransformBar`; `OptionsBarDivider` and `OptionsBarIconButton` are the shared
+divider and 24 × 22 icon button).
 
 | Tool | Bar, left to right |
 | --- | --- |
-| Move | Auto-Select ☐ · Show Transform Controls ☑ │ Align Left, Horizontal Centers, Right · Distribute Vertically · Align Top, Vertical Centers, Bottom · Distribute Horizontally (dimmed below two layers) · ••• Align & Distribute menu |
-| Free Transform (while transforming) | Reference point │ X · Y │ W % · link · H % │ angle │ Interpolation: Nearest Neighbor, Bilinear, Bicubic │ … Cancel · Commit |
+| Move | Auto-Select ☐ · Show Transform Controls ☑ │ Align Left, Horizontal Centers, Right · Distribute Vertically · Align Top, Vertical Centers, Bottom · Distribute Horizontally · ••• Align & Distribute menu |
+| Free Transform (while transforming) | Reference point │ X px · Y px │ W % · link · H % │ angle ° │ Interpolation: Nearest Neighbor, Bilinear, Bicubic │ … Cancel ⊘ · Commit ✓ |
+
+The Move bar's align buttons are dimmed until two or more layers are selected, or a selection is there to line one
+layer up with; the distribute buttons (vertical and horizontal spacing) until three are. The ••• menu has every Align
+(Left, Horizontal Centers, Right, Top, Vertical Centers, Bottom Edges) and Distribute (Horizontal and Vertical
+Centers, Horizontal and Vertical Spacing) command, and with one layer selected it lines it up with the canvas.
+
+The Free Transform bar replaces the Move bar while a Free Transform waits for Commit: Edit ▸ Free Transform (⌘T; the
+selected pixels when there is a selection), Edit ▸ Transform ▸ Distort, or a press on a handle of the transform box
+(resize, rotate, ⌘ to distort), as in familiar editors. More drags, typed values, flips and arrow nudges join the same
+edit; Commit (✓, Return) applies it as one undo step and Cancel (⊘, Escape) puts everything back. A press inside the
+box (or anywhere, with Show Transform Controls off) only moves the layer, applied when let go, and leaves the Move bar
+in place. The reference point (3 × 3, the center by default) is where X and Y measure, and what typed W, H and angle
+and rotation drags keep in place; the canvas marks it with a ringed cross. W and H are percentages of the layer's
+pixels drawn 1:1 (of the box when several layers are transformed), and the link keeps the aspect ratio (Shift flips
+it during a handle drag). Interpolation names Lamina's per-layer sampling (Nearest, Smooth, High quality) for display
+only: saved projects don't change; chosen for several layers, it goes to each of them. While distorting, the numbers
+are dimmed: the corner handles are the controls.
 | Rectangular / Elliptical Marquee | New, Add, Subtract selection icons │ Feather: 0 px (for the next selection) · Anti-alias (dimmed for rectangles) |
 | Lasso / Polygonal Lasso | selection icons │ Feather · Anti-alias |
 | Object Selection | selection icons │ Sample All Layers · Edge (Lamina) │ Select Subject |
@@ -293,7 +312,12 @@ Status: **m-5** (TASK-58).
 
 ### Menus
 
-Separators are shown as │. Items not listed don't exist. Status: **m-5** (TASK-62).
+Separators are shown as │. Items not listed don't exist. Status: **m-5** (TASK-62). Edit ▸ Free Transform ⌘T and
+Edit ▸ Transform ▸ (Distort │ Flip Horizontal · Flip Vertical) are **shipping** (TASK-56), replacing Layer ▸ Transform
+Layer / Transform Selection and Flip Layer Horizontal / Vertical; TASK-62 puts them in the order below. During a Free
+Transform, Flip turns the box over across the reference point as part of the edit (dimmed while distorting);
+otherwise it flips the selected layers about their middle at once. Until TASK-62, View ▸ Show Transform Controls stays
+in the View menu with no shortcut.
 
 - **Lamina:** About Lamina · Check for Updates… │ Settings… ⌘K │ Services ▸ │ Hide Lamina ⌃⌘H · Hide Others ⌥⌘H · Show All │ Quit Lamina ⌘Q
 - **File:** New… ⌘N · New from Clipboard ⌥⌘N · Open… ⌘O · Open Recent ▸ │ Close ⌘W │ Save ⌘S · Save As… ⇧⌘S · Save a Copy… ⌥⌘S (in progress: layered Photoshop files, TASK-27) │ Export ▸ (Quick Export as PNG │ Export As… ⌥⇧⌘W) │ Place Embedded…
@@ -318,7 +342,8 @@ What changes from the shortcuts Lamina shipped before m-5 (applied by TASK-62; c
 | File ▸ Export ▸ Quick Export as PNG (was Export PNG…) | ⇧⌘E | none |
 | File ▸ Export ▸ Export As… | none | ⌥⇧⌘W (Export JPEG… and its ⌥⇧⌘S fold into it) |
 | Select ▸ Subject | ⌥⌘A | none |
-| View ▸ Extras | none | ⌘H (Show Transform Controls becomes a Move bar checkbox only) |
+| View ▸ Extras | none | ⌘H (Show Transform Controls becomes a Move bar checkbox only; ⌘H left it with TASK-56) |
+| Edit ▸ Free Transform (was Layer ▸ Transform Layer / Transform Selection) | ⌘T | ⌘T (shipping, TASK-56) |
 | Hide Lamina | none | ⌃⌘H |
 | Edit ▸ Fill… | none | ⇧F5, also ⇧⌫ |
 | Edit ▸ Content-Aware Fill… | ⇧⌫ | none |

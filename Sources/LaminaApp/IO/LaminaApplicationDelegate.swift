@@ -42,6 +42,8 @@ final class LaminaApplicationDelegate: NSObject, NSApplicationDelegate {
         AppearanceSetting.saved().apply()
         // Slider knobs snap to a click on the track instead of gliding there.
         SliderSnap.install()
+        // View after Filter, as familiar editors order the menus.
+        MenuBarOrder.install()
         // Commands from the `lamina` command-line tool (Apple Events).
         automation.install()
     }

@@ -54,18 +54,23 @@ struct ShortcutChord: Codable, Equatable, Hashable {
         if modifiers & 8 != 0 { flags.insert(.shift) }
         return flags
     }
+    /// F1 to F12 as key equivalents: NSEvent's function-key characters, U+F704 to U+F70F.
+    static func functionKey(_ number: Int) -> String { String(UnicodeScalar(0xF703 + UInt32(number))!) }
+    private static let functionKeyCodes: [UInt16] = [122, 120, 99, 118, 96, 97, 98, 100, 101, 109, 103, 111]
     var label: String {
         if isNone { return "None" }
         let special = ["\u{7f}": "Delete", "\r": "Return", "\u{1b}": "Esc", "\t": "Tab", " ": "Space",
                        "\u{f702}": "←", "\u{f703}": "→", "\u{f701}": "↓", "\u{f700}": "↑"]
+        let function = key.unicodeScalars.first.flatMap { (0xF704...0xF70F).contains($0.value) ? "F\($0.value - 0xF703)" : nil }
         return (modifiers & 4 != 0 ? "⌃" : "") + (modifiers & 2 != 0 ? "⌥" : "")
             + (modifiers & 8 != 0 ? "⇧" : "") + (modifiers & 1 != 0 ? "⌘" : "")
-            + (special[key] ?? key.uppercased())
+            + (special[key] ?? function ?? key.uppercased())
     }
     func event(like event: NSEvent) -> NSEvent? {
-        let codes: [String: UInt16] = ["\u{7f}": 51, "\r": 36, "\u{1b}": 53, "\t": 48, " ": 49,
+        var codes: [String: UInt16] = ["\u{7f}": 51, "\r": 36, "\u{1b}": 53, "\t": 48, " ": 49,
                                        "\u{f702}": 123, "\u{f703}": 124, "\u{f701}": 125, "\u{f700}": 126,
                                        "=": 24, "-": 27]
+        for (index, code) in Self.functionKeyCodes.enumerated() { codes[Self.functionKey(index + 1)] = code }
         let shifted = modifiers & 8 != 0 ? (["[": "{", "]": "}", "=": "+", "-": "_"][key] ?? key) : key
         return NSEvent.keyEvent(with: event.type, location: event.locationInWindow, modifierFlags: cocoaModifiers,
             timestamp: event.timestamp, windowNumber: event.windowNumber, context: nil,
@@ -88,29 +93,35 @@ struct ShortcutDefinition: Identifiable {
     /// menu item asking for a title that isn't here stops with a message saying so.
     static let assignableMenuCommands: [String] = {
         var titles = [
-            "Lamina › Check for Updates…", "Lamina › Hide Lamina", "Lamina › Show All",
-            "File › Open Recent › Clear Menu", "File › Import Images…", "File › Export As…",
-            "Edit › Keyboard Shortcuts…", "Edit › Clear Selection Pixels", "Edit › Stroke…",
+            "Lamina › Check for Updates…", "Lamina › Show All",
+            "File › Open Recent › Clear Recent File List", "File › Export › Quick Export as PNG", "File › Place Embedded…",
+            "Edit › Clear", "Edit › Stroke…", "Edit › Content-Aware Fill…",
             "Edit › Transform › Distort", "Edit › Transform › Flip Horizontal", "Edit › Transform › Flip Vertical",
-            "View › Pixel Grid", "View › Snap", "View › Show Transform Controls", "View › Grid Settings…", "View › Clear Guides",
-            "View › Snap To › Guides", "View › Snap To › Grid", "View › Snap To › Layers", "View › Snap To › Document Bounds",
-            "Select › Layer's Pixels", "Select › Color Range…", "Select › Mask's Black Areas",
-            "Select › Expand…", "Select › Contract…", "Select › Feather…",
-            "Image › Trim…", "Image › Flip Canvas Horizontal", "Image › Flip Canvas Vertical",
-            "Layer › Layer Content Options…", "Layer › Move Out of Folder", "Layer › Rename Layer…",
-            "Layer › Show or Hide Layer", "Layer › Show or Hide All Other Layers",
-            "Layer › Apply Layer Mask", "Layer › Merge Visible", "Layer › Flatten Image",
+            "Image › Adjustments › Exposure…", "Image › Adjustments › Gradient Map…", "Image › Adjustments › Grain…",
+            "Image › Image Rotation › Flip Canvas Horizontal", "Image › Image Rotation › Flip Canvas Vertical", "Image › Trim…",
+            "Layer › New › Group…", "Layer › New › Group from Layers…", "Layer › Duplicate Layer…", "Layer › Delete › Layer",
+            "Layer › Rename Layer…",
             "Layer › Layer Style › Copy Layer Style", "Layer › Layer Style › Paste Layer Style",
             "Layer › Layer Style › Clear Layer Style",
-            "Layer › Delete Layer",
+            "Layer › Layer Content Options…",
+            "Layer › Layer Mask › Reveal All", "Layer › Layer Mask › Hide All", "Layer › Layer Mask › Reveal Selection",
+            "Layer › Layer Mask › Hide Selection", "Layer › Layer Mask › Delete", "Layer › Layer Mask › Apply",
+            "Layer › Remove Background…", "Layer › Hide All Other Layers", "Layer › Arrange › Move Out of Group",
+            "Layer › Flatten Image",
+            "Type › Panels › Character", "Type › Panels › Paragraph",
+            "Select › Color Range…", "Select › Subject", "Select › Modify › Expand…", "Select › Modify › Contract…",
+            "Select › Load Selection…",
+            "View › Show › Pixel Grid",
+            "View › Snap To › Guides", "View › Snap To › Grid", "View › Snap To › Layers", "View › Snap To › Document Bounds",
+            "View › Guides › Clear Guides", "View › Grid Settings…",
+            "Window › Minimize", "Window › Zoom",
             "Window › Workspace › Essentials (Default)", "Window › Workspace › Reset Essentials",
         ]
         titles += DockPanel.windowMenuOrder.map { "Window › \($0.title)" }
         titles += CanvasRotation.allCases.map { "Image › Image Rotation › \($0.rawValue)" }
         titles += LayerAlignment.allCases.map { "Layer › Align › \($0.rawValue)" }
-        titles += LayerDistribution.allCases.map { "Layer › Distribute › \($0.rawValue)" }
-        titles += [FilterKind.blackWhite, .colorBalance, .exposure, .gradientMap, .grain].map { "Image › \($0.rawValue)…" }
-        titles += FilterKind.allCases.filter { $0 != .contentAwareFill && !$0.isImageAdjustment }.map { "Filter › \($0.rawValue)…" }
+        titles += LayerDistribution.allCases.map { "Layer › Distribute › \($0.menuTitle)" }
+        titles += FilterKind.filterMenu.flatMap { submenu in submenu.kinds.compactMap { $0 }.map { "Filter › \(submenu.title) › \($0.rawValue)…" } }
         titles += AdjustmentKind.allCases.map { "Layer › New Adjustment Layer › \($0.rawValue)" }
         titles += PlannedFeature.assignableMenuCommands
         titles += LayerStylePage.all.map { "Layer › Layer Style › \($0.title)…" }
@@ -121,33 +132,39 @@ struct ShortcutDefinition: Identifiable {
         func entry(_ title: String, _ key: String, _ modifiers: Int = 0, menu: Bool = false) -> ShortcutDefinition {
             .init(title: title, group: menu ? "Menus" : "Canvas & Layers", original: ShortcutChord(key, modifiers))
         }
+        // Modifier bits: 1 Command, 2 Option, 4 Control, 8 Shift.
         var result: [ShortcutDefinition] = [
-            entry("Undo", "z", 1, menu: true), entry("Redo", "z", 9, menu: true),
-            entry("New Canvas", "n", 1, menu: true), entry("New from Clipboard", "n", 3, menu: true),
-            entry("Open Project", "o", 1, menu: true),
+            entry("Settings", "k", 1, menu: true), entry("Hide Lamina", "h", 5, menu: true), entry("Hide Others", "h", 3, menu: true),
+            entry("New", "n", 1, menu: true), entry("New from Clipboard", "n", 3, menu: true), entry("Open", "o", 1, menu: true),
+            entry("Close", "w", 1, menu: true),
             entry("Save", "s", 1, menu: true), entry("Save As", "s", 9, menu: true), entry("Save a Copy", "s", 3, menu: true),
-            entry("Export PNG", "e", 9, menu: true), entry("Export JPEG", "s", 11, menu: true),
-            entry("Close Project", "w", 1, menu: true), entry("Fit Canvas", "0", 1, menu: true),
-            entry("Actual Pixels", "1", 1, menu: true), entry("Zoom In", "=", 1, menu: true),
-            entry("Zoom Out", "-", 1, menu: true), entry("Hide Others", "h", 3, menu: true), entry("Cut", "x", 1, menu: true),
-            entry("Copy", "c", 1, menu: true), entry("Copy Merged", "c", 9, menu: true),
-            entry("Paste", "v", 1, menu: true), entry("Fill with Foreground", "\u{7f}", 2, menu: true),
-            entry("Fill with Background", "\u{7f}", 1, menu: true), entry("Content-Aware Fill", "\u{7f}", 8, menu: true),
-            entry("Select All", "a", 1, menu: true), entry("Deselect", "d", 1, menu: true),
-            entry("Inverse Selection", "i", 9, menu: true), entry("Select Subject", "a", 3, menu: true),
-            entry("Last Filter", "f", 1, menu: true), entry("Curves", "m", 1, menu: true), entry("Levels", "l", 1, menu: true),
-            entry("Hue/Saturation", "u", 1, menu: true), entry("Invert Pixels / Mask", "i", 1, menu: true),
-            entry("Canvas Size", "c", 3, menu: true), entry("Image Size", "i", 3, menu: true),
-            entry("Free Transform", "t", 1, menu: true), entry("Duplicate / Layer via Copy", "j", 1, menu: true),
+            entry("Export As", "w", 11, menu: true), entry("Export JPEG", "s", 11, menu: true),
+            entry("Undo", "z", 1, menu: true), entry("Redo", "z", 9, menu: true),
+            entry("Cut", "x", 1, menu: true), entry("Copy", "c", 1, menu: true), entry("Copy Merged", "c", 9, menu: true),
+            entry("Paste", "v", 1, menu: true), entry("Fill", ShortcutChord.functionKey(5), 8, menu: true),
+            entry("Free Transform", "t", 1, menu: true), entry("Keyboard Shortcuts", "k", 11, menu: true),
+            entry("Levels", "l", 1, menu: true), entry("Curves", "m", 1, menu: true), entry("Hue/Saturation", "u", 1, menu: true),
+            entry("Color Balance", "b", 1, menu: true), entry("Black & White", "b", 11, menu: true),
+            entry("Invert", "i", 1, menu: true),
+            entry("Image Size", "i", 3, menu: true), entry("Canvas Size", "c", 3, menu: true),
+            entry("New Layer", "n", 9, menu: true), entry("Layer Via Copy", "j", 1, menu: true),
             entry("Toggle Clipping Mask", "g", 3, menu: true), entry("Group Layers", "g", 1, menu: true),
-            entry("Ungroup Layers", "g", 9, menu: true),
-            entry("New Blank Layer", "n", 9, menu: true), entry("Move Layer Up", "]", 1, menu: true),
-            entry("Move Layer Down", "[", 1, menu: true), entry("Merge Layers", "e", 1, menu: true),
-            entry("Show Grid", "'", 1, menu: true), entry("Show Guides", ";", 1, menu: true),
-            entry("Show Rulers", "r", 1, menu: true), entry("Snap", ";", 9, menu: true),
-            entry("Lock Guides", ";", 3, menu: true), entry("Settings", "k", 1, menu: true),
-            entry("Liquify", "x", 9, menu: true)
+            entry("Ungroup Layers", "g", 9, menu: true), entry("Hide Layers", ",", 1, menu: true),
+            entry("Bring Forward", "]", 1, menu: true), entry("Send Backward", "[", 1, menu: true),
+            entry("Merge Down", "e", 1, menu: true), entry("Merge Visible", "e", 9, menu: true),
+            entry("Select All", "a", 1, menu: true), entry("Deselect", "d", 1, menu: true),
+            entry("Inverse Selection", "i", 9, menu: true), entry("Feather", ShortcutChord.functionKey(6), 8, menu: true),
+            entry("Last Filter", "f", 5, menu: true), entry("Camera Raw Filter", "a", 9, menu: true),
+            entry("Lens Correction", "r", 9, menu: true), entry("Liquify", "x", 9, menu: true),
+            entry("Zoom In", "=", 1, menu: true), entry("Zoom Out", "-", 1, menu: true),
+            entry("Fit on Screen", "0", 1, menu: true), entry("100%", "1", 1, menu: true),
+            entry("Extras", "h", 1, menu: true), entry("Show Grid", "'", 1, menu: true), entry("Show Guides", ";", 1, menu: true),
+            entry("Show Rulers", "r", 1, menu: true), entry("Snap", ";", 9, menu: true), entry("Lock Guides", ";", 3, menu: true),
         ]
+        // Fill straight from the swatches, and Fill…'s second key: no menu items of their own, window-wide outside text
+        // fields (`CanvasView`'s key monitor).
+        result += [entry("Fill with foreground color", "\u{7f}", 2), entry("Fill with background color", "\u{7f}", 1),
+                   entry("Fill… (second shortcut)", "\u{7f}", 8)]
         for (title, key) in [("Select tool", "a"), ("Move / Transform tool", "v"), ("Hand tool", "h"),
             ("Zoom tool", "z"), ("Brush tool", "b"), ("Eraser", "e"), ("Spot Healing", "j"),
             ("Clone Stamp", "s"), ("Type tool", "t"), ("Gradient / Paint Bucket", "g"), ("Shape tool", "u"),
@@ -196,22 +213,82 @@ final class ShortcutSettings {
         let chord: ShortcutChord?
         init(from decoder: Decoder) throws { chord = try? ShortcutChord(from: decoder) }
     }
-    /// Entries renamed since earlier versions saved them (the tools split apart, the transform commands moved to the
-    /// Edit menu): a key set for the old name carries over.
-    static let renamedIDs = [
-        "Menus:Transform Layer / Selection": "Menus:Free Transform",
-        // ⌘H went to View ▸ Extras; a key the person gave Show Transform Controls stays with it.
-        "Menus:Show Transform Controls": "\(ShortcutDefinition.moreGroup):View › Show Transform Controls",
-        "\(ShortcutDefinition.moreGroup):Layer › Flip Layer Horizontal": "\(ShortcutDefinition.moreGroup):Edit › Transform › Flip Horizontal",
-        "\(ShortcutDefinition.moreGroup):Layer › Flip Layer Vertical": "\(ShortcutDefinition.moreGroup):Edit › Transform › Flip Vertical",
-        "Canvas & Layers:Marquee / cycle shape": "Canvas & Layers:Rectangular / Elliptical Marquee",
-        "Canvas & Layers:Magic": "Canvas & Layers:Object Selection / Magic Wand",
-        "Canvas & Layers:Lasso / cycle mode": "Canvas & Layers:Lasso / Polygonal Lasso",
-        "Canvas & Layers:Blur / Smudge / Liquify": "Canvas & Layers:Blur / Smudge",
-        "Canvas & Layers:Cycle shape kind": "Canvas & Layers:Next shape tool",
-        "Canvas & Layers:Switch Gradient / Paint Bucket": "Canvas & Layers:Next Gradient / Paint Bucket",
-        "\(ShortcutDefinition.moreGroup):Layer › Edit Adjustment…": "\(ShortcutDefinition.moreGroup):Layer › Layer Content Options…",
-    ]
+    /// Entries renamed or moved since earlier versions saved them (the tools split apart, the transform commands moved
+    /// to the Edit menu, the menus took their familiar names and places): a key set for the old name carries over. An
+    /// old name may lead to another old name; `currentID(_:)` follows the chain.
+    static let renamedIDs: [String: String] = {
+        let more = ShortcutDefinition.moreGroup
+        var renamed = [
+            "Menus:Transform Layer / Selection": "Menus:Free Transform",
+            "\(more):Layer › Flip Layer Horizontal": "\(more):Edit › Transform › Flip Horizontal",
+            "\(more):Layer › Flip Layer Vertical": "\(more):Edit › Transform › Flip Vertical",
+            "Canvas & Layers:Marquee / cycle shape": "Canvas & Layers:Rectangular / Elliptical Marquee",
+            "Canvas & Layers:Magic": "Canvas & Layers:Object Selection / Magic Wand",
+            "Canvas & Layers:Lasso / cycle mode": "Canvas & Layers:Lasso / Polygonal Lasso",
+            "Canvas & Layers:Blur / Smudge / Liquify": "Canvas & Layers:Blur / Smudge",
+            "Canvas & Layers:Cycle shape kind": "Canvas & Layers:Next shape tool",
+            "Canvas & Layers:Switch Gradient / Paint Bucket": "Canvas & Layers:Next Gradient / Paint Bucket",
+            // TASK-62: the menus in their familiar structure (docs/DESIGN.md, Menus and Shortcut changes).
+            "Menus:New Canvas": "Menus:New", "Menus:Open Project": "Menus:Open", "Menus:Close Project": "Menus:Close",
+            "Menus:Export PNG": "\(more):File › Export › Quick Export as PNG",
+            "\(more):File › Export As…": "Menus:Export As",
+            "\(more):File › Open Recent › Clear Menu": "\(more):File › Open Recent › Clear Recent File List",
+            "\(more):File › Import Images…": "\(more):File › Place Embedded…",
+            "\(more):Lamina › Hide Lamina": "Menus:Hide Lamina",
+            "\(more):Edit › Keyboard Shortcuts…": "Menus:Keyboard Shortcuts",
+            "\(more):Edit › Clear Selection Pixels": "\(more):Edit › Clear",
+            "Menus:Content-Aware Fill": "\(more):Edit › Content-Aware Fill…",
+            "Menus:Fill with Foreground": "Canvas & Layers:Fill with foreground color",
+            "Menus:Fill with Background": "Canvas & Layers:Fill with background color",
+            "Menus:Fit Canvas": "Menus:Fit on Screen", "Menus:Actual Pixels": "Menus:100%",
+            "\(more):View › Pixel Grid": "\(more):View › Show › Pixel Grid",
+            "\(more):View › Snap": "Menus:Snap",
+            "\(more):View › Clear Guides": "\(more):View › Guides › Clear Guides",
+            "Menus:Select Subject": "\(more):Select › Subject",
+            "\(more):Select › Expand…": "\(more):Select › Modify › Expand…",
+            "\(more):Select › Contract…": "\(more):Select › Modify › Contract…",
+            "\(more):Select › Feather…": "Menus:Feather",
+            // Load Selection… does what both did; Layer's Pixels' key wins if both had one (`init`).
+            "\(more):Select › Layer's Pixels": "\(more):Select › Load Selection…",
+            "\(more):Select › Mask's Black Areas": "\(more):Select › Load Selection…",
+            "Menus:Invert Pixels / Mask": "Menus:Invert",
+            "\(more):Image › Color Balance…": "Menus:Color Balance", "\(more):Image › Black & White…": "Menus:Black & White",
+            "\(more):Image › Exposure…": "\(more):Image › Adjustments › Exposure…",
+            "\(more):Image › Gradient Map…": "\(more):Image › Adjustments › Gradient Map…",
+            "\(more):Image › Grain…": "\(more):Image › Adjustments › Grain…",
+            "\(more):Image › Flip Canvas Horizontal": "\(more):Image › Image Rotation › Flip Canvas Horizontal",
+            "\(more):Image › Flip Canvas Vertical": "\(more):Image › Image Rotation › Flip Canvas Vertical",
+            "Menus:New Blank Layer": "Menus:New Layer", "Menus:Duplicate / Layer via Copy": "Menus:Layer Via Copy",
+            "Menus:Move Layer Up": "Menus:Bring Forward", "Menus:Move Layer Down": "Menus:Send Backward",
+            "Menus:Merge Layers": "Menus:Merge Down",
+            "\(more):Layer › Merge Visible": "Menus:Merge Visible",
+            "\(more):Layer › Show or Hide Layer": "Menus:Hide Layers",
+            "\(more):Layer › Show or Hide All Other Layers": "\(more):Layer › Hide All Other Layers",
+            "\(more):Layer › Move Out of Folder": "\(more):Layer › Arrange › Move Out of Group",
+            "\(more):Layer › Edit Adjustment…": "\(more):Layer › Layer Content Options…",
+            "\(more):Layer › Apply Layer Mask": "\(more):Layer › Layer Mask › Apply",
+            "\(more):Layer › Delete Layer": "\(more):Layer › Delete › Layer",
+            "\(more):Layer › Distribute › Horizontal Spacing": "\(more):Layer › Distribute › Horizontally",
+            "\(more):Layer › Distribute › Vertical Spacing": "\(more):Layer › Distribute › Vertically",
+            "\(more):Filter › Remove Background…": "\(more):Layer › Remove Background…",
+            "\(more):Filter › Camera Raw Filter…": "Menus:Camera Raw Filter",
+            "\(more):Filter › Lens Correction…": "Menus:Lens Correction",
+        ]
+        // Each filter moved into its category's submenu.
+        for submenu in FilterKind.filterMenu {
+            for kind in submenu.kinds.compactMap({ $0 }) {
+                renamed["\(more):Filter › \(kind.rawValue)…"] = "\(more):Filter › \(submenu.title) › \(kind.rawValue)…"
+            }
+        }
+        return renamed
+    }()
+    /// Where a key saved under `id` belongs now: `id` itself, or the name its command goes by today.
+    static func currentID(_ id: String) -> String {
+        var current = id
+        // Bounded, so a mistaken loop in the table can't hang the launch.
+        for _ in 0..<8 { guard let next = renamedIDs[current] else { break }; current = next }
+        return current
+    }
     private let defaults: UserDefaults
     /// `defaults` is the app's own everywhere but tests, which use a throwaway suite.
     init(defaults: UserDefaults = .standard) {
@@ -222,8 +299,13 @@ final class ShortcutSettings {
         // command that has since gone, or one a newer rule or a new default now refuses, drops alone rather than
         // taking every other saved shortcut with it.
         let known = Set(ShortcutDefinition.all.map(\.id))
-        let chords = Dictionary(saved.compactMapValues(\.chord).map { (Self.renamedIDs[$0.key] ?? $0.key, $0.value) },
-                                uniquingKeysWith: { kept, _ in kept })
+        // A key saved under a command's current name wins over one carried over from an old name; among old names
+        // the first in order does, so the outcome never depends on how the saved dictionary happens to be ordered.
+        var chords: [String: ShortcutChord] = [:]
+        for (id, chord) in saved.compactMapValues(\.chord).sorted(by: { $0.key < $1.key }) {
+            let current = Self.currentID(id)
+            if current == id || chords[current] == nil { chords[current] = chord }
+        }
         var accepted: [String: ShortcutChord] = [:]
         for (id, chord) in chords.sorted(by: { $0.key < $1.key }) where known.contains(id) {
             var trial = accepted
@@ -278,12 +360,13 @@ final class ShortcutSettings {
                 return "Text-editing shortcuts need Command, Option, or Control so they do not replace normal typing."
             }
             // A menu key without Command, Option or Control would take that key from every text field. Defaults are
-            // exempt (Content-Aware Fill has always been Shift-Delete); only keys the person picks must follow it.
+            // exempt (Fill… is Shift-F5, as in Photoshop); only keys the person picks must follow it.
             if definition.isMenu || definition.group == ShortcutDefinition.moreGroup,
                let chosen = values[definition.id], chosen != definition.original, chosen.modifiers & 7 == 0 {
                 return "Menu shortcuts need Command, Option, or Control, so they don't take keys you type."
             }
-            if [ShortcutChord("q", 1), ShortcutChord(",", 1), ShortcutChord("m", 3)].contains(chord) {
+            // ⌘, is free: Settings… is ⌘K, and ⌘, hides layers, as in Photoshop.
+            if [ShortcutChord("q", 1), ShortcutChord("m", 3)].contains(chord) {
                 return "\(chord.label) is reserved by macOS."
             }
             if let other = assigned[chord] { return "\(chord.label) is assigned to both \(other) and \(definition.title)." }
@@ -388,7 +471,7 @@ struct KeyboardShortcutsSheet: View {
                     }
                     Divider().padding(.vertical, 8)
                     Text("Contextual keys & mouse gestures").font(.headline)
-                    Text("Text fields keep standard macOS editing keys. Dialogs share the Apply/Cancel assignments above. Numeric fields use Up/Down, with Shift for larger steps. Standard macOS commands include ⌘Q to quit and ⌃⌘F for full screen. The shortcut editor itself always uses Return to save and Esc to cancel when not recording.")
+                    Text("Text fields keep standard macOS editing keys. Dialogs share the Apply/Cancel assignments above. Numeric fields use Up/Down, with Shift for larger steps. ⌘Q quits; the window's green button enters full screen. The shortcut editor itself always uses Return to save and Esc to cancel when not recording.")
                     Text("Option temporarily selects the eyedropper in painting tools. Shift constrains shapes/movement or adds to a selection; Option subtracts from selections or draws from center. Command-drag moves selected pixels; Command-Option-drag copies them. Option-drag duplicates layers/groups/effects; Option-click at a layer boundary toggles clipping. Command-click a thumbnail loads its selection. Control bypasses snapping. Right-drag adjusts brush size. Modifier-and-mouse gestures are fixed.")
                 }.padding(.trailing, 8)
             }.frame(height: 465)

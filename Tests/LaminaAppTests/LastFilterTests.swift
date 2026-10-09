@@ -59,12 +59,12 @@ struct LastFilterTests {
         #expect(Set(chords).count == chords.count)
     }
 
-    /// ⌘F is Last Filter's, and Keyboard Shortcuts can change it. (The test host's menu bar isn't the app's, so the
-    /// real menu bar is checked by hand.)
-    @Test func commandFIsLastFilterInKeyboardShortcuts() throws {
+    /// ⌃⌘F is Last Filter's, as in Photoshop (⌘F is its Search), and Keyboard Shortcuts can change it. (The test
+    /// host's menu bar isn't the app's, so the real menu bar is checked by hand.)
+    @Test func controlCommandFIsLastFilterInKeyboardShortcuts() throws {
         let entry = try #require(ShortcutDefinition.all.first { $0.isMenu && $0.title == "Last Filter" })
-        #expect(entry.original == ShortcutChord("f", 1))
+        #expect(entry.original == ShortcutChord("f", 5))
         let settings = ShortcutSettings(defaults: UserDefaults(suiteName: "LastFilterTests-\(UUID().uuidString)")!)
-        #expect(settings.menu("f", modifiers: .command) == ShortcutChord("f", 1))
+        #expect(settings.menu("f", modifiers: [.command, .control]) == ShortcutChord("f", 5))
     }
 }

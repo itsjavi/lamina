@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-09 02:14'
-updated_date: '2026-10-09 06:23'
+updated_date: '2026-10-09 09:17'
 labels: []
 milestone: m-5
 dependencies:
@@ -62,6 +62,8 @@ Decision: macOS 27 leaves NSMenuItem.image out of the menu (verified in the Dev 
 Icons: ToolIcon is now the one mapping (ToolIcon.symbol(for:), NavigationTool.symbol removed, planned tools' symbols moved out of PlannedFeature.symbol, which keeps only the shape-bar controls). Move = arrow.up.and.down.and.arrow.left.and.right, Hand = hand.raised, new DodgeToolIcon (solid paddle on a stick: an outlined one read as Zoom's magnifier), BurnToolIcon (hand cupped under a spot of light, from the mockup's pictogram), TypeToolIcon (serif T in the system serif face).
 Verification: ToolbarTests (separators, shown item last-used/active/planned, controls in order with labels, tool tips, selected state and hit-testing, flyout titles/keys/icons/checkmarks/planned tool tips and choosing, every symbol exists and every item renders a menu image, content height <= 783 pt); full swift test passed (730 + 47 + 22 tests). Dev app at 1500 x 860 in light and dark: toolbar fits with about 90 pt to spare; right-click on Shapes and a 0.35 s hold on Dodge opened the flyouts (real CGEvents, frontmost and in-window checks, pointer restored, no key events). Screenshots: backlog/assets/task-55/toolbar-light-1500x860.png, toolbar-dark-1500x860.png, shapes-flyout-light.png, dodge-flyout-hold-light.png (menu window composited onto the window capture). Dev defaults (window frame, appearance) restored.
 README/website: not updated here; TASK-66 owns the familiar-workspace screenshots and copy.
+
+Follow-up fix (after m-5): flyouts are now a SwiftUI popover (ToolFlyout) instead of a native menu, so drawn icons (Gradient, Paint Bucket, Clone Stamp, Polygonal Lasso, Object Selection, Dodge, Burn, Type, Palette Knife) take the appearance's colors; in the menu they sat in the item title as template images AppKit doesn't tint, black in dark appearance. Clicks: the first chooses the slot's tool, a click on the active slot opens its flyout, the next closes it; press-and-hold is gone (right-click still opens it). The popover is sized before it shows (it had opened off its slot by half its default height). Verified: ToolbarTests (click sequence, rows, every icon draws, popover beside its slot in a window) and the Dev app in dark with the Gradient and Dodge flyouts opened through Accessibility.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

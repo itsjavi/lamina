@@ -83,16 +83,30 @@ private struct ToolSlotInteraction: NSViewRepresentable {
     }
 }
 
-/// A slot's clicks, in AppKit so a held press can open the flyout: a click chooses what the slot shows; holding the
-/// mouse `holdDelay`, right-clicking or Control-clicking opens the flyout, a native menu of the slot's items with their
-/// icons, names and key, the shown one checked. To VoiceOver it's a button "Tool name (Key)", selected when it's the
-/// active tool's, whose Show Menu action opens the flyout.
-final class ToolSlotControl: NSView {
+/// What a click on a slot does (`ToolSlotControl.click`).
+enum SlotClick: Equatable {
+    /// Choose the item the slot shows: the slot's tool becomes the active one (a planned item shows its message).
+    case choose
+    case openFlyout
+    case closeFlyout
+    /// The slot's only tool is already active.
+    case nothing
+}
+
+/// A slot's clicks, in AppKit over the SwiftUI drawing. A click on a slot whose tool isn't active chooses it; a click on
+/// the active slot opens its flyout when it holds more than one item, and a click while the flyout is open closes it.
+/// A slot showing a planned item (Pen, Path Selection) has no tool to make active, so a click opens its flyout straight
+/// away when it lists more than one item. Right-clicking or Control-clicking opens the flyout too. The flyout is a
+/// popover beside the slot listing the slot's items (`ToolFlyout`). To VoiceOver the slot is a button "Tool name (Key)",
+/// selected when it's the active tool's, whose Show Menu action opens the flyout.
+final class ToolSlotControl: NSView, NSPopoverDelegate {
     weak var session: EditorSession?
     var slot: ToolSlot
     var onHover: (Bool) -> Void = { _ in }
-    /// How long a press waits before it opens the flyout instead of choosing.
-    static let holdDelay: TimeInterval = 0.35
+    private var popover: NSPopover?
+    /// The click that closed the flyout from outside it. A transient popover closes on the mouse-down before the slot
+    /// sees it, so a click on the slot while its flyout is open would otherwise open it again at once.
+    private var closingClick: TimeInterval?
 
     init(session: EditorSession, slot: ToolSlot) {
         self.session = session
@@ -102,77 +116,82 @@ final class ToolSlotControl: NSView {
 
     required init?(coder: NSCoder) { nil }
 
-    override func mouseDown(with event: NSEvent) {
-        if event.modifierFlags.contains(.control) { showFlyout(); return }
-        guard let window else { choose(); return }
-        // Up before the delay is a click (if it's still over the slot); held past it, the flyout opens under the mouse,
-        // so dragging onto an item and letting go chooses it, as in a pop-up menu.
-        let deadline = Date(timeIntervalSinceNow: Self.holdDelay)
-        while let next = window.nextEvent(matching: [.leftMouseUp, .leftMouseDragged], until: deadline,
-                                          inMode: .eventTracking, dequeue: true) {
-            guard next.type == .leftMouseUp else { continue }
-            if bounds.contains(convert(next.locationInWindow, from: nil)) { choose() }
-            return
+    var isFlyoutShown: Bool { popover?.isShown == true }
+    /// The open flyout's window, for tests.
+    var flyoutWindow: NSWindow? { popover?.contentViewController?.view.window }
+
+    /// The first click makes the slot's tool active, the next opens the flyout, the one after closes it.
+    static func click(shown: SlotItem, activeTool: NavigationTool, itemCount: Int, flyoutShown: Bool) -> SlotClick {
+        if flyoutShown { return .closeFlyout }
+        switch shown {
+        case .tool(let tool) where tool == activeTool: return itemCount > 1 ? .openFlyout : .nothing
+        case .planned: return itemCount > 1 ? .openFlyout : .choose
+        case .tool: return .choose
         }
-        showFlyout()
     }
 
-    override func rightMouseDown(with event: NSEvent) { showFlyout() }
+    override func mouseDown(with event: NSEvent) {
+        if event.modifierFlags.contains(.control) { toggleFlyout(); return }
+        if let closingClick, closingClick == event.timestamp { self.closingClick = nil; return }
+        guard let session else { return }
+        switch Self.click(shown: session.shownItem(in: slot), activeTool: session.tool, itemCount: slot.items.count,
+                          flyoutShown: isFlyoutShown) {
+        case .choose: choose()
+        case .openFlyout: showFlyout()
+        case .closeFlyout: closeFlyout()
+        case .nothing: break
+        }
+    }
+
+    override func rightMouseDown(with event: NSEvent) {
+        if let closingClick, closingClick == event.timestamp { self.closingClick = nil; return }
+        toggleFlyout()
+    }
 
     func choose() {
         guard let session else { return }
         session.choose(session.shownItem(in: slot))
     }
 
-    /// The flyout, beside the slot's top right corner.
+    private func toggleFlyout() { isFlyoutShown ? closeFlyout() : showFlyout() }
+
+    /// The flyout, beside the slot's right edge.
     func showFlyout() {
-        guard let menu = flyoutMenu() else { return }
-        menu.popUp(positioning: nil, at: NSPoint(x: bounds.maxX + 4, y: isFlipped ? bounds.minY : bounds.maxY), in: self)
-        // The menu took the mouse's exit; say whether it's still here.
+        guard let session, !isFlyoutShown else { return }
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.animates = false
+        popover.delegate = self
+        let content = NSHostingController(rootView: ToolFlyout(session: session, slot: slot) { [weak self] item in
+            self?.chooseItem(item)
+        })
+        content.sizingOptions = [.preferredContentSize]
+        popover.contentViewController = content
+        // Sized before it's shown: placed at a default size and shrunk afterwards, it would end up off its slot.
+        popover.contentSize = content.view.fittingSize
+        self.popover = popover
+        popover.show(relativeTo: bounds, of: self, preferredEdge: .maxX)
+    }
+
+    func closeFlyout() { popover?.performClose(nil) }
+
+    func popoverWillClose(_ notification: Notification) {
+        if let event = NSApp.currentEvent, [.leftMouseDown, .rightMouseDown].contains(event.type) {
+            closingClick = event.timestamp
+        }
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        popover = nil
+        // The popover took the mouse's exit; say whether it's still here.
         if let window { onHover(bounds.contains(convert(window.mouseLocationOutsideOfEventStream, from: nil))) }
     }
 
-    /// The slot's items in flyout order: icon, name, the slot's key, the shown one checked; a planned item's tool tip
-    /// says it's in progress.
-    func flyoutMenu() -> NSMenu? {
-        guard let session else { return nil }
-        let shown = session.shownItem(in: slot)
-        let menu = NSMenu()
-        menu.autoenablesItems = false
-        for item in slot.items {
-            let entry = NSMenuItem(title: item.name, action: #selector(chooseItem(_:)), keyEquivalent: slot.key ?? "")
-            entry.keyEquivalentModifierMask = []
-            entry.target = self
-            entry.representedObject = item
-            entry.attributedTitle = Self.flyoutTitle(item)
-            entry.state = item == shown ? .on : .off
-            if case .planned = item { entry.toolTip = item.helpTag }
-            entry.setAccessibilityLabel(item.label)
-            menu.addItem(entry)
-        }
-        return menu
-    }
-
-    /// The icon, then the name. The icon goes in the title rather than the item's `image`, which macOS 27 leaves out
-    /// of menus.
-    static func flyoutTitle(_ item: SlotItem) -> NSAttributedString {
-        let font = NSFont.menuFont(ofSize: 0)
-        let title = NSMutableAttributedString()
-        if let image = ToolIcon.menuImage(for: item) {
-            let attachment = NSTextAttachment()
-            attachment.image = image
-            attachment.bounds = CGRect(x: 0, y: (font.capHeight - 16) / 2, width: 16, height: 16)
-            title.append(NSAttributedString(attachment: attachment))
-            title.append(NSAttributedString(string: "  "))
-        }
-        title.append(NSAttributedString(string: item.name))
-        title.addAttribute(.font, value: font, range: NSRange(location: 0, length: title.length))
-        return title
-    }
-
-    @objc func chooseItem(_ sender: NSMenuItem) {
-        guard let item = sender.representedObject as? SlotItem else { return }
+    /// Chooses an item from the flyout, which then closes.
+    func chooseItem(_ item: SlotItem) {
         session?.choose(item)
+        closingClick = nil
+        closeFlyout()
     }
 
     override func updateTrackingAreas() {
@@ -188,4 +207,72 @@ final class ToolSlotControl: NSView {
     override func accessibilityRole() -> NSAccessibility.Role? { .button }
     override func accessibilityPerformPress() -> Bool { choose(); return true }
     override func accessibilityPerformShowMenu() -> Bool { showFlyout(); return true }
+}
+
+private extension SlotItem {
+    var isPlanned: Bool { if case .planned = self { true } else { false } }
+}
+
+/// One line of a slot's flyout.
+struct ToolFlyoutRow: Equatable {
+    let item: SlotItem
+    /// What the slot shows now, marked with a checkmark.
+    let isShown: Bool
+    /// The slot's key, the same for every row: "U".
+    let key: String?
+}
+
+/// A slot's flyout: its items in flyout order, each with its 16 pt icon, its name ("Elliptical Marquee Tool") and the
+/// slot's key at the right, a checkmark on the shown one; planned items carry the "· In progress" help tag. Drawn in
+/// SwiftUI with the color roles, so every icon (symbols and drawings alike) takes the appearance's colors; the row under
+/// the pointer is highlighted in the accent color, as a menu's would be.
+struct ToolFlyout: View {
+    let session: EditorSession
+    let slot: ToolSlot
+    let onChoose: (SlotItem) -> Void
+    @State private var hovered: SlotItem?
+
+    static func rows(session: EditorSession, slot: ToolSlot) -> [ToolFlyoutRow] {
+        let shown = session.shownItem(in: slot)
+        return slot.items.map { ToolFlyoutRow(item: $0, isShown: $0 == shown, key: slot.key?.uppercased()) }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Self.rows(session: session, slot: slot), id: \.item) { row in
+                rowView(row)
+            }
+        }
+        .padding(5)
+        .frame(minWidth: 220)
+    }
+
+    private func rowView(_ row: ToolFlyoutRow) -> some View {
+        let highlighted = hovered == row.item
+        return Button { onChoose(row.item) } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark").font(.system(size: 10, weight: .semibold))
+                    .opacity(row.isShown ? 1 : 0)
+                    .frame(width: 12)
+                ToolIcon(item: row.item, size: 16)
+                    .foregroundStyle(highlighted ? Color.white : ColorRole.icon.color)
+                Text(row.item.name)
+                Spacer(minLength: 16)
+                if let key = row.key {
+                    Text(key).foregroundStyle(highlighted ? Color.white : ColorRole.secondaryText.color)
+                }
+            }
+            .font(.system(size: 13))
+            .foregroundStyle(highlighted ? Color.white : ColorRole.text.color)
+            .padding(.horizontal, 8)
+            .frame(height: 24)
+            .background(highlighted ? Color.accentColor : .clear, in: RoundedRectangle(cornerRadius: 5))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovered = $0 ? row.item : (hovered == row.item ? nil : hovered) }
+        .help(row.item.isPlanned ? row.item.helpTag : "")
+        .accessibilityLabel(row.item.label)
+        .accessibilityAddTraits(row.isShown ? .isSelected : [])
+    }
 }

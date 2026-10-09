@@ -24,9 +24,6 @@ struct ToolbarTests {
         })
     }
 
-    /// A flyout entry's name, without the icon in front of it.
-    private func name(_ entry: NSMenuItem) -> String { entry.title.trimmingCharacters(in: CharacterSet(charactersIn: "\u{FFFC} ")) }
-
     /// Let SwiftUI apply a change to the session.
     private func settle() async throws { try await Task.sleep(for: .milliseconds(50)) }
 
@@ -88,35 +85,85 @@ struct ToolbarTests {
         #expect(session.tool == .ellipticalMarquee && session.inProgressNotice?.feature == .penTool)
     }
 
-    /// The flyout lists the slot's items in order with icon, name and key, the shown one checked, planned ones saying
-    /// they're in progress; choosing from it goes through `choose(_:)`.
+    /// The flyout lists the slot's items in order with name and key, the shown one checked, planned ones labeled as in
+    /// progress; choosing from it goes through `choose(_:)`.
     @Test func theFlyoutListsTheSlotsItems() throws {
         let session = EditorSession()
         session.selectTool(.ellipse)
         let control = ToolSlotControl(session: session, slot: .shapes)
-        let menu = try #require(control.flyoutMenu())
-        #expect(menu.items.map(name) == ["Rectangle Tool", "Ellipse Tool", "Polygon Tool", "Star Tool", "Line Tool"])
-        #expect(menu.items.allSatisfy { $0.keyEquivalent == "u" && $0.keyEquivalentModifierMask.isEmpty })
-        for entry in menu.items {
-            let title = try #require(entry.attributedTitle)
-            #expect(entry.accessibilityLabel() == "\(name(entry)) (U)", "VoiceOver hears the name and key, not the icon")
-            #expect(title.attribute(.attachment, at: 0, effectiveRange: nil) is NSTextAttachment, "\(name(entry)) has its icon")
-        }
-        #expect(menu.items.map(\.state) == [.off, .on, .off, .off, .off])
-        #expect(menu.items[2].toolTip == "Polygon Tool (U) · In progress" && menu.items[0].toolTip == nil)
+        var rows = ToolFlyout.rows(session: session, slot: .shapes)
+        #expect(rows.map(\.item.name) == ["Rectangle Tool", "Ellipse Tool", "Polygon Tool", "Star Tool", "Line Tool"])
+        #expect(rows.allSatisfy { $0.key == "U" })
+        #expect(rows.map(\.item.label) == rows.map { "\($0.item.name) (U)" }, "VoiceOver hears the name and key")
+        #expect(rows.map(\.isShown) == [false, true, false, false, false])
+        #expect(rows[2].item.helpTag == "Polygon Tool (U) · In progress")
 
-        control.chooseItem(menu.items[3])
+        control.chooseItem(rows[3].item)
         #expect(session.tool == .ellipse && session.inProgressNotice?.feature == .starTool, "a planned item only shows its message")
-        control.chooseItem(menu.items[4])
+        control.chooseItem(rows[4].item)
         #expect(session.tool == .line && session.inProgressNotice == nil)
-        #expect(control.flyoutMenu()?.items.last?.state == .on)
+        rows = ToolFlyout.rows(session: session, slot: .shapes)
+        #expect(rows.last?.isShown == true)
 
-        let brush = try #require(ToolSlotControl(session: session, slot: .brush).flyoutMenu())
-        #expect(brush.items.map(name) == ["Brush Tool", "Mixer Brush Tool", "Palette Knife Tool"])
-        #expect(brush.items.map(\.state) == [.on, .off, .off], "the slot's last-used tool, while another slot's is active")
-        let path = try #require(ToolSlotControl(session: session, slot: .pathSelection).flyoutMenu())
-        #expect(path.items.map(name) == ["Path Selection Tool", "Direct Selection Tool"])
-        #expect(path.items.allSatisfy { $0.keyEquivalent.isEmpty }, "no key until TASK-28 ships")
+        let brush = ToolFlyout.rows(session: session, slot: .brush)
+        #expect(brush.map(\.item.name) == ["Brush Tool", "Mixer Brush Tool", "Palette Knife Tool"])
+        #expect(brush.map(\.isShown) == [true, false, false], "the slot's last-used tool, while another slot's is active")
+        let path = ToolFlyout.rows(session: session, slot: .pathSelection)
+        #expect(path.map(\.item.name) == ["Path Selection Tool", "Direct Selection Tool"])
+        #expect(path.allSatisfy { $0.key == nil }, "no key until TASK-28 ships")
+    }
+
+    /// The first click on a slot makes its tool active, the next opens the flyout, the one after closes it; a slot of one
+    /// tool has no flyout, and a slot showing a planned item opens its flyout at once when it lists more than one.
+    @Test func clicksChooseThenOpenThenCloseTheFlyout() {
+        let marquee = SlotItem.tool(.rectangularMarquee)
+        #expect(ToolSlotControl.click(shown: marquee, activeTool: .brush, itemCount: 2, flyoutShown: false) == .choose)
+        #expect(ToolSlotControl.click(shown: marquee, activeTool: .rectangularMarquee, itemCount: 2, flyoutShown: false) == .openFlyout)
+        #expect(ToolSlotControl.click(shown: marquee, activeTool: .rectangularMarquee, itemCount: 2, flyoutShown: true) == .closeFlyout)
+        #expect(ToolSlotControl.click(shown: .tool(.crop), activeTool: .crop, itemCount: 1, flyoutShown: false) == .nothing)
+        #expect(ToolSlotControl.click(shown: .tool(.crop), activeTool: .move, itemCount: 1, flyoutShown: false) == .choose)
+        #expect(ToolSlotControl.click(shown: .planned(.penTool), activeTool: .move, itemCount: 1, flyoutShown: false) == .choose,
+                "the Pen slot shows its message")
+        #expect(ToolSlotControl.click(shown: .planned(.pathSelectionTool), activeTool: .move, itemCount: 2, flyoutShown: false) == .openFlyout)
+    }
+
+    /// The flyout opens beside its own slot, in a toolbar taller than its slots (as in the app, where the column has room
+    /// to spare below the colors), and a second call closes it.
+    @Test(.showsWindows) func theFlyoutOpensBesideItsSlot() async throws {
+        let session = EditorSession()
+        session.selectTool(.gradient)
+        let host = NSHostingView(rootView: ToolbarColumn(session: session))
+        host.frame = CGRect(x: 0, y: 0, width: ToolbarColumn.width, height: 784)
+        let window = NSWindow(contentRect: CGRect(x: 200, y: 100, width: ToolbarColumn.width, height: 784),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFront(nil)
+        defer { window.close() }
+        host.layoutSubtreeIfNeeded()
+        try await settle()
+        let control = try #require(descendants(host).compactMap { $0 as? ToolSlotControl }.first { $0.slot == .gradient })
+        control.showFlyout()
+        try await settle()
+        let popoverWindow = try #require(control.flyoutWindow)
+        let slot = window.convertToScreen(control.convert(control.bounds, to: nil))
+        #expect(abs(popoverWindow.frame.midY - slot.midY) < 4, "popover \(popoverWindow.frame) beside slot \(slot)")
+        #expect(popoverWindow.frame.minX >= slot.maxX - 1)
+        control.closeFlyout()
+        try await settle()
+        #expect(!control.isFlyoutShown)
+    }
+
+    /// Whether a rendered icon has any visible pixel.
+    private func hasInk(_ item: SlotItem) -> Bool {
+        let renderer = ImageRenderer(content: ToolIcon(item: item, size: 16).foregroundStyle(.black))
+        renderer.scale = 2
+        guard let image = renderer.cgImage, let context = CGContext(
+            data: nil, width: image.width, height: image.height, bitsPerComponent: 8, bytesPerRow: image.width * 4,
+            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        guard let data = context.data?.assumingMemoryBound(to: UInt8.self) else { return false }
+        return stride(from: 3, to: image.width * image.height * 4, by: 4).contains { data[$0] > 0 }
     }
 
     /// Every item has an icon: a symbol that exists, or its own drawing; Move is the four-headed arrow.
@@ -131,7 +178,7 @@ struct ToolbarTests {
             if let symbol = ToolIcon.symbol(for: item) {
                 #expect(NSImage(systemSymbolName: symbol, accessibilityDescription: nil) != nil, "\(symbol)")
             }
-            #expect(ToolIcon.menuImage(for: item) != nil, "\(item)")
+            #expect(hasInk(item), "\(item) draws something")
         }
     }
 

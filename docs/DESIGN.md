@@ -181,7 +181,7 @@ Status: **shipping** (TASK-55). `ToolIcon` (`Sources/LaminaApp/UI/ToolIcon.swift
 `ToolIcon.symbol(for:)` gives each symbol, and the custom icons are SwiftUI drawings beside it (`DodgeToolIcon`,
 `BurnToolIcon`, `TypeToolIcon`, `PaletteKnifeToolIcon`; `GradientToolIcon`, `PaintBucketToolIcon`, `CloneStampToolIcon`,
 `PolygonalLassoToolIcon`, `ObjectSelectionToolIcon` sit with their tools' bars), stroked 1.5 pt at 18 pt.
-`ToolIcon.menuImage(for:)` renders them as template images for menus.
+The toolbar's flyouts draw `ToolIcon` itself, so drawings and symbols alike take the appearance's colors.
 
 ## Elevation and depth
 
@@ -210,12 +210,18 @@ The column (`ToolbarColumn`, `Sources/LaminaApp/UI/Toolbar.swift`) is 44 pt wide
   when it's the slot's, else the slot's last-used tool, else (Pen, Path Selection) its first planned item. The active
   slot sits on `activeTool` with its icon in `text`; a hovered one on `hover`; the rest show `icon` on `chrome`. Corners
   6 pt.
-- A click chooses the shown item through `EditorSession.choose(_:)`, so a planned one shows its message. Holding the
-  mouse 0.35 s, right-clicking or Control-clicking opens the flyout: a native menu beside the slot's top right listing
-  the slot's items in flyout order, each with its 16 pt icon, its name ("Elliptical Marquee Tool") and the slot's key
-  at the right; a checkmark marks the shown item. Held open, dragging onto an item and letting go chooses it. Planned
-  items are listed like the others, with the "· In progress" help tag. The icon is drawn in the item's title, since
-  macOS 27 leaves menu items' own images out of menus.
+- Clicks (`ToolSlotControl.click`): the first click on a slot whose tool isn't active chooses its shown item through
+  `EditorSession.choose(_:)`; a click on the active slot opens its flyout when it holds more than one item; a click on
+  the slot while its flyout is open closes it (so do a click elsewhere and Escape). A slot showing a planned item has no
+  tool to make active, so a click opens its flyout at once when it lists more than one item (Path Selection) and shows
+  the message when it holds only one (Pen). Right-click or Control-click opens the flyout too. There is no press and
+  hold.
+- The flyout (`ToolFlyout`) is a popover beside the slot listing its items in flyout order, each with its 16 pt icon in
+  `icon`, its name ("Elliptical Marquee Tool") in `text` and the slot's key at the right in `secondaryText`, 24 pt rows,
+  a checkmark on the shown item; the row under the pointer is highlighted in the accent color with white text and icon.
+  Choosing a row closes it. Planned items are listed like the others, with the "· In progress" help tag. It's drawn in
+  SwiftUI, not a native menu: AppKit leaves menu items' images out on macOS 27 and doesn't tint drawn icons placed in a
+  menu item's title, which drew them black in dark appearance.
 - Each slot (`ToolSlotControl`, AppKit, over the SwiftUI drawing) is a button to VoiceOver labeled "Tool name (Key)"
   and reported selected when active; its Show Menu action opens the flyout. Its help tag is the same label (with
   "· In progress" for a planned item).

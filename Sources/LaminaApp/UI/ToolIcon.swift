@@ -71,19 +71,6 @@ struct ToolIcon: View {
             }
         }
     }
-
-    /// The icon as a template image for a native menu (the toolbar's flyouts): a symbol as itself, a drawing rendered.
-    @MainActor static func menuImage(for item: SlotItem, size: CGFloat = 16) -> NSImage? {
-        if let symbol = symbol(for: item) {
-            return NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
-                .withSymbolConfiguration(.init(pointSize: size - 2, weight: .regular))
-        }
-        let renderer = ImageRenderer(content: ToolIcon(item: item, size: size).foregroundStyle(.black))
-        renderer.scale = 2
-        guard let image = renderer.nsImage else { return nil }
-        image.isTemplate = true
-        return image
-    }
 }
 
 /// Strokes in the weight of the SF Symbols beside them: 1.5 pt at 18 pt, on a 24-unit grid that `draw` lays out in.

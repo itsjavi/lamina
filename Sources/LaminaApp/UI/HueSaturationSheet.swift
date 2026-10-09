@@ -86,7 +86,7 @@ struct HueSaturationSheet: View {
                         eyedropper(mode)
                     }
                     .buttonStyle(.plain)
-                    .background(session.hueSampleMode == mode ? Color.accentColor.opacity(0.25) : .clear,
+                    .background(session.hueSampleMode == mode ? ColorRole.activeTool.color : .clear,
                                 in: RoundedRectangle(cornerRadius: 4))
                     .help(mode.help)
                     .accessibilityLabel("\(mode.rawValue) color")
@@ -101,7 +101,7 @@ struct HueSaturationSheet: View {
                     Image(systemName: "hand.point.up.left").frame(width: 24, height: 20)
                 }
                 .buttonStyle(.plain)
-                .background(session.hueTargeting ? Color.accentColor.opacity(0.25) : .clear,
+                .background(session.hueTargeting ? ColorRole.activeTool.color : .clear,
                             in: RoundedRectangle(cornerRadius: 4))
                 .help("Targeted adjustment: drag on the image to change that color's saturation, or its hue with Command held")
                 .accessibilityLabel("Targeted adjustment")

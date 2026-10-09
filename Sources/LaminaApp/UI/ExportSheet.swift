@@ -69,7 +69,7 @@ struct ExportSheet: View {
             // Closer to the title row than the rest of the dialog's spacing.
             .padding(.bottom, -8)
             ZStack {
-                Color(white: 0.12)
+                ColorRole.pasteboard.color
                 if let result {
                     ExportPreview(image: result.preview, pixelWidth: raster.image.width, pixelHeight: raster.image.height, zoom: $zoom)
                 }

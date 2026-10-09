@@ -111,6 +111,9 @@ struct LaminaMain: App {
                             .assignableShortcut("Lamina › Check for Updates…")
                             .disabled(applicationDelegate.updater == nil)
                     }
+                    CommandGroup(replacing: .appSettings) {
+                        SettingsLink { Text("Settings…") }.configuredKeyboardShortcut("k")
+                    }
                     CommandGroup(after: .toolbar) {
                         // With a dialog's preview open (Export JPEG), these zoom that preview rather than the canvas.
                         Button("Fit Canvas") {
@@ -440,5 +443,6 @@ struct LaminaMain: App {
                         .disabled(!session.canEditLayers || session.activeLayer == nil)
                 }
             }
+        Settings { SettingsView() }
     }
 }

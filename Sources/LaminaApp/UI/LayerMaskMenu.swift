@@ -40,9 +40,9 @@ final class MaskAloneBadgeView: NSView {
         icon.symbolConfiguration = .init(pointSize: 11, weight: .regular)
         let title = NSTextField(labelWithString: "Layer Mask")
         title.font = .systemFont(ofSize: 12, weight: .semibold)
-        title.textColor = .white
+        title.textColor = ColorRole.text.nsColor
         name.font = .systemFont(ofSize: 12)
-        name.textColor = NSColor.white.withAlphaComponent(0.6)
+        name.textColor = ColorRole.secondaryText.nsColor
         name.lineBreakMode = .byTruncatingTail
         let button = NSButton(image: NSImage(systemSymbolName: "xmark", accessibilityDescription: "Stop viewing the mask") ?? NSImage(),
                               target: nil, action: nil)
@@ -55,12 +55,11 @@ final class MaskAloneBadgeView: NSView {
         super.init(frame: .zero)
         button.target = self
         button.action = #selector(closeClicked)
-        icon.contentTintColor = .white
-        button.contentTintColor = .white
+        icon.contentTintColor = ColorRole.icon.nsColor
+        button.contentTintColor = ColorRole.icon.nsColor
         wantsLayer = true
-        layer?.backgroundColor = NSColor.black.withAlphaComponent(0.75).cgColor
-        layer?.borderColor = NSColor.white.withAlphaComponent(0.14).cgColor
         layer?.borderWidth = 1
+        updateLayerColors()
         layer?.cornerRadius = 13
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
@@ -71,6 +70,11 @@ final class MaskAloneBadgeView: NSView {
         ])
     }
     required init?(coder: NSCoder) { nil }
+    override func viewDidChangeEffectiveAppearance() { updateLayerColors() }
+    private func updateLayerColors() {
+        layer?.backgroundColor = ColorRole.chrome.resolved(for: effectiveAppearance).cgColor
+        layer?.borderColor = ColorRole.edge.resolved(for: effectiveAppearance).cgColor
+    }
     override var intrinsicContentSize: NSSize { NSSize(width: stack.fittingSize.width, height: 26) }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
     @objc private func closeClicked() { close() }

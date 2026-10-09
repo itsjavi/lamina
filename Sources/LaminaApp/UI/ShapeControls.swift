@@ -51,7 +51,7 @@ struct ShapeControls: View {
                 Button { session.openColorPicker(background: false) } label: {
                     let swatch = RoundedRectangle(cornerRadius: 3, style: .continuous)
                     swatch.fill(Color(nsColor: session.foregroundColor.nsColor))
-                        .overlay { swatch.strokeBorder(.black.opacity(0.5), lineWidth: 1) }
+                        .overlay { swatch.strokeBorder(ColorRole.edge.color, lineWidth: 1) }
                         .frame(width: 36, height: 18)
                 }
                 .buttonStyle(.plain)

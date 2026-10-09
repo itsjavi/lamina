@@ -670,6 +670,10 @@ final class CanvasView: NSView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     override var isFlipped: Bool { true }
     override var isOpaque: Bool { true }
+    /// The pasteboard follows the appearance; the GPU's frame doesn't redraw by itself when it changes.
+    override func viewDidChangeEffectiveAppearance() { needsDisplay = true }
+    /// The area around the document, the same color on both canvases.
+    private var pasteboard: NSColor { ColorRole.pasteboard.resolved(for: effectiveAppearance) }
     override var acceptsFirstResponder: Bool { true }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
@@ -864,7 +868,7 @@ final class CanvasView: NSView {
         if lines.frame != bounds { lines.frame = bounds }
         lines.needsDisplay = true
         if drawOnGPU(dirtyRect) { return }
-        NSColor(white: 0.105, alpha: 1).setFill()
+        pasteboard.setFill()
         dirtyRect.fill()
         guard let document = session.document,
               let context = NSGraphicsContext.current?.cgContext else { return }
@@ -2669,7 +2673,9 @@ extension CanvasView {
         func gray(_ white: CGFloat, alpha: CGFloat = 1) -> CIImage {
             CIImage(color: CIColor(red: white, green: white, blue: white, alpha: alpha))
         }
-        var frame = gray(0.105).cropped(to: full)
+        let backdrop = pasteboard
+        var frame = CIImage(color: CIColor(red: backdrop.redComponent, green: backdrop.greenComponent, blue: backdrop.blueComponent))
+            .cropped(to: full)
         guard rect.intersects(full) else { return frame }
         // The document's shadow, then its checkerboard: 10-point squares from its top-left corner.
         let shadow = CIImage(color: CIColor(red: 0, green: 0, blue: 0, alpha: 0.35)).cropped(to: rect)

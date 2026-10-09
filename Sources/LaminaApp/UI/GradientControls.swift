@@ -54,7 +54,7 @@ struct GradientControls: View {
         .background(.white)
         .overlay { LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing) }
         .clipShape(shape)
-        .overlay { shape.strokeBorder(.black.opacity(0.5), lineWidth: 1) }
+        .overlay { shape.strokeBorder(ColorRole.edge.color, lineWidth: 1) }
         .frame(width: 56, height: 18)
         .accessibilityHidden(true)
     }

@@ -46,7 +46,7 @@ struct TypeControls: View {
                         let color = session.typeColor
                         let swatch = RoundedRectangle(cornerRadius: 3, style: .continuous)
                         swatch.fill(Color(red: color.red, green: color.green, blue: color.blue))
-                            .overlay { swatch.strokeBorder(.black.opacity(0.5), lineWidth: 1) }
+                            .overlay { swatch.strokeBorder(ColorRole.edge.color, lineWidth: 1) }
                             .frame(width: 36, height: 18)
                     }
                     .buttonStyle(.plain).help("Text color").accessibilityLabel("Text color")
@@ -58,7 +58,7 @@ struct TypeControls: View {
                             } label: {
                                 Image(systemName: alignment == .left ? "text.alignleft" : alignment == .center ? "text.aligncenter" : "text.alignright")
                                     .frame(width: 30, height: 26)
-                                    .background(selected ? Color.white.opacity(0.14) : .clear,
+                                    .background(selected ? ColorRole.activeTool.color : .clear,
                                                 in: RoundedRectangle(cornerRadius: 4))
                                     // Without this the glyph's own strokes are the only thing a click lands on.
                                     .contentShape(RoundedRectangle(cornerRadius: 4))

@@ -71,10 +71,11 @@ Rules:
 
 Native controls (buttons, pop-ups, checkboxes, text fields, menus, sheets) draw themselves with system colors; never
 recolor them. Everything Lamina draws itself takes a **named role**, defined once in code with a light and a dark value.
-No literal grays (`Color(white:)`, hex) in interface code. TASK-51 creates the roles; record their file here when it
-lands.
+No literal grays (`Color(white:)`, hex) in interface code. The roles live in `Sources/LaminaApp/UI/ColorRoles.swift`
+(`ColorRole`, with `.color` for SwiftUI, `.nsColor` for AppKit and `resolved(for:)` for layer and Metal colors), and
+`ColorRoleTests` checks them against this table. **Shipping** (TASK-51).
 
-| Role | Used for | Light | Dark | Prefer |
+| Role | Used for | Light | Dark | System equivalent |
 | --- | --- | --- | --- | --- |
 | window | behind everything | `#F5F5F7` | `#1D1D1F` | `windowBackgroundColor` |
 | chrome | title bar, options bar, toolbar, status bar, panel icon column | `#ECECEE` | `#29292C` | own role |
@@ -92,10 +93,23 @@ lands.
 | selection | selected layer, history state, list rows | `#CFE0FB` | `#2A5596` | own role |
 | pasteboard | the area around the document | `#C6C6CB` | `#202022` | own role |
 
+- Every role takes the values in this table, accent excepted (the system's). The system equivalents are not used:
+  on current macOS they don't keep this hierarchy (`windowBackgroundColor` is white in light, lighter than `chrome`).
 - Regions are separated by a 1 pt `edge` line, never by shadows or gradients.
 - The document, its thumbnails and canvas overlays look the same in both appearances: transform box and handles
-  `#3E8BFF` with white handle fills, marching ants black and white, crop shield black at 32%.
-- Appearance follows macOS and switches live. Lamina ▸ Settings… (⌘K) offers Appearance: System, Light, Dark.
+  `#3E8BFF` with white handle fills, marching ants black and white, crop shield black at 32%. Fixed too: the
+  transparency checkerboard and the document's shadow and edge, guides and grid in their chosen colors, brush and
+  sample-ring cursors, and what shows tones or colors (Levels' black, gray and white sliders, color wheels and fields,
+  Camera Raw's colored slider tracks, the Color Range mask preview).
+- Custom wells (histograms, curves, the Camera Raw scopes) are `field` with `separator` grid lines and `text` curves
+  and points; image previews in dialogs (Export, Camera Raw develop) sit on `pasteboard`; swatch and well borders are
+  `edge`; pressed mode buttons in dialogs and options bars are `activeTool`; selected history states and effect rows
+  are `selection`.
+- Until the frame is rebuilt (TASK-52, TASK-55, TASK-58), the bars, tool rail and status bar sit on `chrome`, the side
+  panels on `panel`, and the active document tab is a `control` capsule with an `edge` outline.
+- Appearance follows macOS and switches live. Lamina ▸ Settings… (⌘K) opens the Settings window, whose Appearance
+  setting (System, Light, Dark, as radio buttons) is saved as `appearance` in UserDefaults and applied to the whole app
+  through `NSApp.appearance`, alerts and open and save panels included. **Shipping** (TASK-51).
 - The mockup's colored change dots are review aids, not app colors.
 
 ## Typography
@@ -279,7 +293,8 @@ What changes from the shortcuts Lamina shipped before m-5 (applied by TASK-62; c
 | Camera Raw Filter… / Lens Correction… / Liquify… | none | ⇧⌘A / ⇧⌘R / ⇧⌘X |
 | Select ▸ Modify ▸ Feather… | none | ⇧F6 |
 | Layer ▸ Hide Layers | none | ⌘, |
-| Edit ▸ Keyboard Shortcuts… / Lamina ▸ Settings… | none | ⌥⇧⌘K / ⌘K |
+| Edit ▸ Keyboard Shortcuts… | none | ⌥⇧⌘K |
+| Lamina ▸ Settings… | none (no Settings window) | ⌘K (shipping, TASK-51) |
 | Tools | B with Tab cycling modes, R for Smear | E Eraser, O Dodge and Burn, R Blur and Smudge, Shift plus key cycles a slot |
 
 ### Dialogs

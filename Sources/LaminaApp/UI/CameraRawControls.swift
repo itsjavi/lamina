@@ -37,7 +37,7 @@ struct CameraRawControls: View {
             ZStack {
                 graph(scope, mode: mode)
                     .frame(height: 110)
-                    .background(Color.black.opacity(0.35))
+                    .background(ColorRole.field.color)
                     .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                 HStack {
                     clipButton(shadows: true)
@@ -74,7 +74,7 @@ struct CameraRawControls: View {
         } label: {
             Image(systemName: "triangle.fill")
                 .font(.caption2)
-                .foregroundStyle(on ? (shadows ? Color.blue : Color.red) : Color.white.opacity(0.55))
+                .foregroundStyle(on ? (shadows ? Color.blue : Color.red) : ColorRole.secondaryText.color)
         }
         .buttonStyle(.plain)
         .help(shadows ? "Show clipped shadows in blue on the preview." : "Show clipped highlights in red on the preview.")
@@ -100,7 +100,7 @@ struct CameraRawControls: View {
                     let row = index / CameraRawScope.scopeSide
                     let amount = min(1, scope.vectorscope[index] / peak)
                     let rect = CGRect(x: CGFloat(column) * cell, y: size.height - CGFloat(row + 1) * cell, width: cell + 0.2, height: cell + 0.2)
-                    context.fill(Path(rect), with: .color(.white.opacity(0.15 + 0.85 * amount)))
+                    context.fill(Path(rect), with: .color(ColorRole.text.color.opacity(0.15 + 0.85 * amount)))
                 }
             }
         }

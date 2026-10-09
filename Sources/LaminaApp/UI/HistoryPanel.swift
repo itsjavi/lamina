@@ -98,7 +98,7 @@ struct HistoryPanel: View {
             .foregroundStyle(index > position ? .tertiary : .primary)
             .padding(.horizontal, 14).padding(.vertical, 6)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(index == position ? Color.accentColor.opacity(0.18) : .clear)
+            .background(index == position ? ColorRole.selection.color : .clear)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

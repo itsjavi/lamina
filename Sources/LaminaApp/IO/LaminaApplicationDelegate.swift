@@ -38,8 +38,8 @@ final class LaminaApplicationDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
-        // Always dark, alerts and open/save panels included, whatever the Mac is set to.
-        NSApp.appearance = NSAppearance(named: .darkAqua)
+        // The Mac's appearance, or the one chosen in Settings, for every window, panel and alert.
+        AppearanceSetting.saved().apply()
         // Slider knobs snap to a click on the track instead of gliding there.
         SliderSnap.install()
         // Commands from the `lamina` command-line tool (Apple Events).

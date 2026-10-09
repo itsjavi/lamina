@@ -63,7 +63,7 @@ struct ColorPickerSheet: View {
         }
         .frame(width: fieldSize, height: fieldSize)
         .clipShape(Rectangle())
-        .overlay { Rectangle().strokeBorder(.black.opacity(0.6), lineWidth: 1) }
+        .overlay { Rectangle().strokeBorder(ColorRole.edge.color, lineWidth: 1) }
         .contentShape(Rectangle())
         .gesture(DragGesture(minimumDistance: 0).onChanged { value in
             hsb.saturation = min(1, max(0, value.location.x / fieldSize))
@@ -80,7 +80,7 @@ struct ColorPickerSheet: View {
                 PickerHSB(hue: $0, saturation: 1, brightness: 1).rgb.swiftUI
             }, startPoint: .top, endPoint: .bottom)
                 .frame(width: stripWidth, height: fieldSize)
-                .overlay { Rectangle().strokeBorder(.black.opacity(0.6), lineWidth: 1) }
+                .overlay { Rectangle().strokeBorder(ColorRole.edge.color, lineWidth: 1) }
                 .padding(.horizontal, 7)
             HStack(spacing: stripWidth) {
                 HueArrow().fill(.primary).frame(width: 7, height: 10)
@@ -100,7 +100,7 @@ struct ColorPickerSheet: View {
     private var preview: some View {
         RoundedRectangle(cornerRadius: 5, style: .continuous)
             .fill(color.swiftUI)
-            .overlay { RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(.black.opacity(0.6), lineWidth: 1) }
+            .overlay { RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(ColorRole.edge.color, lineWidth: 1) }
             .frame(width: 64, height: 64)
             .accessibilityLabel("New color")
     }

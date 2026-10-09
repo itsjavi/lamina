@@ -12,7 +12,7 @@ struct ColorRangeSheet: View {
                     Button { edit?.sampleMode = mode } label: { eyedropper(mode) }
                         .buttonStyle(.plain)
                         // Holding Shift or Option lights up the eyedropper a click will use.
-                        .background(edit?.effectiveMode == mode ? Color.accentColor.opacity(0.25) : .clear,
+                        .background(edit?.effectiveMode == mode ? ColorRole.activeTool.color : .clear,
                                     in: RoundedRectangle(cornerRadius: 4))
                         .help(help(mode))
                         .accessibilityLabel("\(mode.rawValue) color")
@@ -57,7 +57,7 @@ struct ColorRangeSheet: View {
             if let picture = edit?.preview { Image(decorative: picture, scale: 2).resizable() }
         }
         .frame(width: size.width * scale, height: size.height * scale)
-        .overlay { Rectangle().strokeBorder(.white.opacity(0.2)) }
+        .overlay { Rectangle().strokeBorder(ColorRole.edge.color) }
         .frame(maxWidth: .infinity)
     }
 

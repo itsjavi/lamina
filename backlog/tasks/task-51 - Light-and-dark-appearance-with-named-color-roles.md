@@ -1,9 +1,11 @@
 ---
 id: TASK-51
 title: Light and dark appearance with named color roles
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-09 02:14'
+updated_date: '2026-10-09 04:28'
 labels: []
 milestone: m-5
 dependencies: []
@@ -36,3 +38,15 @@ Lamina forces dark mode (`.preferredColorScheme(.dark)` in ContentView) and pain
 <!-- DOD:BEGIN -->
 - [ ] #1 docs/DESIGN.md matches what shipped
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Add Sources/LaminaApp/UI/ColorRoles.swift: a ColorRole enum with DESIGN.md's light/dark values as dynamic NSColors (NSColor(name:dynamicProvider:)), bridged to SwiftUI Color, plus a resolver for CGColor/CIColor users (Metal frame).
+2. Appearance setting: AppearanceSetting (System, Light, Dark) persisted in UserDefaults, applied app-wide through NSApp.appearance (nil for System) at launch and on change; drop the forced darkAqua and .preferredColorScheme(.dark).
+3. Settings scene with an Appearance picker; replace the app-settings command group with Settings… on ⌘K, registered in ShortcutDefinition.all.
+4. Replace literal grays in interface code with roles: editor background, tool rail selection, rulers, project tabs, export/raw previews, histogram and curve wells, swatch borders, layer list rows, mask badge, selection highlights. Canvas overlays and document content stay fixed.
+5. Pasteboard (Core Graphics and Metal paths) takes the pasteboard role resolved for the canvas's effective appearance and redraws on appearance change.
+6. Tests: roles resolve to the spec values in both appearances; the setting maps to the right NSAppearance and persists; ⌘K is registered.
+7. Build, swift test, make dev, screenshots in light and dark with the demo project into backlog/assets/task-51/; update DESIGN.md (roles file, decisions).
+<!-- SECTION:PLAN:END -->

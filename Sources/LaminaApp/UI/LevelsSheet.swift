@@ -21,7 +21,7 @@ struct LevelsSheet: View {
                 ForEach(LevelsChannel.allCases, id: \.self) { Text($0.rawValue).tag($0) }
             }.frame(width: 180)
             VStack(spacing: 0) {
-                histogram.frame(height: 150).background(.black.opacity(0.25))
+                histogram.frame(height: 150).background(ColorRole.field.color)
                     .overlay(alignment: .topLeading) {
                         if edit?.histogramReady != true { Text("Loading histogram…").font(.caption).padding(8) }
                     }
@@ -108,7 +108,7 @@ struct LevelsSheet: View {
                 path.addRect(CGRect(x: CGFloat(index) * size.width / 256, y: size.height - height,
                                     width: size.width / 256 + 0.1, height: height))
             }
-            let color: Color = switch settings.channel { case .rgb: .gray; case .red: .red; case .green: .green; case .blue: .blue }
+            let color: Color = switch settings.channel { case .rgb: ColorRole.secondaryText.color; case .red: .red; case .green: .green; case .blue: .blue }
             context.fill(path, with: .color(color))
         }.accessibilityLabel("Original \(settings.channel.rawValue) histogram")
         .help("Linear histogram with automatic vertical scaling. Tall spikes may extend beyond the graph; all tones from 0 to 255 remain included.")

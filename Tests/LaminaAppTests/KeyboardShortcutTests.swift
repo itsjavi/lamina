@@ -98,8 +98,9 @@ struct KeyboardShortcutTests {
         let id = "\(ShortcutDefinition.moreGroup):Select › Color Range…"
         #expect(ShortcutSettings.problem(in: [id: ShortcutChord("k", 0)]) != nil, "a plain letter")
         #expect(ShortcutSettings.problem(in: [id: ShortcutChord("k", 8)]) != nil, "Shift alone")
-        #expect(ShortcutSettings.problem(in: [id: ShortcutChord("k", 1)]) == nil)
+        #expect(ShortcutSettings.problem(in: [id: ShortcutChord("k", 5)]) == nil)
         #expect(ShortcutSettings.problem(in: [id: ShortcutChord("z", 1)]) != nil, "taken by Undo")
+        #expect(ShortcutSettings.problem(in: [id: ShortcutChord("k", 1)]) != nil, "taken by Settings")
         // Defaults keep working even where they break the rule (Content-Aware Fill is Shift-Delete).
         #expect(ShortcutSettings.problem(in: [:]) == nil)
     }

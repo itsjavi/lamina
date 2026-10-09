@@ -1086,6 +1086,8 @@ private final class LayerCell: NSTableCellView, NSTextFieldDelegate {
         row.select(editing: editing)
         return true
     }
+    // Layer colors don't follow the appearance by themselves.
+    override func viewDidChangeEffectiveAppearance() { updateTarget() }
     func updateTarget() {
         effectButtons.forEach { $0.updateSelection() }
         if let layer = session?.document?.layers.first(where: { $0.id == layerID }),
@@ -1100,8 +1102,10 @@ private final class LayerCell: NSTableCellView, NSTextFieldDelegate {
         maskThumbnail.layer?.borderColor = NSColor.controlAccentColor.cgColor
         thumbnail.layer?.borderWidth = active && !mask ? 2 : 0
         maskThumbnail.layer?.borderWidth = active && mask ? 2 : 0
-        // Shown alone on the canvas, the mask is outlined in white rather than the accent.
-        if active, session?.maskAloneLayer?.id == layerID { maskThumbnail.layer?.borderColor = NSColor.white.cgColor }
+        // Shown alone on the canvas, the mask is outlined in the text color rather than the accent.
+        if active, session?.maskAloneLayer?.id == layerID {
+            maskThumbnail.layer?.borderColor = ColorRole.text.resolved(for: effectiveAppearance).cgColor
+        }
     }
     /// Types the layer's name in the row: Return keeps it, Escape leaves it as it was, as does clicking away.
     func beginRenaming() {
@@ -1311,7 +1315,7 @@ private final class LayerEffectRow: NSView, NSDraggingSource {
     @objc private func toggle() { session?.toggleEffect(kind, on: layerID) }
     func updateSelection() {
         let selected = session?.selectedEffect == LayerEffectSelection(layerID: layerID, kind: kind)
-        layer?.backgroundColor = selected ? NSColor.controlAccentColor.withAlphaComponent(0.3).cgColor : NSColor.clear.cgColor
+        layer?.backgroundColor = selected ? ColorRole.selection.resolved(for: effectiveAppearance).cgColor : NSColor.clear.cgColor
     }
 }
 
@@ -1431,11 +1435,11 @@ extension LayerThumbnailButton {
         context == .withinApplication ? .copy : []
     }
 }
-/// One device pixel of faint white, ignored by clicks.
+/// One device pixel of separator, ignored by clicks.
 private final class RowEdgeLine: NSView {
     override func draw(_ dirtyRect: NSRect) {
         let scale = window?.backingScaleFactor ?? 2
-        NSColor.white.withAlphaComponent(0.06).setFill()
+        ColorRole.separator.nsColor.setFill()
         NSRect(x: 0, y: 0, width: bounds.width, height: 1 / scale).fill()
     }
     override func hitTest(_ point: NSPoint) -> NSView? { nil }

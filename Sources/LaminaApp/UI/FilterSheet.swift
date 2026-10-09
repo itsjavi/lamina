@@ -346,7 +346,7 @@ struct GradientMapControls: View {
             LinearGradient(colors: [color(ends.dark), color(ends.light)], startPoint: .leading, endPoint: .trailing)
                 .frame(height: 20)
                 .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-                .overlay { RoundedRectangle(cornerRadius: 4, style: .continuous).strokeBorder(.black.opacity(0.35)) }
+                .overlay { RoundedRectangle(cornerRadius: 4, style: .continuous).strokeBorder(ColorRole.edge.color) }
                 .accessibilityHidden(true)
             HStack(spacing: 20) {
                 swatch("Shadows", settings.shadows) { pick(false) }

@@ -56,16 +56,12 @@ struct MoveToolBar: View {
 
     private var held: NSEvent.ModifierFlags { HeldModifiers.shared.flags }
 
-    /// The bar's align buttons wait for two layers, or a selection to line one up with, as in familiar editors;
-    /// lining one layer up with the canvas is in the ••• menu.
-    private var canAlignFromBar: Bool {
-        session.canAlignLayers && (session.selectedLayerIDs.count > 1 || session.selection?.isEmpty == false)
-    }
-
+    /// Like the ••• menu and the Properties panel: one layer lines up with the canvas (or a selection), several with
+    /// their bounds.
     private func alignButtons(_ alignments: [LayerAlignment]) -> some View {
         ForEach(alignments, id: \.self) { alignment in
             OptionsBarIconButton(title: "Align " + alignment.rawValue, symbol: alignment.symbol) { session.alignLayers(alignment) }
-                .disabled(!canAlignFromBar)
+                .disabled(!session.canAlignLayers)
         }
     }
 

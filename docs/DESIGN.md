@@ -363,10 +363,11 @@ from a softer selection keeps the softer edge. Select Subject runs Select ▸ Su
 or Option held. The bar has no Deselect button or selection readout: ⌘D and the Select menu cover them, and Expand and
 Contract live in Select ▸ Modify.
 
-The Move bar's align buttons are dimmed until two or more layers are selected, or a selection is there to line one
-layer up with; the distribute buttons (vertical and horizontal spacing) until three are. The ••• menu has every Align
-(Left, Horizontal Centers, Right, Top, Vertical Centers, Bottom Edges) and Distribute (Horizontal and Vertical
-Centers, Horizontal and Vertical Spacing) command, and with one layer selected it lines it up with the canvas.
+The Move bar's align buttons work with any layer selected: one layer lines up with the canvas (or a selection), several
+with their bounds, as in the ••• menu and the Properties panel. The distribute buttons (vertical and horizontal
+spacing) are dimmed until three layers are selected. The ••• menu has every Align (Left, Horizontal Centers, Right,
+Top, Vertical Centers, Bottom Edges) and Distribute (Horizontal and Vertical Centers, Horizontal and Vertical Spacing)
+command.
 
 The Free Transform bar replaces the Move bar while a Free Transform waits for Commit: Edit ▸ Free Transform (⌘T; the
 selected pixels when there is a selection), Edit ▸ Transform ▸ Distort, or a press on a handle of the transform box

@@ -134,5 +134,5 @@ An adjustment layer has an `adjustment` object and no `imageFile`, and it affect
 
 ## More
 
-- Folders, text layers, layer effects and everything else the format holds: [project-format.md](project-format.md).
+- Groups, text layers, layer effects and everything else the format holds: [project-format.md](project-format.md).
 - Limits: canvases up to 30,000 pixels on a side; layers and masks count toward a memory budget that scales with the Mac.

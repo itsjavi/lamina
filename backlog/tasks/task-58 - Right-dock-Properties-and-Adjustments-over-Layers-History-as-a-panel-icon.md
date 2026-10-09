@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-09 02:14'
-updated_date: '2026-10-09 05:46'
+updated_date: '2026-10-09 05:55'
 labels: []
 milestone: m-5
 dependencies:
@@ -28,7 +28,7 @@ Today one 252 pt side panel switches between Layers and History. Familiar editor
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 The right side holds a column of panel icons (History) and a dock of two tab groups, Properties | Adjustments above Layers, sized as in docs/DESIGN.md
-- [ ] #2 The dock can be resized within its range and the split between groups dragged, and both are remembered
+- [x] #2 The dock can be resized within its range and the split between groups dragged, and both are remembered
 - [x] #3 Clicking the History icon opens the History panel beside the dock and clicking it again closes it; History keeps today's behavior
 - [x] #4 Window lists Adjustments, History, Layers and Properties to show or hide them, and Window ▸ Workspace ▸ Reset Essentials restores the layout
 - [x] #5 In a 1500 × 860 pt window the canvas keeps at least 1100 × 740 pt
@@ -71,10 +71,16 @@ Dev-app defaults restored (window frame, appearance, dock keys).
 ![Layers closed from the Window menu, Adjustments in front](../assets/task-58/layers-closed-1500x860.png)
 
 README, website and screenshots: none changed here; TASK-66 updates them for the whole familiar workspace once the dock's panels are filled.
+
+Rebased onto main with TASK-63 and TASK-56 (one conflict in LaminaMain.swift around the app-visibility group: DockCommands kept before TASK-56's new ⌘H comment). swift build clean; full swift test passes (719 app tests in 105 suites, 47, 22).
+AC #2 verified with real input (approved focus-taking check): the Dev build at 1500 x 860 brought to the front, real CGEvent mouse down / drags / up through the HID tap (pointer put back afterwards). The dock's left edge dragged 40 pt left: dock 292 -> 332 pt (tabs moved from x 1218 to 1178, dockWidth 332). The split dragged 60 pt up: Layers' tab row from y 458 to 398 (dockTopHeight 280). Killed and relaunched: tabs at the same positions, so both were remembered. Dev-app defaults restored (window frame; dock keys removed).
+Fix found on the way (commit 'fix: the dock's resize edges…'): the first split drag, grabbed 1 pt below the line, went to the Layers tab row, which sits above the edge's overhanging grab area; DockResizeEdge now has zIndex(1), and the final check grabbed the split 1.5 pt below the line successfully. DESIGN.md notes the 8 pt grab band.
+
+![Dock dragged to 332 pt, split to 280 pt](../assets/task-58/dragged-332-280-1500x860.png)
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Replaced the shared Layers | History side panel with the familiar right side: a 34 pt panel icon column (History) and a 292 pt dock (240–360, resizable from its left edge) holding Properties | Adjustments (340 pt) over Layers, split draggable, all remembered in UserDefaults (DockLayout). Tab groups (DockGroup) have a 26 pt tab row with an underlined front tab and a ≡ menu (Close, Close Tab Group); closed groups collapse and an empty dock gives its width to the canvas. History opens as a floating panel beside the icon column and closes from its icon, keeping today's states, undo and redo. Window lists Adjustments, History, Layers and Properties with check marks, plus Workspace ▸ Essentials (Default) and Reset Essentials. Properties and Adjustments show neutral empty states as slots for TASK-59/60. Verified with DockLayoutTests, the full swift test (all pass) and the Dev build at 1500 × 860 through Accessibility (History toggle and state jump, Window menu checks, collapse, Reset Essentials, persistence across relaunch, canvas about 1115 × 761 pt). AC #2 is left unchecked: the dock and split drags still need a manual check (synthetic drags don't reach a background app).
+Replaced the shared Layers | History side panel with the familiar right side: a 34 pt panel icon column (History) and a 292 pt dock (240–360, resizable from its left edge) holding Properties | Adjustments (340 pt) over Layers, split draggable, all remembered in UserDefaults (DockLayout). Tab groups (DockGroup) have a 26 pt tab row with an underlined front tab and a ≡ menu (Close, Close Tab Group); closed groups collapse and an empty dock gives its width to the canvas. History opens as a floating panel beside the icon column and closes from its icon, keeping today's states, undo and redo. Window lists Adjustments, History, Layers and Properties with check marks, plus Workspace ▸ Essentials (Default) and Reset Essentials. Properties and Adjustments show neutral empty states as slots for TASK-59/60. Verified with DockLayoutTests, the full swift test (all pass after rebasing onto TASK-63 and TASK-56), the Dev build at 1500 × 860 through Accessibility (History toggle and state jump, Window menu checks, collapse, Reset Essentials, canvas about 1115 × 761 pt) and real mouse drags of the dock edge (292 → 332 pt) and the split (340 → 280 pt), both remembered across a relaunch.
 <!-- SECTION:FINAL_SUMMARY:END -->

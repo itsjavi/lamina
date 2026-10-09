@@ -295,7 +295,7 @@ Status: the frame is **shipping** (TASK-58); the panels' contents are **m-5** (T
   button on `activeTool`), then the dock, 292 pt wide by default and 240–360 pt by dragging its left edge. Properties
   | Adjustments sits on top, 340 pt high with its tab row by default; Layers takes the rest. Dragging the line between
   them moves the split; the top group keeps at least 120 pt and Layers at least 160 pt (a split set in a taller window
-  shows clamped). Width, split, closed panels and the top group's front tab are remembered (UserDefaults `dockWidth`,
+  shows clamped). Both lines take the drag across an 8 pt band centered on them, with the resize pointer. Width, split, closed panels and the top group's front tab are remembered (UserDefaults `dockWidth`,
   `dockTopHeight`, `dockClosedPanels`, `dockTopTab`).
 - The panel menu (≡) holds Close (the front tab's panel) and Close Tab Group. A group with every panel closed collapses
   and gives its height to the other; with every dock panel closed only the icon column stays and the canvas takes the

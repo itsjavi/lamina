@@ -109,15 +109,9 @@ enum PlannedFeature: String, CaseIterable, Identifiable {
         return path
     }
 
-    /// The SF Symbol of a planned tool (`ToolIcon` draws the Palette Knife itself).
+    /// The SF Symbol of an options-bar placeholder that shows one (planned tools' icons are `ToolIcon`'s).
     var symbol: String {
         switch self {
-        case .penTool: "pencil.tip"
-        case .pathSelectionTool: "cursorarrow"
-        case .directSelectionTool: "point.topleft.down.to.point.bottomright.curvepath"
-        case .mixerBrushTool: "paintbrush"
-        case .polygonTool: "hexagon.fill"
-        case .starTool: "star.fill"
         case .strokeOptions: "lineweight"
         case .pathOperations: "square.on.square"
         default: "hammer"

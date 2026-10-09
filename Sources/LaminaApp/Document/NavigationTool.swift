@@ -97,36 +97,6 @@ enum NavigationTool: String, CaseIterable {
         default: "\(title) Tool" + (key.map { " (\($0))" } ?? "")
         }
     }
-    /// The SF Symbol for tools without an icon of their own (`ToolIcon`).
-    var symbol: String {
-        switch self {
-        case .move: "arrow.up.left.and.arrow.down.right"
-        case .rectangularMarquee: "rectangle.dashed"
-        case .ellipticalMarquee: "circle.dashed"
-        case .lasso, .polygonalLasso: "lasso"
-        case .objectSelection, .magicWand: "wand.and.stars"
-        case .crop: "crop"
-        case .eyedropper: "eyedropper"
-        case .spotHealing: "bandage"
-        case .brush: "paintbrush.pointed"
-        case .cloneStamp: "seal"
-        case .eraser: "eraser"
-        case .gradient: "square.bottomhalf.filled"
-        case .paintBucket: "drop.halffull"
-        case .blur: "drop"
-        case .smudge: "hand.point.up.left"
-        case .dodge: "sun.max"
-        case .burn: "flame"
-        case .type: "textformat"
-        case .rectangle: "rectangle.fill"
-        case .ellipse: "oval.fill"
-        case .line: "line.diagonal"
-        case .hand: "hand.draw"
-        case .zoom: "magnifyingglass"
-        case .liquify: "water.waves"
-        case .idle: "circle.slash"
-        }
-    }
     /// What the status bar says the tool does, and its keys.
     var hint: String {
         switch self {
@@ -202,6 +172,10 @@ enum ToolSlot: CaseIterable {
         }
     }
 
+    /// Whether a separator goes above it in the toolbar: the selection tools, Crop, Eyedropper, the painting and
+    /// retouching tools, the type and vector tools, then navigation.
+    var startsGroup: Bool { [.crop, .eyedropper, .spotHealing, .pen, .hand].contains(self) }
+
     /// Lowercase, as the canvas reads keys; nil for Path Selection, whose A stays No Tool until TASK-28 ships it.
     var key: String? {
         switch self {
@@ -234,6 +208,13 @@ enum SlotItem: Hashable {
     case tool(NavigationTool)
     case planned(PlannedFeature)
 
+    /// The name its flyout lists: "Elliptical Marquee Tool".
+    var name: String {
+        switch self {
+        case .tool(let tool): "\(tool.title) Tool"
+        case .planned(let feature): feature.name
+        }
+    }
     /// Accessibility label: "Pen Tool (P)".
     var label: String {
         switch self {
@@ -254,6 +235,13 @@ extension EditorSession {
     /// The tool a slot shows and its key picks: the one last used there, or its first; nil in a slot of planned tools.
     /// A planned tool is never the last used: choosing one leaves the slot as it was.
     func tool(in slot: ToolSlot) -> NavigationTool? { slotTools[slot] ?? slot.tools.first }
+
+    /// What a toolbar slot shows and a click on it chooses: the active tool when it's the slot's, else the slot's tool,
+    /// else (Pen, Path Selection) its first planned item.
+    func shownItem(in slot: ToolSlot) -> SlotItem {
+        if slot.tools.contains(tool) { return .tool(tool) }
+        return tool(in: slot).map(SlotItem.tool) ?? slot.items[0]
+    }
 
     /// Whether `key` (lowercase) picks a tool: a slot's key, or A for No Tool.
     static func isToolKey(_ key: String) -> Bool { key == "a" || ToolSlot.allCases.contains { $0.key == key } }

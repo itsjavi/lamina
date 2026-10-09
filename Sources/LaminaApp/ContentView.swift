@@ -76,7 +76,7 @@ struct ContentView: View {
             OptionsBar(session: session) { toolHeaders }
             Divider()
             HStack(spacing: 0) {
-                toolRail
+                ToolbarColumn(session: session)
                 Divider()
                 VStack(spacing: 0) {
                     if session.showsRulers, session.document != nil {
@@ -251,31 +251,6 @@ struct ContentView: View {
     private func requestNewCanvas() {
         if let applicationDelegate { Task { await applicationDelegate.projects.newCanvas() } }
         else { session.clearProject() }
-    }
-    private var toolRail: some View {
-        // Scrolls when the window is too short for every tool, rather than pushing the bars above and below away.
-        IndicatorlessScrollView {
-        VStack(spacing: 4) {
-            // Every slot's items, in toolbar order, planned tools included; Liquify (Filter menu) and No Tool have none.
-            ForEach(ToolSlot.allCases.flatMap(\.items), id: \.self) { item in
-                let active = item == .tool(session.tool)
-                Button { session.choose(item) } label: {
-                    ToolIcon(item: item)
-                    .frame(width: 36, height: 36)
-                        .background(active ? ColorRole.activeTool.color : .clear,
-                                    in: RoundedRectangle(cornerRadius: 7))
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain).help(item.helpTag).accessibilityLabel(item.label)
-                .foregroundStyle(active ? ColorRole.text.color : ColorRole.icon.color)
-                .accessibilityAddTraits(active ? .isSelected : [])
-            }
-            ColorPaletteControls(session: session).padding(.top, 8)
-        }
-        .padding(.top, 16).padding(.bottom, 12)
-        .frame(width: 56)
-        }
-        .frame(width: 56)
     }
     private var welcome: some View {
         NewCanvasSheet(session: session,

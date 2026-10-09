@@ -13,7 +13,7 @@ import UniformTypeIdentifiers
             characters: "i", charactersIgnoringModifiers: "i", isARepeat: false, keyCode: 34))
         canvas.keyDown(with: event)
         #expect(session.tool == .eyedropper)
-        #expect(NavigationTool.eyedropper.symbol == "eyedropper")
+        #expect(ToolIcon.symbol(for: .tool(.eyedropper)) == "eyedropper")
     }
 
     @Test func commandZoomUpdatesOnKeyDownAndRepeat() throws {

@@ -1,9 +1,11 @@
 ---
 id: TASK-55
 title: 'Toolbar in familiar groups, with flyouts and new icons'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-09 02:14'
+updated_date: '2026-10-09 06:04'
 labels: []
 milestone: m-5
 dependencies:
@@ -38,3 +40,15 @@ The 56 pt tool rail lists 16 tools in Lamina's own order, and the Move tool's re
 <!-- DOD:BEGIN -->
 - [ ] #1 docs/DESIGN.md matches what shipped
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. UI/Toolbar.swift: ToolbarColumn (44 pt, chrome) with one ToolbarSlot per ToolSlot in order, separators before Crop, Eyedropper, Spot Healing, Pen and Hand (ToolSlot.startsGroup), 32 x 30 slots with activeTool/hover backgrounds, corner triangle when a slot has more than one item, ColorPaletteControls at the bottom; IndicatorlessScrollView fallback for short windows.
+2. Slot interaction in AppKit (ToolSlotControl over the SwiftUI drawing): click chooses the shown item through choose(_:), holding 0.35 s, right-click or control-click pops a native NSMenu flyout (icon, name, key as key equivalent, current item checked, planned items with their in-progress help tag); hover tracking; accessibility button with label 'Tool name (Key)', selected when active, press and show-menu actions; tool tip = help tag.
+3. EditorSession.shownItem(in:) for what a slot shows (active tool in the slot, else last used, else first item).
+4. ToolIcon: the one tool -> icon mapping (move NavigationTool.symbol into it); Move four-headed arrow, Hand hand.raised, new DodgeToolIcon (paddle), BurnToolIcon (cupped hand), serif T for Horizontal Type; ToolIcon.menuImage for the flyout.
+5. ContentView: replace toolRail with ToolbarColumn.
+6. Tests: ToolbarTests (slot display last-used/active, separators, flyout contents and choosing, labels and selected state, height fits 860 pt); update CanvasEntryTests symbol check.
+7. DESIGN.md: Toolbar status shipping, iconography notes, workspace layout; screenshots light/dark and a flyout in backlog/assets/task-55/.
+<!-- SECTION:PLAN:END -->

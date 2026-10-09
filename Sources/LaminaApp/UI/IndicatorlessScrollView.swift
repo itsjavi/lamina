@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The tool rail scrolls when it overflows without showing or reserving space
+/// The toolbar scrolls when it overflows without showing or reserving space
 /// for a macOS scroller, even when the system setting always shows scroll bars.
 struct IndicatorlessScrollView<Content: View>: NSViewRepresentable {
     @ViewBuilder let content: () -> Content
@@ -39,8 +39,9 @@ struct IndicatorlessScrollView<Content: View>: NSViewRepresentable {
         }
 
         func updateDocumentSize() {
-            let height = host.fittingSize.height
-            let size = NSSize(width: 56, height: height)
+            let fitting = host.fittingSize
+            let height = fitting.height
+            let size = NSSize(width: fitting.width, height: height)
             if host.frame.size != size { host.setFrameSize(size) }
             verticalScrollElasticity = height > contentView.bounds.height + 1 ? .allowed : .none
         }

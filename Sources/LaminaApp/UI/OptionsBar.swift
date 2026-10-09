@@ -21,11 +21,6 @@ struct OptionsBar<Settings: View>: View {
     }
 }
 
-/// The 1 × 20 pt line between an options bar's groups.
-struct OptionsBarDivider: View {
-    var body: some View { ColorRole.separator.color.frame(width: 1, height: 20) }
-}
-
 enum OptionsBarStyle {
     /// The toolbar's width in docs/DESIGN.md, so the icon sits over the column it was picked from.
     static let iconSlotWidth: CGFloat = 44

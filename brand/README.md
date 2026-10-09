@@ -6,7 +6,7 @@ substantially, update the affected pieces in the same task.
 | What        | Where                                               | Shows                                                         |
 | ----------- | --------------------------------------------------- | ------------------------------------------------------------- |
 | README      | `README.md`                                         | Pitch (decision-7), why, feature list, screenshot table, build |
-| Website     | `web/index.html`, `web/styles.css`                  | Hero, why, feature rows, details grid, build steps            |
+| Website     | `web/index.html`, `web/styles.css`                  | Hero, why, feature rows, details grid, download and build     |
 | Icon        | `web/assets/icon.png`, `favicon.png`, `apple-touch-icon.png` | Renders of `Resources/AppIcon.icon` (`scripts/app-icon.swift`) |
 | Screenshots | `web/assets/*.webp`                                 | Used by both the README and the website                       |
 | Social card | `scripts/og-image.html` → `web/assets/og-image.jpg` | Icon, headline, intro text and the hero screenshot            |

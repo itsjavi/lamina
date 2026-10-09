@@ -638,6 +638,10 @@ h1 {
   align-items: center;
 }
 
+.get .actions {
+  justify-content: flex-start;
+}
+
 .code-block {
   position: relative;
   background: var(--terminal-bg);

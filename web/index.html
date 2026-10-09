@@ -54,6 +54,7 @@
         "description": "A native macOS image editor for photo editing and compositing, with layers, masks, adjustment layers and Camera Raw in a familiar layout, in light and dark.",
         "url": "https://itsjavi.com/lamina/",
         "license": "https://opensource.org/licenses/MIT",
+        "downloadUrl": "https://github.com/itsjavi/lamina/releases/latest",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
       }
     </script>
@@ -102,10 +103,14 @@
             shortcuts. No subscription, no account, and AI agents can work on your projects too.
           </p>
           <div class="actions">
-            <a class="button button-primary" href="https://github.com/itsjavi/lamina">View on GitHub</a>
-            <a class="button button-secondary" href="#get">Build it yourself</a>
+            <a class="button button-primary" href="https://github.com/itsjavi/lamina/releases/latest" data-release-download
+              >Download for Mac</a
+            >
+            <a class="button button-secondary" href="https://github.com/itsjavi/lamina">View on GitHub</a>
           </div>
-          <p class="fineprint">macOS 26 on Apple silicon · MIT licensed</p>
+          <p class="fineprint">
+            <span data-release-version>Latest release</span> · macOS 26 on Apple silicon · MIT licensed
+          </p>
         </div>
         <div class="container hero-shot">
           <a href="assets/oil-painting.webp" data-lightbox>
@@ -352,10 +357,19 @@ claude mcp add lamina -- \
         <div class="container get-inner">
           <div>
             <p class="eyebrow">Get it</p>
-            <h2 id="get-title">Build Lamina in a minute.</h2>
+            <h2 id="get-title">Download Lamina.</h2>
             <p class="section-lead">
-              There's no release yet. You need macOS 26 on Apple silicon and Xcode 26; <code>make install</code> builds the
-              app and copies it to <code>/Applications</code>.
+              A disk image for macOS 26 on Apple silicon, signed and notarized by Apple. Updates arrive inside the app, and
+              every <a href="https://github.com/itsjavi/lamina/releases">release</a> lists SHA-256 checksums.
+            </p>
+            <div class="actions">
+              <a class="button button-primary" href="https://github.com/itsjavi/lamina/releases/latest" data-release-download
+                >Download Lamina</a
+              >
+            </div>
+            <p class="fineprint">
+              Or build it yourself with Xcode 26: <code>make install</code> builds the app and copies it to
+              <code>/Applications</code>.
             </p>
           </div>
           <div class="code-block">
@@ -395,6 +409,22 @@ make install</code></pre>
     </dialog>
 
     <script>
+      // The download buttons link to the newest release's page; with JavaScript they get its DMG and version from
+      // GitHub's API (which allows other origins), so a release never needs a site deploy. Pre-releases are never
+      // "latest".
+      fetch("https://api.github.com/repos/itsjavi/lamina/releases/latest", {
+        headers: { Accept: "application/vnd.github+json" },
+      })
+        .then((response) => (response.ok ? response.json() : Promise.reject()))
+        .then((release) => {
+          const version = release.tag_name?.replace(/^v/, "");
+          const dmg = release.assets?.find((asset) => asset.name.endsWith(".dmg"));
+          if (!version || !/^[0-9][0-9A-Za-z.-]*$/.test(version) || !dmg) return;
+          for (const el of document.querySelectorAll("[data-release-version]")) el.textContent = `Version ${version}`;
+          for (const el of document.querySelectorAll("[data-release-download]")) el.href = dmg.browser_download_url;
+        })
+        .catch(() => {});
+
       // Screenshots open in an overlay instead of navigating away; the links still work without JavaScript.
       const lightbox = document.querySelector(".lightbox");
       const lightboxImage = lightbox.querySelector("img");

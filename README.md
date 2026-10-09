@@ -172,10 +172,13 @@ and `CODEX_MCP_PROTOCOL_VERSION=2026-07-28` in the server's environment).
 - macOS 26 or later on Apple silicon
 - Xcode 26 or later to build (Swift 6.2, and actool for the icon)
 
-## Building
+## Download
 
-There's no release yet; build it from source. Releases will be published on
-[GitHub Releases](https://github.com/itsjavi/lamina/releases).
+Get the DMG from the [latest release](https://github.com/itsjavi/lamina/releases/latest): signed with Developer ID and
+notarized by Apple, and it updates itself. Each release lists SHA-256 checksums; check a download with
+`shasum -a 256 -c SHA256SUMS --ignore-missing`.
+
+## Building
 
 ```bash
 git clone https://github.com/itsjavi/lamina.git

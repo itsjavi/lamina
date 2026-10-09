@@ -73,8 +73,15 @@ struct ColorRoleTests {
     @Test func thePasteboardFollowsTheAppearance() throws {
         let canvas = CanvasView(session: EditorSession())
         canvas.frame = CGRect(x: 0, y: 0, width: 40, height: 30)
+        // In a window that is never shown: a view outside one keeps no display state.
+        let window = NSWindow(contentRect: canvas.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = canvas
+        defer { window.contentView = nil }
         for appearance in [light, dark] {
+            canvas.needsDisplay = false
             canvas.appearance = appearance
+            #expect(canvas.needsDisplay, "a change of appearance redraws the canvas, the GPU's frame included")
             let context = try #require(CGContext(data: nil, width: 40, height: 30, bitsPerComponent: 8, bytesPerRow: 160,
                 space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
             NSGraphicsContext.saveGraphicsState()

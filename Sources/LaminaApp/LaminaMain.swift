@@ -112,7 +112,7 @@ struct LaminaMain: App {
                             .disabled(applicationDelegate.updater == nil)
                     }
                     CommandGroup(replacing: .appSettings) {
-                        SettingsLink { Text("Settings…") }.configuredKeyboardShortcut("k")
+                        Button("Settings…") { SettingsWindow.shared.show() }.configuredKeyboardShortcut("k")
                     }
                     CommandGroup(after: .toolbar) {
                         // With a dialog's preview open (Export JPEG), these zoom that preview rather than the canvas.
@@ -443,6 +443,5 @@ struct LaminaMain: App {
                         .disabled(!session.canEditLayers || session.activeLayer == nil)
                 }
             }
-        Settings { SettingsView() }
     }
 }

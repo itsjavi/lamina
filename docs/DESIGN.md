@@ -107,8 +107,9 @@ No literal grays (`Color(white:)`, hex) in interface code. The roles live in `So
   are `selection`.
 - Until the frame is rebuilt (TASK-52, TASK-55, TASK-58), the bars, tool rail and status bar sit on `chrome`, the side
   panels on `panel`, and the active document tab is a `control` capsule with an `edge` outline.
-- Appearance follows macOS and switches live. Lamina ▸ Settings… (⌘K) opens the Settings window, whose Appearance
-  setting (System, Light, Dark, as radio buttons) is saved as `appearance` in UserDefaults and applied to the whole app
+- Appearance follows macOS and switches live. Lamina ▸ Settings… (⌘K) opens the Lamina Settings window (an AppKit
+  window, `SettingsWindow` in `UI/SettingsView.swift`: a SwiftUI `Settings` scene would keep its own ⌘, item), whose
+  Appearance setting (System, Light, Dark, as radio buttons) is saved as `appearance` in UserDefaults and applied to the whole app
   through `NSApp.appearance`, alerts and open and save panels included. **Shipping** (TASK-51).
 - The mockup's colored change dots are review aids, not app colors.
 

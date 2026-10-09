@@ -11,6 +11,20 @@ If you've been asked to make or change an image in a `.lam` project, you don't n
 [docs/writing-lamina-projects.md](docs/writing-lamina-projects.md): it covers the file format, the rules that make a project
 load, and how to write it safely while it's open, so the person can watch the canvas update as you work.
 
+## The interface and its spec
+
+[docs/DESIGN.md](docs/DESIGN.md) is the maintained spec for everything people see (decision-9): a familiar layout and
+the names people know from Photoshop, Affinity and similar editors, drawn with native controls, in light and dark.
+
+- Read it before changing the interface, and update it in the same commit as any change to a tool, menu item, panel,
+  dialog, shortcut, color or size. Before finishing such a task, check that the spec matches what shipped.
+- New features go where familiar editors put them, under the names people already know; record the placement in the
+  spec.
+- A planned feature with an open Backlog task shows its control as an in-progress placeholder (the spec lists them).
+  Creating such a task adds its placeholder row; shipping or dropping the task removes it.
+- Milestone m-5 (Familiar workspace, TASK-51 to TASK-66) comes before any other new feature: don't start feature work
+  outside it until m-5 is done. Fixes and releases can still ship.
+
 ## Commands
 
 | Task                     | Command                                                         |
@@ -46,7 +60,8 @@ load, and how to write it safely while it's open, so the person can watch the ca
 | `Tests/LaminaTestHost`     | Starts AppKit's event loop with a document window in the test process (see below)           |
 | `Resources/`                   | `Info.plist`, `LaminaApp.entitlements` (sandbox), `lamina.entitlements`, `PrivacyInfo.xcprivacy`, `AppIcon.icon` (Icon Composer; compiled by actool in `scripts/build-app.sh`) |
 | `scripts/`                     | `build-app.sh` (assembles, compiles the icon, embeds Sparkle, signs), `release.sh`, `appcast.sh`, `bump-version.sh`, `acknowledgements.swift` (Credits.html), `app-icon.swift` (draws the icon's layers), `demo-project.swift` and `window-screenshot.swift` (README and website screenshots), `og-image.html` (social card), `metrics.swift` (`make metrics`) |
-| `docs/`                        | The `.lam` format (`project-format.md`, `writing-lamina-projects.md`), releasing (`releasing.md`) and performance notes |
+| `docs/`                        | The interface spec (`DESIGN.md`) and its approved mockup (`references/redesign_v2.html`), the `.lam` format (`project-format.md`, `writing-lamina-projects.md`), releasing (`releasing.md`) and performance notes |
+| `backlog/`                     | Planning with [Backlog.md](https://github.com/MrLesk/Backlog.md): tasks, milestones, decisions, drafts. Change records with the `backlog` CLI (`backlog task list --plain`, `backlog instructions`) |
 | `web/`, `brand/`               | The website (https://itsjavi.com/lamina/) and its assets, shared with the README; `brand/README.md` says what to update when a feature ships or the UI changes, and how screenshots are taken |
 | `.github/workflows/`           | `ci.yml` (tests), `release.yml` (tag-driven release), `pages.yml` (deploys `web/`)          |
 

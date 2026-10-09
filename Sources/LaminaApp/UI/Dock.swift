@@ -35,7 +35,7 @@ struct Dock: View {
                 if let front = layout.topFront {
                     DockGroup(tabs: layout.openPanels(of: DockPanel.topGroup),
                               selection: Binding(get: { front }, set: { layout.topSelection = $0 }), layout: layout) { panel in
-                        if panel == .adjustments { AdjustmentsPanel(session: session) } else { PropertiesPanel(session: session) }
+                        if panel == .adjustments { AdjustmentsPanel(session: session, layout: layout) } else { PropertiesPanel(session: session) }
                     }
                     .frame(height: showsLayers ? DockLayout.topHeight(layout.topHeight, in: proxy.size.height) : nil)
                     if showsLayers {

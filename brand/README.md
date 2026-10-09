@@ -36,23 +36,31 @@ so they are reproducible:
 make dev
 swift scripts/demo-project.swift "/private/tmp/lamina-demo/Golden Hour.lam"
 P=~/Library/Containers/com.itsjavi.lamina.dev/Data/Library/Preferences/com.itsjavi.lamina.dev.plist
-defaults write "$P" "NSWindow Frame editor" "36 25 1440 900 0 0 1512 949 "   # window size, before launching
+defaults read "$P"                                    # note what you change, to put it back afterwards
+defaults write "$P" "NSWindow Frame editor" "6 89 1500 860 0 75 1512 874 "  # window size (DESIGN.md's target)
+defaults write "$P" tool.grid -bool false             # no layout grid over the canvas
+defaults write "$P" appearance dark                   # or light; delete the key afterwards
 open -g -n -a "$PWD/build/Lamina Dev.app" "/private/tmp/lamina-demo/Golden Hour.lam"
-swift scripts/window-screenshot.swift "Lamina Dev" /private/tmp/shot           # the document window
-swift scripts/window-screenshot.swift "Lamina Dev" /private/tmp/shot --panels  # with its floating panels over it
+PID=$(pgrep -nf "$PWD/build/Lamina Dev.app")
+swift scripts/window-screenshot.swift "Lamina Dev" /private/tmp/shot --pid $PID           # the document window
+swift scripts/window-screenshot.swift "Lamina Dev" /private/tmp/shot --panels --pid $PID  # with its floating panels
+kill $PID
 ```
 
-Current shots (window 1440×874 points):
+Current shots (window 1500×860 points, rulers on, grid off):
 
 | File              | Setup                                                                       |
 | ----------------- | --------------------------------------------------------------------------- |
-| `screenshot.webp` | The demo as it opens: the "Golden hour" title selected with the Move tool    |
-| `camera-raw.webp` | Sky layer selected, Filter › Camera Raw Filter…, `--panels`                  |
-| `curves.webp`     | Warm grade selected, Layer › Layer Content Options…, `--panels`              |
-| `oil-painting.webp` | `scripts/oil-painting-project.swift`'s seascape as it opens, 2400 wide. Showcases agent painting (strokes are generated outside the app until the agent painting milestone lands) |
+| `screenshot.webp` | Dark. The demo as it opens: the "Golden hour" title selected with the Move tool, Properties showing the Type Layer |
+| `camera-raw.webp` | Dark. Sky layer selected, Filter › Camera Raw Filter…, `--panels`           |
+| `curves.webp`     | Light. Warm grade selected, so Properties shows its Curves                  |
+| `oil-painting.webp` | Dark. `scripts/oil-painting-project.swift`'s seascape as it opens, 2400 wide. Showcases agent painting (strokes are generated outside the app until the agent painting milestone lands) |
 
-Selecting layers and choosing menu commands in the background takes an agent with background app control (clicks on
-the Layers panel, menu commands by title). Convert and size them like the existing files:
+One shot is light and the rest dark, so the pages show both appearances without a pair of every image. Select layers
+with `lamina --pid $PID select-layer --document <id> --layer <id>` (ids from `lamina --pid $PID list-documents`), and
+choose menu commands with `swift scripts/menu-command.swift $PID Filter "Camera Raw Filter…"` (Accessibility's press
+action on the item, so the calling app needs Privacy & Security › Accessibility); neither sends mouse or key events.
+Convert and size them like the existing files:
 
 ```bash
 cwebp -q 86 -m 6 -resize 2400 0 shot.png -o web/assets/screenshot.webp   # hero: 2400 wide
@@ -61,13 +69,13 @@ cwebp -q 86 -m 6 -resize 1600 0 shot.png -o web/assets/camera-raw.webp   # other
 
 Gotchas:
 
-- The app is always dark, so there is no light variant.
+- The window frame default is shared by every copy of the Dev build; set it before launching and restore it (and any
+  other default you changed) when done.
 - The last four numbers of the window frame are the screen's visible frame; a window taller than it is shortened.
-- Floating panels hide while the app is in the background. `--panels` still captures them, but they can't be clicked:
-  quit the Dev build (`pkill -TERM -f "Lamina Dev.app/Contents/MacOS/Lamina"`) and launch it again for the next shot.
+- Floating panels hide while the app is in the background. `--panels` still captures them, but nothing can close them
+  without a key press: quit the Dev build (`kill $PID`) and launch it again for the next shot.
 - Background windows are never key, so traffic lights look inactive. Acceptable.
-- Layer effects open only from the Layers panel's effects menu, which background control can't open; take that one by
-  hand if it's wanted.
+- The appearance default is read at launch; quit and launch again after changing it.
 
 ## Numbers on the website
 

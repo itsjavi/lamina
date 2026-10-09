@@ -1,22 +1,28 @@
 // Captures the windows of a running app without activating it (the agents' Dev build), for the README and website
 // screenshots (brand/README.md). By default one PNG per document window; with --panels, the document window with its
-// floating panels (Curves, Camera Raw, Effects…) drawn over it where they sit, as one PNG. A panel of an app in the
-// background is off screen but can still be captured.
-//   swift scripts/window-screenshot.swift "Lamina Dev" /private/tmp/shot [title-substring] [--panels]
+// floating panels (Camera Raw, filter and adjustment dialogs, Layer Style…) drawn over it where they sit, as one PNG. A
+// panel of an app in the background is off screen but can still be captured. --pid picks one copy when several run.
+//   swift scripts/window-screenshot.swift "Lamina Dev" /private/tmp/shot [title-substring] [--panels] [--pid <pid>]
 import AppKit
 
 var args = Array(CommandLine.arguments.dropFirst())
 let withPanels = args.contains("--panels")
 args.removeAll { $0 == "--panels" }
+var pid: Int?
+if let index = args.firstIndex(of: "--pid"), index + 1 < args.count {
+    pid = Int(args[index + 1])
+    args.removeSubrange(index...index + 1)
+}
 guard args.count >= 2 else {
-    print("usage: window-screenshot <owner> <out-prefix> [title] [--panels]")
+    print("usage: window-screenshot <owner> <out-prefix> [title] [--panels] [--pid <pid>]")
     exit(64)
 }
 let owner = args[0], prefix = args[1], titleFilter = args.count > 2 ? args[2] : nil
 
 struct Window { let id: Int; let title: String; let bounds: CGRect; let layer: Int }
 let windows: [Window] = (CGWindowListCopyWindowInfo([.optionAll], kCGNullWindowID) as? [[String: Any]] ?? []).compactMap { info in
-    guard info[kCGWindowOwnerName as String] as? String == owner, let id = info[kCGWindowNumber as String] as? Int,
+    guard info[kCGWindowOwnerName as String] as? String == owner,
+          pid.map({ info[kCGWindowOwnerPID as String] as? Int == $0 }) ?? true, let id = info[kCGWindowNumber as String] as? Int,
           let raw = info[kCGWindowBounds as String] as? [String: Double] else { return nil }
     let bounds = CGRect(x: raw["X"] ?? 0, y: raw["Y"] ?? 0, width: raw["Width"] ?? 0, height: raw["Height"] ?? 0)
     return Window(id: id, title: info[kCGWindowName as String] as? String ?? "", bounds: bounds, layer: info[kCGWindowLayer as String] as? Int ?? 0)

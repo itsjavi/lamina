@@ -1,5 +1,5 @@
 // Writes the demo project the README and website screenshots are taken from: a sunset built from ordinary layers (a
-// gradient sky, a sun with an outer glow, two hill silhouettes, a lake faded by a mask, a live text title in a folder
+// gradient sky, a sun with an outer glow, two hill silhouettes, a lake faded by a mask, a live text title in a group
 // and a Curves grade), so the Layers panel shows most of what a project can hold. It writes the package by hand, as
 // docs/writing-lamina-projects.md describes, so it also checks that guide.
 //   swift scripts/demo-project.swift "/private/tmp/lamina-demo/Golden Hour.lam"
@@ -61,7 +61,7 @@ func layer(_ id: UUID, _ name: String, _ frame: [String: Any], image: Bool = tru
     return record.merging(extra) { $1 }
 }
 
-let sky = UUID(), sun = UUID(), farHills = UUID(), nearHills = UUID(), lake = UUID(), folder = UUID(), title = UUID(), grade = UUID()
+let sky = UUID(), sun = UUID(), farHills = UUID(), nearHills = UUID(), lake = UUID(), group = UUID(), title = UUID(), grade = UUID()
 
 try png(sky, width, height) { gradient($0, [(0, color(0x1F2556)), (0.45, color(0x8C3F6E)), (0.75, color(0xF0865A)), (1, color(0xFFC77D))],
                                       from: .zero, to: CGPoint(x: 0, y: 1080)) }
@@ -124,9 +124,9 @@ let manifest: [String: Any] = [
         layer(farHills, "Far hills", transform(0, 700, width, 620), extra: ["opacity": 0.9]),
         layer(nearHills, "Near hills", transform(0, 780, width, 560)),
         layer(lake, "Lake", transform(0, 1080, width, 420), extra: ["maskFile": lake.uuidString + ".mask.png", "maskEnabled": true]),
-        layer(folder, "Title", canvas, image: false, extra: ["isGroup": true]),
+        layer(group, "Title", canvas, image: false, extra: ["isGroup": true]),
         layer(title, "Golden hour", transform(180, 170, titleWidth, titleHeight), extra: [
-            "parentID": folder.uuidString, "text": style,
+            "parentID": group.uuidString, "text": style,
             "effects": ["shadow": ["angle": 90, "distance": 10, "blur": 30, "red": 0.12, "green": 0.04, "blue": 0.15, "opacity": 0.55]]]),
         layer(grade, "Warm grade", canvas, image: false, extra: ["adjustment": curves, "opacity": 0.8]),
     ],

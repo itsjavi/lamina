@@ -354,8 +354,8 @@ Transform, Flip turns the box over across the reference point as part of the edi
 otherwise it flips the selected layers about their middle at once. Until TASK-62, View ▸ Show Transform Controls stays
 in the View menu with no shortcut. The in-progress menu items ship with TASK-53 in today's menus, as close to these
 places as today's order allows: Save a Copy… after Save As…, Rasterize and Convert to Editable Vectors after Apply
-Layer Mask, Combine Shapes ▸ and Release to Layers after Move Layer Down, Contextual Task Bar above the open documents
-in Window. TASK-62 moves them with the rest.
+Layer Mask, Combine Shapes ▸ and Release to Layers after Move Layer Down, and in Window, Contextual Task Bar between
+the panels and the open documents (in `DockCommands`). TASK-62 moves them with the rest.
 
 - **Lamina:** About Lamina · Check for Updates… │ Settings… ⌘K │ Services ▸ │ Hide Lamina ⌃⌘H · Hide Others ⌥⌘H · Show All │ Quit Lamina ⌘Q
 - **File:** New… ⌘N · New from Clipboard ⌥⌘N · Open… ⌘O · Open Recent ▸ │ Close ⌘W │ Save ⌘S · Save As… ⇧⌘S · Save a Copy… ⌥⌘S (in progress: layered Photoshop files, TASK-27) │ Export ▸ (Quick Export as PNG │ Export As… ⌥⇧⌘W) │ Place Embedded…

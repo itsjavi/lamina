@@ -1,9 +1,11 @@
 import SwiftUI
 
 /// Window ▸ Workspace and the dock's panels, after Bring All to Front and before the open windows. A panel is checked
-/// while it is on screen; choosing a checked panel closes it, any other comes to the front.
+/// while it is on screen; choosing a checked panel closes it, any other comes to the front. The Contextual Task Bar
+/// follows them (in progress, TASK-67).
 struct DockCommands: Commands {
     let layout: DockLayout
+    let session: EditorSession
 
     var body: some Commands {
         CommandGroup(after: .windowArrangement) {
@@ -21,6 +23,8 @@ struct DockCommands: Commands {
                 Toggle(panel.title, isOn: Binding(get: { layout.isVisible(panel) }, set: { _ in layout.toggle(panel) }))
                     .assignableShortcut("Window › \(panel.title)")
             }
+            Divider()
+            PlannedMenuItem(feature: .contextualTaskBar, session: session)
         }
     }
 }

@@ -116,11 +116,6 @@ struct LaminaMain: App {
                     CommandGroup(replacing: .appSettings) {
                         Button("Settings…") { SettingsWindow.shared.show() }.configuredKeyboardShortcut("k")
                     }
-                    // Window: the open documents come after this.
-                    CommandGroup(before: .windowList) {
-                        PlannedMenuItem(feature: .contextualTaskBar, session: session)
-                        Divider()
-                    }
                     CommandGroup(after: .toolbar) {
                         // With a dialog's preview open (Export JPEG), these zoom that preview rather than the canvas.
                         Button("Fit Canvas") {
@@ -188,7 +183,7 @@ struct LaminaMain: App {
                                 .disabled(!session.canClearGuides)
                         }
                     }
-                    DockCommands(layout: DockLayout.shared)
+                    DockCommands(layout: DockLayout.shared, session: session)
                     // ⌘H is kept for View ▸ Extras (docs/DESIGN.md, Shortcut changes), so Hide keeps its place in the
                     // app menu without the shortcut.
                     CommandGroup(replacing: .appVisibility) {

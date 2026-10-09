@@ -75,9 +75,9 @@ Rules:
   at its end when the column is narrow. Busy work ("Working…", "Importing images…") shows in the hint's place.
 - Status: **shipping** (TASK-52). The frame is `ContentView` (`editorStack`); the options bar is `OptionsBar`
   (`UI/OptionsBar.swift`), the tool → icon mapping `ToolIcon` (`UI/ToolIcon.swift`, with a size: 18 pt in the toolbar,
-  16 pt in the options bar), the zoom field `ZoomField` (`UI/StatusBar.swift`); the hint is the tool's `hint`. The
-  toolbar is still the 56 pt rail listing every tool and planned tool, which scrolls at 1500 × 860 pt until TASK-55
-  groups it into slots. The panel icon column and the dock shipped with TASK-58 (see [Dock and panels](#dock-and-panels)): at
+  16 pt in the options bar and flyouts), the zoom field `ZoomField` (`UI/StatusBar.swift`); the hint is the tool's
+  `hint`. The toolbar is `ToolbarColumn` (TASK-55, see [Toolbar](#toolbar)): at 1500 × 860 pt every slot and the colors
+  fit with about 90 pt to spare. The panel icon column and the dock shipped with TASK-58 (see [Dock and panels](#dock-and-panels)): at
   1500 × 860 pt with the dock at its default width the canvas measures about 1115 × 761 pt (at the dock's widest,
   360 pt, about 1047 pt wide).
 
@@ -119,7 +119,7 @@ No literal grays (`Color(white:)`, hex) in interface code. The roles live in `So
   and points; image previews in dialogs (Export, Camera Raw develop, filter previews) sit on `pasteboard`; swatch and well borders are
   `edge`; pressed mode buttons in dialogs and options bars are `activeTool`; selected history states and effect rows
   are `selection`.
-- The options bar, tool rail, status bar and panel icon column sit on `chrome`, the dock's panels on `panel` with
+- The options bar, toolbar, status bar and panel icon column sit on `chrome`, the dock's panels on `panel` with
   their tab rows on `panelHeader`, and the active document tab is a `control` capsule with an `edge` outline.
 - Appearance follows macOS and switches live. Lamina ▸ Settings… (⌘K) opens the Lamina Settings window (an AppKit
   window, `SettingsWindow` in `UI/SettingsView.swift`: a SwiftUI `Settings` scene would keep its own ⌘, item), whose
@@ -146,9 +146,11 @@ Every numeric field uses monospaced digits so values don't jitter while scrubbin
 - SF Symbols first, at the symbol weight that matches 1.5 pt strokes; draw a custom icon only when no symbol reads as
   the tool. Custom icons are SwiftUI shapes (like today's `GradientToolIcon`) with the same stroke weight and corner
   treatment as the symbols around them.
-- Sizes: 18 pt in toolbar slots, 16 pt in options bars, menus and the panel icon column, 15 pt in panels and footers.
+- Sizes: 18 pt in toolbar slots, 16 pt in options bars, menus (the toolbar's flyouts too) and the panel icon column,
+  15 pt in panels and footers.
 - Icons take the `icon` role; the active tool's icon takes `text`. No colored icons except the color swatches.
-- A slot whose group has more than one tool shows a small triangle in its bottom-right corner.
+- A slot whose group has more than one tool shows a small triangle in its bottom-right corner (4 pt, inset 3 pt,
+  `secondaryText`).
 
 | Tool | Icon |
 | --- | --- |
@@ -164,8 +166,8 @@ Every numeric field uses monospaced digits so values don't jitter while scrubbin
 | Eraser | `eraser` |
 | Gradient / Paint Bucket | custom filled square / custom bucket |
 | Blur / Smudge | `drop` / `hand.point.up.left` |
-| Dodge / Burn | custom paddle / custom cupped hand |
-| Horizontal Type | a serif "T" (not "Aa") |
+| Dodge / Burn | custom paddle, solid so it doesn't read as Zoom's magnifier / custom hand cupped under a spot of light |
+| Horizontal Type | a serif "T" (not "Aa"), the system's serif face |
 | Rectangle / Ellipse / Line | `rectangle.fill` / `oval.fill` / `line.diagonal` |
 | Hand / Zoom | `hand.raised` / `magnifyingglass` |
 | Pen (in progress) | `pencil.tip` |
@@ -175,9 +177,11 @@ Every numeric field uses monospaced digits so values don't jitter while scrubbin
 | Stroke options / path operations (shape bars, in progress) | `lineweight` / `square.on.square` |
 | History panel | `clock.arrow.circlepath` |
 
-Until TASK-55 draws the custom icons, Dodge and Burn show `sun.max` and `flame`, and Move, Type and Hand keep the
-symbols they had; the new Eraser, Elliptical Marquee, Smudge, Rectangle, Ellipse and Line already use the symbols above
-(`ToolIcon` in `Sources/LaminaApp/UI/ToolIcon.swift` picks each tool's icon).
+Status: **shipping** (TASK-55). `ToolIcon` (`Sources/LaminaApp/UI/ToolIcon.swift`) is the one tool → icon mapping:
+`ToolIcon.symbol(for:)` gives each symbol, and the custom icons are SwiftUI drawings beside it (`DodgeToolIcon`,
+`BurnToolIcon`, `TypeToolIcon`, `PaletteKnifeToolIcon`; `GradientToolIcon`, `PaintBucketToolIcon`, `CloneStampToolIcon`,
+`PolygonalLassoToolIcon`, `ObjectSelectionToolIcon` sit with their tools' bars), stroked 1.5 pt at 18 pt.
+`ToolIcon.menuImage(for:)` renders them as template images for menus.
 
 ## Elevation and depth
 
@@ -194,11 +198,30 @@ it opens a flyout listing the group's tools with icon, name and key. A tool's ke
 plus the key, with that slot's tool active, picks the next tool in the slot (round to the first), and from any other
 tool picks the slot's last-used one. A held key counts once. Help tags and accessibility labels read "Tool name (Key)".
 Status: the separate tools, their keys and Shift cycling are **shipping** (TASK-54: `NavigationTool` and `ToolSlot` in
-`Sources/LaminaApp/Document/NavigationTool.swift`, with each slot's last tool in `EditorSession.slotTools`); the slot
-column with flyouts is **m-5** (TASK-55). Until then the tool rail lists every slot's items on its own, planned tools
-included. The planned tools in this table are **shipping** as placeholders (TASK-53): `ToolSlot.items` lists them in
+`Sources/LaminaApp/Document/NavigationTool.swift`, with each slot's last tool in `EditorSession.slotTools`); so is the
+slot column with flyouts (TASK-55), described below. The planned tools in this table are **shipping** as placeholders (TASK-53): `ToolSlot.items` lists them in
 flyout order, P shows the Pen's message, and Shift-cycling passes through them (see
 [In-progress placeholders](#in-progress-placeholders)).
+
+The column (`ToolbarColumn`, `Sources/LaminaApp/UI/Toolbar.swift`) is 44 pt wide on `chrome`, 6 pt from the top:
+
+- One 32 × 30 slot per `ToolSlot`, 1 pt apart, with a 22 × 1 pt `separator` line (4 pt above and below) where the
+  table below has a separator (`ToolSlot.startsGroup`). A slot shows `EditorSession.shownItem(in:)`: the active tool
+  when it's the slot's, else the slot's last-used tool, else (Pen, Path Selection) its first planned item. The active
+  slot sits on `activeTool` with its icon in `text`; a hovered one on `hover`; the rest show `icon` on `chrome`. Corners
+  6 pt.
+- A click chooses the shown item through `EditorSession.choose(_:)`, so a planned one shows its message. Holding the
+  mouse 0.35 s, right-clicking or Control-clicking opens the flyout: a native menu beside the slot's top right listing
+  the slot's items in flyout order, each with its 16 pt icon, its name ("Elliptical Marquee Tool") and the slot's key
+  at the right; a checkmark marks the shown item. Held open, dragging onto an item and letting go chooses it. Planned
+  items are listed like the others, with the "· In progress" help tag. The icon is drawn in the item's title, since
+  macOS 27 leaves menu items' own images out of menus.
+- Each slot (`ToolSlotControl`, AppKit, over the SwiftUI drawing) is a button to VoiceOver labeled "Tool name (Key)"
+  and reported selected when active; its Show Menu action opens the flyout. Its help tag is the same label (with
+  "· In progress" for a planned item).
+- The colors follow 10 pt below the last slot (`ColorPaletteControls`): the foreground swatch over the background one,
+  swap (X) at the top right, default colors (D) at the bottom left.
+- The column scrolls, without a scroller, only in a window too short for it (`IndicatorlessScrollView`).
 
 Each tool remembers its settings. Brush and Spot Healing share one tip (size, hardness, opacity); Eraser, Dodge and Burn,
 Blur and Smudge, Clone Stamp and Liquify each keep their own, and settings saved before the split start Eraser, Dodge

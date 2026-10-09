@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-09 02:14'
-updated_date: '2026-10-09 05:19'
+updated_date: '2026-10-09 05:27'
 labels: []
 milestone: m-5
 dependencies: []
@@ -66,6 +66,10 @@ Verification: swift build; swift test (688 app tests, 47 and 22 in the other tar
 ![Move tool at 1500 x 860](../assets/task-52/workspace-frame-1500x860.png)
 
 ![Hand tool bar at 1500 x 860](../assets/task-52/hand-tool-1500x860.png)
+
+Rebased onto main with TASK-54 (357b736, 1e37f3e). One ToolIcon: TASK-54's (tool model from NavigationTool) plus the size parameter, used by the rail (18 pt) and OptionsBar (16 pt); OptionsBar's help/label now use tool.label (No Tool (A) from the model). Title lines that TASK-54 had changed to Text(session.tool.title) are removed in Brush, Lasso and Shape controls; the Liquify bar (in BrushControls) shows inside OptionsBar. The status bar shows session.tool.hint. My rail spacing tweak is dropped in favor of TASK-54's rail (25 tools, scrolls at 1500 x 860 until TASK-55). DESIGN.md merged. swift build and full swift test pass (701 app tests, 47, 22). Re-checked at 1500 x 860: bars and canvas in place, nothing clipped except the scrolling rail.
+
+![After TASK-54 at 1500 x 860](../assets/task-52/after-task-54-1500x860.png)
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

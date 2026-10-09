@@ -283,7 +283,7 @@ divider and 24 × 22 icon button).
 | Lasso / Polygonal Lasso | selection icons │ Feather: · Anti-alias |
 | Object Selection | selection icons │ Sample All Layers · Edge: px (Lamina) · Anti-alias │ Select Subject |
 | Magic Wand | selection icons │ Sample Size: · Tolerance: · Anti-alias · Contiguous · Sample All Layers │ Select Subject |
-| Crop | Ratio (Ratio, Original Ratio, 1:1 (Square), 4:3, 16:9, …) · W ⇄ H · Clear │ … Cancel · Commit |
+| Crop | Ratio (Ratio, Original Ratio, 1:1 (Square), 4:3, 3:4, 16:9, 9:16, 9:20, 2.39:1, then ratios typed before) · W ⇄ H · Clear · the crop's size in px │ … Cancel ⊘ · Commit ✓ (while a crop is pending) |
 | Eyedropper | Show Sampling Ring |
 | Spot Healing Brush | brush picker │ Type: Content-Aware \| Create Texture \| Proximity Match │ Opacity: (Lamina) |
 | Brush | brush picker (Size, Hardness; bristle presets in progress, TASK-46) │ Opacity: · pressure for opacity · Flow: │ Smoothing: │ pressure for size |
@@ -304,6 +304,12 @@ While a mask is targeted, the swatches show their colors in gray and every tool 
 that gray (Rec. 601 weights; the colors themselves are kept for the layer's pixels): black hides, white reveals, and D
 and X give and swap them, as in familiar editors. The toolbar swatch's Black · Hide / White · Reveal pop-over stays for
 picking either quickly.
+
+The Crop bar (`CropControls`, **shipping**, TASK-57): Ratio leaves the crop free and empties W and H; a ratio fills
+them with its sides (Original Ratio with the canvas's pixels). Typing both and pressing Return chooses that ratio and
+remembers it at the end of the pop-up (eight at most, newest first), which replaces the old Custom… item. ⇄ turns the
+ratio on its side (16:9 to 9:16) and Clear goes back to Ratio. Cancel ⊘ and Commit ✓ show while a crop is pending;
+Escape and Return on the canvas do the same.
 
 The painting bars (`BrushControls`, **shipping**, TASK-57) start with the brush picker (`BrushPicker`,
 `UI/BrushPicker.swift`): the tip drawn in `text`, solid to its hardness and fading to its edge, with the size in pixels

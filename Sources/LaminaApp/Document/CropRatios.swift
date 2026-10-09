@@ -4,9 +4,17 @@ import Observation
 /// The Crop tool's ratio choices, written "W:H".
 nonisolated enum CropRatio {
     /// What the picker always offers, in order. "Free" has no ratio; "Original" is the canvas's own.
-    static let builtIn = ["Free", "Original", "1:1", "4:3", "3:4", "16:9", "9:16"]
-    /// The picker's last entry, which asks for a ratio to type rather than being one.
-    static let customTag = "Custom…"
+    static let builtIn = ["Free", "Original", "1:1", "4:3", "3:4", "16:9", "9:16", "9:20", "2.39:1"]
+
+    /// The picker's name for a choice, as familiar editors write them: "Ratio" (free), "Original Ratio", "1:1 (Square)".
+    static func title(_ choice: String) -> String {
+        switch choice {
+        case "Free": "Ratio"
+        case "Original": "Original Ratio"
+        case "1:1": "1:1 (Square)"
+        default: choice
+        }
+    }
     /// Sides above this make no sensible ratio and only overflow the picker.
     static let largestSide = 10_000.0
 

@@ -220,12 +220,26 @@ extension EditorSession {
         if cropRatioChoice == "Original" { return document.map { CGFloat($0.width) / CGFloat($0.height) } }
         return CropRatio.value(cropRatioChoice)
     }
-    /// A ratio typed in Custom…: remembered with the others, chosen, and applied to the frame.
+    /// A ratio typed in the bar's W and H: remembered with the others, chosen, and applied to the frame.
     func useCustomCropRatio(width: Double, height: Double, remembering ratios: CustomCropRatios = .shared) {
         guard let text = ratios.add(width: width, height: height) else { return }
         cropRatioChoice = text
         changeCropRatio()
     }
+    /// The W and H the bar shows for the ratio chosen: its two sides, the canvas's for Original, none for Free.
+    var cropRatioSides: (width: Double, height: Double)? {
+        if cropRatioChoice == "Original" { return document.map { (Double($0.width), Double($0.height)) } }
+        let sides = cropRatioChoice.split(separator: ":")
+        guard CropRatio.value(cropRatioChoice) != nil, let width = Double(sides[0]), let height = Double(sides[1]) else { return nil }
+        return (width, height)
+    }
+    /// ⇄: the same ratio turned on its side, 4:3 to 3:4.
+    func swapCropRatio(remembering ratios: CustomCropRatios = .shared) {
+        guard let sides = cropRatioSides else { return }
+        useCustomCropRatio(width: sides.height, height: sides.width, remembering: ratios)
+    }
+    /// Clear: back to a free crop, whatever the frame's shape.
+    func clearCropRatio() { cropRatioChoice = "Free" }
     func cancelCrop() { cropRect = nil }
     func changeCropRatio() {
         guard let rect = visibleCropRect, let ratio = cropRatio else { return }

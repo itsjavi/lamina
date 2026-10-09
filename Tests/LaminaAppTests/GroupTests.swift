@@ -78,7 +78,7 @@ struct GroupTests {
         session.addBlankLayer()
         let child = try #require(session.activeLayerID)
         let snapshot = try #require(session.projectSnapshot())
-        #expect(snapshot.manifest.version == 11)
+        #expect(snapshot.manifest.version == 12)
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("Groups-\(UUID()).lam")
         defer { try? FileManager.default.removeItem(at: url) }
         try await ProjectStore.shared.save(snapshot, to: url)

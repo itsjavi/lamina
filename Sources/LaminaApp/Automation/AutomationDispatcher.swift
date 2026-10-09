@@ -95,7 +95,13 @@ final class AutomationDispatcher {
         if s.levels != nil { return "The Levels dialog is open." }
         if s.colorRange != nil { return "The Color Range dialog is open." }
         if s.selectionAmountOperation != nil { return "A Modify Selection dialog is open." }
-        if let dialog = s.commandDialog { return dialog == .fill ? "The Fill dialog is open." : "The Load Selection dialog is open." }
+        if let dialog = s.commandDialog {
+            switch dialog {
+            case .fill: return "The Fill dialog is open."
+            case .loadSelection: return "The Load Selection dialog is open."
+            case .lockLayers: return "The Lock Layers dialog is open."
+            }
+        }
         if s.colorPicker != nil { return "The color picker is open." }
         if s.layerStyle != nil { return "The Layer Style dialog is open." }
         if s.cropRect != nil { return "A crop is in progress." }

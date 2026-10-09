@@ -478,15 +478,31 @@ are **shipping**.
   - The top row (6 pt above and below, 8 pt at the sides): the blend mode pop-up, as wide as the row leaves it
     (grouped as the Layer Style dialog's), then "Opacity:" (dragging it scrubs) and a 48 pt percent field ("100%";
     Return or leaving it applies, Up and Down step 1%, Shift 10%) whose chevron pops up a 0–100% slider. The blend
-    mode is off for groups and multiple selections, Opacity for multiple selections. Under it, 4 pt down and
-    right-aligned under Opacity as in Photoshop, "Fill:" and its 48 pt field reading 100% with a chevron: in progress
-    (TASK-83, `FillOpacityPlaceholder`), dimmed with Opacity. A `separator` line under them.
+    mode is off for groups and multiple selections, Opacity for multiple selections. Under it, 4 pt down, Photoshop's
+    second row: "Lock:" and its buttons (`LayerLockButtons`, 24 × 22 icon buttons with 12 pt symbols in `icon`, on
+    `activeTool` while pressed): Lock transparent pixels (`checkerboard.rectangle`, in progress, TASK-93), Lock image
+    pixels (`paintbrush.pointed`), Lock position (`arrow.up.and.down.and.arrow.left.and.right`) and Lock all
+    (`lock.fill`). Photoshop's fourth button, Prevent auto-nesting into and out of Artboards and Frames, is left out:
+    Lamina has neither. Right-aligned under Opacity, "Fill:" and its 48 pt field reading 100% with a chevron: in
+    progress (TASK-83, `FillOpacityPlaceholder`), dimmed with Opacity. A `separator` line under them.
+  - Locks (TASK-92): a button turns its lock on for every selected layer, or off when they all have it, as one undo
+    step; it shows pressed while every selected layer has it, and the buttons dim (`tertiaryText`) without a
+    selection. Lock image pixels refuses painting, fills, Clear and Cut, filters and adjustments, Invert, Apply Mask,
+    merging and Distort on the layer's own pixels (its mask stays editable; a stroke started on it says why); Lock
+    position refuses moving, nudging, transforming, flipping and aligning; Lock all refuses all of that, the mask,
+    opacity, blend mode, layer effects, an adjustment's settings and a type layer's text. A group's locks hold for
+    everything inside it, and a selected group counts what it holds. Visibility, names, stacking and deleting stay
+    free, as in Photoshop, and so do document-wide changes (Image Size, Canvas Size, Crop, Trim, Image Rotation).
+    `/` on the canvas toggles the lock last chosen, Lock transparent pixels at first, as in Photoshop. Locks are saved
+    (format version 12). Code: `Document/LayerLocking.swift`, `LayerLocks` in LaminaCore.
   - The list. Each layer is a one-line 32 pt row: a 26 pt eye column (12 pt `eye` / `eye.slash` in `icon`, a
     `separator` line at its right; dragging down the eyes shows or hides each), then, stepped in 14 pt per group level
     (and 14 pt more for a clipped layer, whose name starts "↳ "): a group's disclosure triangle (8 pt chevron) and
     16 pt `folder`, or the layer's thumbnail; then, with a mask, the link glyph (the chain while linked, a click
-    links or unlinks) and the mask thumbnail; the name (12 pt, truncated); and, on a styled layer, an "fx" badge
-    (12 pt italic serif, `icon`) with an 8 pt triangle at the right. Thumbnails fit a 24 pt square: pixel layers and
+    links or unlinks) and the mask thumbnail; the name (12 pt, truncated); on a styled layer, an "fx" badge
+    (12 pt italic serif, `icon`) with an 8 pt triangle; and on a locked layer Photoshop's padlock at the right, 10 pt:
+    `lock.fill` when locked all, `lock` when partly locked (both `icon`), and `lock` in `tertiaryText` when only a
+    group around it is locked. Thumbnails fit a 24 pt square: pixel layers and
     masks show the whole canvas, edged in `edge`; adjustment layers their Adjustments panel symbol (15 pt) and type
     layers a serif "T" (15 pt semibold, `text`), each on a 24 pt `control` plate. A `separator` hairline under every
     row and sub-row; rows hidden by a hidden group show at 35%.
@@ -540,7 +556,7 @@ one in Keyboard Shortcuts (More Menu Commands), as every menu item does.
 - **File:** New… ⌘N · New from Clipboard ⌥⌘N · Open… ⌘O · Open Recent ▸ (recent projects │ Clear Recent File List) │ Close ⌘W │ Save ⌘S · Save As… ⇧⌘S · Save a Copy… ⌥⌘S (in progress: layered Photoshop files, TASK-27) │ Export ▸ (Quick Export as PNG │ Export As… ⌥⇧⌘W) │ Place Embedded…
 - **Edit:** Undo ⌘Z · Redo ⇧⌘Z │ Cut ⌘X · Copy ⌘C · Copy Merged ⇧⌘C · Paste ⌘V · Clear │ Search ⌘F (in progress, TASK-79) │ Fill… ⇧F5 · Stroke… · Content-Aware Fill… │ Free Transform ⌘T · Transform ▸ (Distort │ Flip Horizontal · Flip Vertical) │ Keyboard Shortcuts… ⌥⇧⌘K · Toolbar… (in progress, TASK-87)
 - **Image:** Mode ▸ (RGB Color ✓ │ 8 Bits/Channel ✓ · 16 Bits/Channel · 32 Bits/Channel; the last two in progress, TASK-90) │ Adjustments ▸ (Levels… ⌘L · Curves… ⌘M · Exposure… │ Hue/Saturation… ⌘U · Color Balance… ⌘B · Black & White… ⌥⇧⌘B · Color Lookup… (in progress, TASK-84) │ Invert ⌘I · Gradient Map… │ Grain…) │ Image Size… ⌥⌘I · Canvas Size… ⌥⌘C · Image Rotation ▸ (180° · 90° Clockwise · 90° Counter Clockwise │ Flip Canvas Horizontal · Flip Canvas Vertical) · Trim…
-- **Layer:** New ▸ (Layer… ⇧⌘N │ Group… · Group from Layers… │ Layer Via Copy ⌘J) · Duplicate Layer… · Delete ▸ Layer │ Rename Layer… · Layer Style ▸ (Blending Options… │ Stroke… · Inner Shadow… · Inner Glow… · Color Overlay… · Outer Glow… · Drop Shadow… │ Copy Layer Style · Paste Layer Style · Clear Layer Style) │ New Adjustment Layer ▸ (Grain… │ Levels… · Curves… · Exposure… │ Hue/Saturation… · Color Balance… · Black & White… │ Invert · Gradient Map… │ Gaussian Blur… · Motion Blur… · Add Noise…) · Layer Content Options… │ Layer Mask ▸ (Reveal All · Hide All · Reveal Selection · Hide Selection │ Delete · Apply) · Create Clipping Mask ⌥⌘G · Remove Background… │ Rasterize (in progress, TASK-32) · Convert to Editable Vectors (in progress, TASK-35) │ Group Layers ⌘G · Ungroup Layers ⇧⌘G · Hide Layers ⌘, · Hide All Other Layers │ Arrange ▸ (Bring Forward ⌘] · Send Backward ⌘[ │ Move Out of Group) · Combine Shapes ▸ (in progress, TASK-34) · Release to Layers (in progress, TASK-34) │ Align ▸ (Top Edges · Vertical Centers · Bottom Edges │ Left Edges · Horizontal Centers · Right Edges) · Distribute ▸ (Vertical Centers · Horizontal Centers │ Horizontally · Vertically) │ Merge Down ⌘E (Merge Layers with several selected) · Merge Visible ⇧⌘E · Flatten Image
+- **Layer:** New ▸ (Layer… ⇧⌘N │ Group… · Group from Layers… │ Layer Via Copy ⌘J) · Duplicate Layer… · Delete ▸ Layer │ Rename Layer… · Layer Style ▸ (Blending Options… │ Stroke… · Inner Shadow… · Inner Glow… · Color Overlay… · Outer Glow… · Drop Shadow… │ Copy Layer Style · Paste Layer Style · Clear Layer Style) │ New Adjustment Layer ▸ (Grain… │ Levels… · Curves… · Exposure… │ Hue/Saturation… · Color Balance… · Black & White… │ Invert · Gradient Map… │ Gaussian Blur… · Motion Blur… · Add Noise…) · Layer Content Options… │ Layer Mask ▸ (Reveal All · Hide All · Reveal Selection · Hide Selection │ Delete · Apply) · Create Clipping Mask ⌥⌘G · Remove Background… │ Rasterize (in progress, TASK-32) · Convert to Editable Vectors (in progress, TASK-35) │ Group Layers ⌘G · Ungroup Layers ⇧⌘G · Hide Layers ⌘, · Hide All Other Layers │ Arrange ▸ (Bring Forward ⌘] · Send Backward ⌘[ │ Move Out of Group) · Combine Shapes ▸ (in progress, TASK-34) · Release to Layers (in progress, TASK-34) │ Align ▸ (Top Edges · Vertical Centers · Bottom Edges │ Left Edges · Horizontal Centers · Right Edges) · Distribute ▸ (Vertical Centers · Horizontal Centers │ Horizontally · Vertically) │ Lock Layers… ⌘/ │ Merge Down ⌘E (Merge Layers with several selected) · Merge Visible ⇧⌘E · Flatten Image
 - **Type:** Panels ▸ (Character · Paragraph), both opening Properties
 - **Select:** All ⌘A · Deselect ⌘D · Inverse ⇧⌘I │ Color Range… · Subject │ Modify ▸ (Expand… · Contract… · Feather… ⇧F6) │ Load Selection…
 - **Filter:** Last Filter ⌃⌘F │ Camera Raw Filter… ⇧⌘A · Lens Correction… ⇧⌘R · Liquify… ⇧⌘X │ Blur ▸ (Gaussian Blur… · Motion Blur…) · Noise ▸ Add Noise… · Pixelate ▸ Dither… · Render ▸ Vignette… · Sharpen ▸ (Unsharp Mask… │ Tonal Contrast…) · Stylize ▸ Bloom / Glow… · Other ▸ High Pass…
@@ -616,6 +632,7 @@ named). Keyboard Shortcuts lists every one; function keys show as F1 to F12, and
 | File ▸ Save a Copy… / Pen Tool | none | ⌥⌘S / P (shipping as placeholders, TASK-53) |
 | Tools (shipped with TASK-54) | B with Tab cycling modes, R for Smear | E Eraser, O Dodge and Burn, R Blur and Smudge, Shift plus key cycles a slot |
 | Edit ▸ Search / View ▸ Proof Colors / View ▸ Gamut Warning (placeholders, TASK-79 and TASK-89) | none | ⌘F / ⌘Y / ⇧⌘Y |
+| Layer ▸ Lock Layers… / the last lock (TASK-92) | none | ⌘/ / `/` on the canvas (Canvas & Layers: Toggle the last layer lock) |
 | Screen modes and hiding the panels (placeholders on the canvas, TASK-78) | Tab did nothing on the canvas | F and Shift-F (the next and previous screen mode) and Tab and Shift-Tab (Hide Panels) show their in-progress message; Keyboard Shortcuts lists them under Canvas & Layers (Next and Previous screen mode, Show or hide panels, Show or hide panels but the toolbar) |
 
 ### Dialogs
@@ -691,7 +708,11 @@ named). Keyboard Shortcuts lists every one; function keys show as F1 to F12, and
   Subtract from Selection (dimmed without a selection). A mask is a channel over the whole canvas, its edge's value
   beyond its own pixels, so an inverted reveal-all mask is exactly its black areas, what Mask's Black Areas selected.
   A new selection from an empty channel keeps the old one (a beep); taking away everything leaves no selection.
-- While Fill or Load Selection is open, other edits, Undo and `lamina` edits wait ("The Fill dialog is open.").
+- Lock Layers (Layer ▸ Lock Layers… ⌘/; `LockLayersSheet`, TASK-92): Photoshop's Lock dialog for the selected layers, a
+  Lock group with Transparency (in progress, TASK-93: checking it shows its message), Image, Position and All, each
+  on where every selected layer has it; OK sets those locks on every selected layer as one step. Prevent auto-nest
+  is left out, as in the Layers panel.
+- While Fill, Load Selection or Lock Layers is open, other edits, Undo and `lamina` edits wait ("The Fill dialog is open.").
 - Filter dialogs share one frame (`FilterPreview`): a 340 × 220 preview of the layer, with zoom out, the percentage and
   zoom in under it (6.25% to 1600%, starting at 100% of the layer's pixels, centered on the selection or the layer),
   then the settings, each slider paired with a field and its unit ("Pixels", "%", "°", "levels") in a column of its own.
@@ -782,6 +803,7 @@ on the next click and is announced to VoiceOver. A placeholder looks like a ship
 | Customize Toolbar | Edit ▸ Toolbar… | TASK-87 |
 | Proof Setup, Proof Colors, Gamut Warning | View: Proof Setup ▸ Custom…, Proof Colors ⌘Y, Gamut Warning ⇧⌘Y | TASK-89 |
 | 16 Bits/Channel, 32 Bits/Channel | Image ▸ Mode | TASK-90 |
+| Lock transparent pixels | Layers panel's Lock row, the Lock Layers dialog's Transparency, and `/` until another lock is chosen | TASK-93 |
 
 How it works (`Sources/LaminaApp/Document/PlannedFeature.swift`):
 

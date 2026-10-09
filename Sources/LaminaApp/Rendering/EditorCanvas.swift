@@ -2272,6 +2272,7 @@ final class CanvasView: NSView {
             // Screen modes and hiding the panels, in progress (TASK-78). Shift-Tab arrives as backtab.
             case "f" where !event.isARepeat: session.pressPlannedKey("f", shift: event.modifierFlags.contains(.shift))
             case "\t" where !event.isARepeat, "\u{19}" where !event.isARepeat: session.pressPlannedKey("\t")
+            case "/" where !event.isARepeat: session.toggleLastLock()
             default: ignoreKey(event)
             }
         } else { ignoreKey(event) }

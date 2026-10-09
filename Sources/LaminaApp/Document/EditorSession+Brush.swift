@@ -8,13 +8,16 @@ extension EditorSession {
         canEditLayers && selectedLayerIDs.count == 1 && (activeLayer?.isGroup == false || isMaskSelected) && selection?.isEmpty != true
             && activeLayerID.map { document?.effectiveVisibleIDs.contains($0) == true } == true
             && (!isMaskSelected || activeLayer?.mask?.isEnabled == true)
-            && (isMaskSelected || activeLayer?.adjustment == nil)
+            && (isMaskSelected || activeLayer?.adjustment == nil) && !activePixelsLocked
     }
     /// Why a stroke can't start on the target, for the alert, as Photoshop explains a brush it refuses. Nil when
     /// nothing about the target is in the way; while the editor is busy (a transform, a dialog) a press just waits.
     var paintRefusal: String? {
         guard canEditLayers, let layer = activeLayer, !canPaint else { return nil }
         if selectedLayerIDs.count > 1 { return "Several layers are selected. Select just one to paint on it." }
+        if activePixelsLocked {
+            return "“\(layer.name)” is locked. Turn off its lock in the Layers panel to paint on it."
+        }
         if layer.isGroup, !isMaskSelected {
             return "“\(layer.name)” is a group, which has no pixels of its own. Paint on a layer inside it, or on the group’s mask."
         }
@@ -198,7 +201,7 @@ extension EditorSession {
         } else {
             document?.layers[index] = ImageLayer(id: current.id, asset: result.asset, name: current.name,
                 isVisible: current.isVisible, transform: result.transform, parentID: current.parentID, isGroup: false,
-                opacity: current.opacity, blendMode: current.blendMode, mask: mask, maskSourceID: current.maskSourceID, effects: current.effects)
+                opacity: current.opacity, blendMode: current.blendMode, mask: mask, maskSourceID: current.maskSourceID, effects: current.effects, locks: current.locks)
         }
         endEdit()
     }
@@ -241,7 +244,7 @@ extension EditorSession {
                     var kept = mask
                     kept.isEnabled = current.mask?.isEnabled ?? mask.isEnabled
                     return kept
-                }, maskSourceID: current.maskSourceID, effects: current.effects)
+                }, maskSourceID: current.maskSourceID, effects: current.effects, locks: current.locks)
         }
         alsoApply?()
         endEdit()

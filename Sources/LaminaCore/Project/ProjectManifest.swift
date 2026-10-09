@@ -4,7 +4,7 @@ import Foundation
 /// files beside it (see `ProjectPackage`); docs/project-format.md describes every field.
 package struct ProjectManifest: Codable, Sendable {
     /// The format version new saves write.
-    package static let current = 11
+    package static let current = 12
     /// Every version `load` accepts. The package-header check, the manifest check and the error
     /// message all read this, so they cannot drift apart when `current` is bumped.
     package static let supported = 1...ProjectManifest.current
@@ -75,12 +75,15 @@ package struct ProjectLayerRecord: Codable, Sendable {
     /// The stroke and drop shadow drawn around the layer.
     package var effects: LayerEffects? = nil
     package var text: LayerTextStyle? = nil
+    /// Photoshop's Lock buttons; nil (and before version 12) is unlocked.
+    package var locks: LayerLocks? = nil
 
     package init(id: UUID, name: String, isVisible: Bool, transform: LayerTransform, imageFile: String?,
                  parentID: UUID? = nil, isGroup: Bool? = nil, opacity: Double? = nil, blendMode: LayerBlendMode? = nil,
                  maskFile: String? = nil, maskEnabled: Bool? = nil, maskSourceID: UUID? = nil,
                  adjustment: LayerAdjustment? = nil, maskPlacement: LayerTransform? = nil, maskLinked: Bool? = nil,
-                 shape: LayerShapeStyle? = nil, effects: LayerEffects? = nil, text: LayerTextStyle? = nil) {
+                 shape: LayerShapeStyle? = nil, effects: LayerEffects? = nil, text: LayerTextStyle? = nil,
+                 locks: LayerLocks? = nil) {
         self.id = id
         self.name = name
         self.isVisible = isVisible
@@ -99,6 +102,7 @@ package struct ProjectLayerRecord: Codable, Sendable {
         self.shape = shape
         self.effects = effects
         self.text = text
+        self.locks = locks
     }
 }
 

@@ -25,6 +25,7 @@ enum PlannedFeature: String, CaseIterable, Identifiable {
     case customizeToolbar
     case proofSetup, proofColors, gamutWarning
     case sixteenBitsPerChannel, thirtyTwoBitsPerChannel
+    case lockTransparentPixels
 
     /// Where its control lives.
     enum Home: Equatable {
@@ -88,6 +89,7 @@ enum PlannedFeature: String, CaseIterable, Identifiable {
         case .gamutWarning: "Gamut Warning"
         case .sixteenBitsPerChannel: "16 Bits/Channel"
         case .thirtyTwoBitsPerChannel: "32 Bits/Channel"
+        case .lockTransparentPixels: "Lock transparent pixels"
         }
     }
 
@@ -116,6 +118,7 @@ enum PlannedFeature: String, CaseIterable, Identifiable {
         case .customizeToolbar: "TASK-87"
         case .proofSetup, .proofColors, .gamutWarning: "TASK-89"
         case .sixteenBitsPerChannel, .thirtyTwoBitsPerChannel: "TASK-90"
+        case .lockTransparentPixels: "TASK-93"
         }
     }
 
@@ -136,7 +139,7 @@ enum PlannedFeature: String, CaseIterable, Identifiable {
         case .hidePanels: .key("Tab")
         case .search: .menu("Edit › Search")
         case .navigator: .menu("Window › Navigator")
-        case .fillOpacity: .panel("Layers")
+        case .fillOpacity, .lockTransparentPixels: .panel("Layers")
         case .colorLookup: .menu("Image › Adjustments › Color Lookup…")
         case .effectBlendMode, .spread, .choke, .centerStroke: .panel("Layer Style")
         case .twoColumnToolbar: .panel("Toolbar")

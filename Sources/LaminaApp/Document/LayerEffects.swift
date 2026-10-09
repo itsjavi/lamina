@@ -9,7 +9,7 @@ struct LayerEffectSelection: Equatable {
 }
 
 extension EditorSession {
-    var canEditEffects: Bool { canEditLayers && activeLayer?.isGroup == false && activeLayer?.asset != nil }
+    var canEditEffects: Bool { canEditLayers && activeLayer?.isGroup == false && activeLayer?.asset != nil && !activeAppearanceLocked }
     var activeEffects: LayerEffects { activeLayer?.effects ?? LayerEffects() }
     var selectedEffect: LayerEffectSelection? {
         guard let effectSelection, effectSelection.layerID == activeLayerID,
@@ -31,6 +31,7 @@ extension EditorSession {
         guard canEditLayers, effects.isValid,
               let index = document?.layers.firstIndex(where: { $0.id == (id ?? activeLayerID) }),
               document?.layers[index].isGroup == false, document?.layers[index].asset != nil,
+              document?.effectiveLocks(of: document!.layers[index].id).all != true,
               document?.layers[index].effects != (effects.isEmpty ? nil : effects) else { return }
         finishOpacityEdit()
         beginEdit(name)

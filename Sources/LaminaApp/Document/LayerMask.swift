@@ -216,7 +216,7 @@ extension ProjectSnapshot {
 
 extension EditorSession {
     /// Layers and folders alike take a mask.
-    var canEditMask: Bool { canEditLayers && selectedLayerIDs.count == 1 && activeLayer != nil }
+    var canEditMask: Bool { canEditLayers && selectedLayerIDs.count == 1 && activeLayer != nil && !activeLocks.all }
     func selectLayerTarget(_ id: UUID, mask: Bool) {
         effectSelection = nil
         guard !isProjectBusy, !isImporting, brushStroke == nil else { return }

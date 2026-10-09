@@ -6,6 +6,12 @@ extension EditorSession {
     /// One layer merges with the layer beneath it in the same folder; several selected layers merge together
     /// (with anything their folders hold); a folder merges its contents, and the folder goes.
     private func mergePlan() -> (ids: [UUID], removed: Set<UUID>, name: String, parent: UUID?, anchor: UUID, action: String)? {
+        // Merging rewrites the layers' pixels, so a layer locked against that can't take part, as in Photoshop.
+        guard let plan = unlockedMergePlan(), let document,
+              !plan.ids.contains(where: { document.effectiveLocks(of: $0).locksPixels() }) else { return nil }
+        return plan
+    }
+    private func unlockedMergePlan() -> (ids: [UUID], removed: Set<UUID>, name: String, parent: UUID?, anchor: UUID, action: String)? {
         guard canEditLayers, let document, let active = activeLayer else { return nil }
         let layers = document.layers
         if selectedLayerIDs.count > 1 {

@@ -941,6 +941,12 @@ private final class LayerCell: NSTableCellView, NSTextFieldDelegate {
     private let effectsBadge = NSButton()
     private var nameToBadge: NSLayoutConstraint!
     private var nameToEdge: NSLayoutConstraint!
+    /// Photoshop's padlock at the row's right: solid when the layer is locked all, hollow when partly locked, and
+    /// faint on a layer locked only by a group around it.
+    private let lockMark = NSImageView()
+    private var nameToLock: NSLayoutConstraint!
+    private var badgeToEdge: NSLayoutConstraint!
+    private var badgeToLock: NSLayoutConstraint!
     /// Whether the layer's thumbnail shows the target outline: pictures, and anything with a mask to tell apart.
     private var outlinesThumbnail = true
     private var layerID: UUID?
@@ -1010,7 +1016,7 @@ private final class LayerCell: NSTableCellView, NSTextFieldDelegate {
         effectsBadge.target = self
         effectsBadge.action = #selector(toggleEffects)
         effectsBadge.toolTip = "Show or hide the layer's effects"
-        for view in [eye, disclosure, thumbnail, linkButton, maskThumbnail, disabledMaskMark, nameLabel, effectsBadge] {
+        for view in [eye, disclosure, thumbnail, linkButton, maskThumbnail, disabledMaskMark, nameLabel, effectsBadge, lockMark] {
             view.translatesAutoresizingMaskIntoConstraints = false
             addSubview(view)
         }
@@ -1043,6 +1049,11 @@ private final class LayerCell: NSTableCellView, NSTextFieldDelegate {
         maskThumbnailHeight = maskThumbnail.heightAnchor.constraint(equalToConstant: thumbnailSide)
         nameToBadge = nameLabel.trailingAnchor.constraint(equalTo: effectsBadge.leadingAnchor, constant: -4)
         nameToEdge = nameLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6)
+        nameToLock = nameLabel.trailingAnchor.constraint(equalTo: lockMark.leadingAnchor, constant: -4)
+        badgeToEdge = effectsBadge.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6)
+        badgeToLock = effectsBadge.trailingAnchor.constraint(equalTo: lockMark.leadingAnchor, constant: -3)
+        lockMark.setContentHuggingPriority(.required, for: .horizontal)
+        lockMark.setContentCompressionResistancePriority(.required, for: .horizontal)
         NSLayoutConstraint.activate([
             eye.leadingAnchor.constraint(equalTo: leadingAnchor), eye.topAnchor.constraint(equalTo: topAnchor),
             eye.widthAnchor.constraint(equalToConstant: Self.eyeColumn), eye.heightAnchor.constraint(equalToConstant: Self.lineHeight),
@@ -1069,8 +1080,9 @@ private final class LayerCell: NSTableCellView, NSTextFieldDelegate {
             disabledMaskMark.centerYAnchor.constraint(equalTo: maskThumbnail.centerYAnchor),
             nameLabel.leadingAnchor.constraint(equalTo: maskSlot.trailingAnchor, constant: 4),
             nameLabel.centerYAnchor.constraint(equalTo: topAnchor, constant: middle),
-            effectsBadge.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6),
             effectsBadge.centerYAnchor.constraint(equalTo: topAnchor, constant: middle),
+            lockMark.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6),
+            lockMark.centerYAnchor.constraint(equalTo: topAnchor, constant: middle),
             effectsBadge.heightAnchor.constraint(equalToConstant: 20),
         ])
     }
@@ -1161,8 +1173,19 @@ private final class LayerCell: NSTableCellView, NSTextFieldDelegate {
         effectsBadge.isHidden = !styled
         effectsBadge.image = Self.chevron(showsEffects ? "chevron.down" : "chevron.right", description: nil)
         effectsBadge.setAccessibilityLabel(showsEffects ? "Hide effects: \(layer.name)" : "Show effects: \(layer.name)")
-        NSLayoutConstraint.deactivate([nameToBadge, nameToEdge])
-        NSLayoutConstraint.activate([styled ? nameToBadge : nameToEdge])
+        let inherited = session.document?.effectiveLocks(of: layer.id) ?? LayerLocks()
+        let locked = !inherited.isEmpty
+        lockMark.isHidden = !locked
+        if locked {
+            let configuration = NSImage.SymbolConfiguration(pointSize: 10, weight: .regular)
+            lockMark.image = NSImage(systemSymbolName: layer.locks.all ? "lock.fill" : "lock", accessibilityDescription: nil)?
+                .withSymbolConfiguration(configuration)
+            lockMark.contentTintColor = layer.locks.isEmpty ? ColorRole.tertiaryText.nsColor : ColorRole.icon.nsColor
+            lockMark.toolTip = layer.locks.isEmpty ? "Locked by its group" : layer.locks.all ? "Locked" : "Partly locked"
+            lockMark.setAccessibilityLabel("\(lockMark.toolTip ?? ""): \(layer.name)")
+        }
+        NSLayoutConstraint.deactivate([nameToBadge, nameToEdge, nameToLock, badgeToEdge, badgeToLock])
+        NSLayoutConstraint.activate(styled ? [nameToBadge, locked ? badgeToLock : badgeToEdge] : [locked ? nameToLock : nameToEdge])
         updateTarget()
         layerName = layer.name
         // A reused cell must not carry another row's half-finished rename.

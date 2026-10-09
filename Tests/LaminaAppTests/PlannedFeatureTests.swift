@@ -62,7 +62,7 @@ struct PlannedFeatureTests {
         #expect(inSlots == [.perspectiveCropTool, .pencilTool, .mixerBrushTool, .paletteKnifeTool, .penTool,
                             .pathSelectionTool, .directSelectionTool, .polygonTool, .starTool], "toolbar order")
         let optionsBar = PlannedFeature.bristlePresets + [.shapeStroke, .strokeOptions, .pathOperations]
-        let panels: [String: [PlannedFeature]] = ["Layers": [.fillOpacity], "Layer Style": PlannedFeature.layerStyleOptions,
+        let panels: [String: [PlannedFeature]] = ["Layers": [.fillOpacity, .lockTransparentPixels], "Layer Style": PlannedFeature.layerStyleOptions,
                                                   "Toolbar": [.twoColumnToolbar]]
         let menu = ShortcutDefinition.all.filter { $0.isMenu || $0.group == ShortcutDefinition.moreGroup }
         for feature in PlannedFeature.allCases {

@@ -22,6 +22,8 @@ extension EditorSession {
     /// Cmd-T: transforms the selected pixels when there is a selection, else the layer.
     func transformCommand() {
         if canTransformSelection { Task { await beginSelectionTransform() } }
+        // With a selection the command means its pixels: locked, they stay, rather than the whole layer moving.
+        else if selection?.isEmpty == false, activePixelsLocked { NSSound.beep() }
         else { beginTransform() }
     }
 
@@ -99,7 +101,7 @@ extension EditorSession {
             document?.layers[index] = ImageLayer(id: source.id, asset: merged.asset, name: source.name, isVisible: source.isVisible,
                 transform: merged.transform, parentID: source.parentID, isGroup: false,
                 opacity: source.opacity, blendMode: source.blendMode, mask: merged.mask, maskSourceID: source.maskSourceID,
-                effects: source.effects)
+                effects: source.effects, locks: source.locks)
             document?.selection = moved
             activeLayerID = source.id
         } catch {

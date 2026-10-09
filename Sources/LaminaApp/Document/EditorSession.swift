@@ -5,7 +5,7 @@ import LaminaCore
 struct ImageLayer: Identifiable, Equatable {
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id && lhs.name == rhs.name && lhs.isVisible == rhs.isVisible && lhs.transform == rhs.transform
-            && lhs.asset?.image === rhs.asset?.image && lhs.parentID == rhs.parentID && lhs.isGroup == rhs.isGroup && lhs.opacity == rhs.opacity && lhs.blendMode == rhs.blendMode && lhs.mask == rhs.mask && lhs.maskSourceID == rhs.maskSourceID && lhs.adjustment == rhs.adjustment && lhs.shape == rhs.shape && lhs.text == rhs.text && lhs.effects == rhs.effects
+            && lhs.asset?.image === rhs.asset?.image && lhs.parentID == rhs.parentID && lhs.isGroup == rhs.isGroup && lhs.opacity == rhs.opacity && lhs.blendMode == rhs.blendMode && lhs.mask == rhs.mask && lhs.maskSourceID == rhs.maskSourceID && lhs.adjustment == rhs.adjustment && lhs.shape == rhs.shape && lhs.text == rhs.text && lhs.effects == rhs.effects && lhs.locks == rhs.locks
     }
     let id: UUID
     var asset: ImportedImage?
@@ -25,6 +25,8 @@ struct ImageLayer: Identifiable, Equatable {
     /// A stroke and drop shadow drawn around the layer, kept apart from its pixels.
     var effects: LayerEffects?
     var text: LayerText?
+    /// Photoshop's Lock buttons (`LayerLocks`); a group's hold for what's inside it (`effectiveLocks`).
+    var locks = LayerLocks()
     nonisolated var size: CGSize { transform.size }
 
     init(asset: ImportedImage, origin: CGPoint) {
@@ -41,7 +43,7 @@ struct ImageLayer: Identifiable, Equatable {
         self.name = name
     }
 
-    init(id: UUID, asset: ImportedImage?, name: String, isVisible: Bool, transform: LayerTransform, parentID: UUID? = nil, isGroup: Bool = false, opacity: Double = 1, blendMode: LayerBlendMode = .normal, mask: LayerMask? = nil, maskSourceID: UUID? = nil, adjustment: LayerAdjustment? = nil, shape: LayerShape? = nil, effects: LayerEffects? = nil, text: LayerText? = nil) {
+    init(id: UUID, asset: ImportedImage?, name: String, isVisible: Bool, transform: LayerTransform, parentID: UUID? = nil, isGroup: Bool = false, opacity: Double = 1, blendMode: LayerBlendMode = .normal, mask: LayerMask? = nil, maskSourceID: UUID? = nil, adjustment: LayerAdjustment? = nil, shape: LayerShape? = nil, effects: LayerEffects? = nil, text: LayerText? = nil, locks: LayerLocks = LayerLocks()) {
         self.id = id
         self.asset = asset
         self.name = name
@@ -57,6 +59,7 @@ struct ImageLayer: Identifiable, Equatable {
         self.shape = shape
         self.effects = effects
         self.text = text
+        self.locks = locks
     }
 }
 
@@ -180,6 +183,8 @@ final class EditorSession {
     /// Liquify's way back: the tool chosen before it, and how many History steps were applied then.
     @ObservationIgnored var liquifyEntry: (tool: NavigationTool, position: Int)?
     var collapsedGroupIDs: Set<UUID> = []
+    /// The lock `/` toggles: the one last chosen, Lock transparent pixels at first, as in Photoshop.
+    var lastLock: LayerLock = .transparentPixels
     /// Styled layers whose effect rows the Layers panel's fx badge has folded away.
     var collapsedEffectLayerIDs: Set<UUID> = []
     var cropRect: CGRect?
@@ -439,7 +444,7 @@ final class EditorSession {
     @ObservationIgnored var warpStroke: WarpStroke? { didSet { resumeFileRequests() } }
 
     var canTransform: Bool {
-        guard canEditLayers else { return false }
+        guard canEditLayers, !selectionPositionLocked else { return false }
         // Several selected layers, or a folder's contents, transform together.
         if transformsAsGroup { return !groupTransformMembers.isEmpty }
         return activeLayer?.asset != nil && activeLayer?.isGroup == false && activeLayerID.map { document?.effectiveVisibleIDs.contains($0) == true } == true

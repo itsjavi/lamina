@@ -38,7 +38,11 @@ extension EditorSession {
         let target = newLayer ? nil : document.layers.reversed().first {
             visible.contains($0.id) && $0.liveText != nil && $0.transform.contains(point)
         }
-        if let target { selectLayer(target.id) }
+        if let target {
+            selectLayer(target.id)
+            // Locked all, a type layer's text can't change; Photoshop keeps type editable under its other locks.
+            if document.effectiveLocks(of: target.id).all { brushError = lockedMessage("edit the text"); return }
+        }
         var style = target?.liveText?.style ?? textDefaults
         if target == nil {
             style.content = ""
@@ -63,6 +67,7 @@ extension EditorSession {
 
     func editActiveText() {
         guard canEditLayers, textDraft == nil, let document, let layer = activeLayer, let text = layer.liveText else { return }
+        if activeLocks.all { brushError = lockedMessage("edit the text"); return }
         tool = .type
         textDraft = TextDraft(documentID: document.id, layerID: layer.id, origin: layer.origin, transform: layer.transform, style: text.style)
     }
@@ -146,7 +151,8 @@ extension EditorSession {
     @discardableResult
     func recolorText(_ id: UUID, to color: PaletteColor) -> Bool {
         guard canEditLayers, let index = document?.layers.firstIndex(where: { $0.id == id }),
-              let layer = document?.layers[index], let text = layer.liveText, let asset = layer.asset else { return false }
+              let layer = document?.layers[index], let text = layer.liveText, let asset = layer.asset,
+              document?.effectiveLocks(of: id).all != true else { return false }
         var style = text.style
         guard style.red != color.red || style.green != color.green || style.blue != color.blue || style.colorRuns != nil else { return true }
         style.setColor(color, in: NSRange(location: 0, length: 0))

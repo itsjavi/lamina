@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The Layers panel's top rows, as familiar editors lay them out: the blend mode menu, as wide as the row allows, then
 /// "Opacity:" and its field, whose chevron pops up a slider. Dragging the label scrubs the opacity too. Under them,
-/// "Fill:", in progress (TASK-83).
+/// Photoshop's Lock buttons, then "Fill:", in progress (TASK-83).
 struct LayerAppearanceControls: View {
     @Bindable var session: EditorSession
     let layerID: UUID?
@@ -13,7 +13,11 @@ struct LayerAppearanceControls: View {
     var body: some View {
         VStack(alignment: .trailing, spacing: 4) {
             opacityRow
-            FillOpacityPlaceholder(session: session).disabled(!session.canEditOpacity)
+            HStack(spacing: 4) {
+                LayerLockButtons(session: session)
+                Spacer(minLength: 4)
+                FillOpacityPlaceholder(session: session).disabled(!session.canEditOpacity)
+            }
         }
         .font(.system(size: 12)).monospacedDigit()
         .padding(.horizontal, 8).padding(.vertical, 6)
@@ -79,5 +83,27 @@ struct LayerAppearanceControls: View {
         let typed = percentage.replacingOccurrences(of: "%", with: "").trimmingCharacters(in: .whitespaces)
         if let value = Double(typed), value.isFinite { session.setLayerOpacity(min(100, max(0, value)) / 100) }
         sync()
+    }
+}
+
+/// "Lock:" and Photoshop's Lock buttons, pressed while every selected layer has that lock (`EditorSession.toggleLock`).
+/// Lock transparent pixels is in progress (TASK-93).
+struct LayerLockButtons: View {
+    let session: EditorSession
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Text("Lock:").foregroundStyle(.secondary).padding(.trailing, 2)
+            ForEach(LayerLock.allCases, id: \.self) { lock in
+                OptionsBarIconButton(title: lock.planned?.helpTag ?? lock.title, isPressed: session.isLocked(lock)) {
+                    session.toggleLock(lock)
+                } icon: {
+                    // An explicit color stops SwiftUI dimming a disabled button, so dim it here.
+                    Image(systemName: lock.symbol).font(.system(size: 12))
+                        .foregroundStyle(session.canChangeLocks ? ColorRole.icon.color : ColorRole.tertiaryText.color)
+                }
+            }
+        }
+        .disabled(!session.canChangeLocks)
     }
 }

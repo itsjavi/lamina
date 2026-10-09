@@ -14,7 +14,8 @@ extension EditorSession {
     var copiedLayerEffects: LayerEffects? { LayerStyleClipboard.shared.effects }
     /// Selected layers that can hold effects: groups and layers without pixels can't.
     private var styleTargets: [ImageLayer] {
-        document?.layers.filter { selectedLayerIDs.contains($0.id) && !$0.isGroup && $0.asset != nil } ?? []
+        guard let document else { return [] }
+        return document.layers.filter { selectedLayerIDs.contains($0.id) && !$0.isGroup && $0.asset != nil && !document.effectiveLocks(of: $0.id).all }
     }
     var canCopyLayerStyle: Bool { canEditLayers && activeLayer?.effects?.isEmpty == false }
     var canPasteLayerStyle: Bool { canEditLayers && copiedLayerEffects != nil && !styleTargets.isEmpty }

@@ -454,6 +454,9 @@ private struct LayerMenuCommands: Commands {
             }
                 .disabled(!session.canDistributeLayers)
             Divider()
+            Button("Lock Layers…") { session.beginLockLayers() }
+                .configuredKeyboardShortcut("/").disabled(!session.canChangeLocks)
+            Divider()
             // Merge Down, or Merge Layers with several selected.
             Button(session.mergeTitle) { session.mergeLayers() }
                 .configuredKeyboardShortcut("e").disabled(!session.canMergeLayers)

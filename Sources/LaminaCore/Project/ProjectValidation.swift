@@ -15,6 +15,8 @@ extension ProjectManifest {
         guard (1...DocumentLimits.maxSide).contains(width), (1...DocumentLimits.maxSide).contains(height),
               layers.count <= 10_000 else { throw ProjectError.tooLarge }
         for layer in layers {
+            // Layer locks arrived in version 12.
+            guard layer.locks == nil || version >= 12 else { throw ProjectError.invalid }
             if let text = layer.text {
                 // Per-letter colors arrived in version 10, per-letter faces in version 11.
                 guard text.isValid,

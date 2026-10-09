@@ -134,6 +134,8 @@ extension EditorSession {
     /// Cmd-X: copy, then clear the selected pixels.
     func cutSelection() async {
         guard selection != nil, canCopyPixels else { return }
+        // Cut takes the pixels away, so a locked target only copies, with the alert Photoshop gives.
+        guard canEditPixels else { brushError = paintRefusal ?? lockedMessage("cut the pixels"); return }
         copySelection()
         await clearSelectedPixels()
     }
@@ -286,7 +288,7 @@ extension EditorSession {
                 transform: original.transform, parentID: original.parentID.map { mapping[$0] ?? $0 },
                 isGroup: original.isGroup, opacity: original.opacity, blendMode: original.blendMode,
                 mask: original.mask, maskSourceID: original.maskSourceID.map { mapping[$0] ?? $0 },
-                adjustment: original.adjustment, shape: original.shape, effects: original.effects, text: original.text)
+                adjustment: original.adjustment, shape: original.shape, effects: original.effects, text: original.text, locks: original.locks)
         }
         document?.layers.insert(contentsOf: copies, at: index + 1)
         for original in originals where collapsedGroupIDs.contains(original.id) {

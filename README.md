@@ -54,6 +54,7 @@ you watch it update. Vector layers are next.
 - Layer styles in one Layer Style dialog: Blending Options, Stroke, Inner Shadow, Inner Glow, Color Overlay, Outer Glow and Drop Shadow, rendered on the GPU and editable at any time; each effect has its own row and eye in the Layers panel
 - Merge Down, Merge Layers and Merge Group (⌘E), Merge Visible (⇧⌘E) and Flatten Image
 - Layer Mask › Apply, Copy, Paste and Clear Layer Style, and Hide All Other Layers
+- Layer locks as in Photoshop: lock a layer's pixels, its position or everything from the Layers panel's Lock row or Layer › Lock Layers… (⌘/); a group's locks hold for what it contains
 - Duplicate, rename inline, reorder and nest by drag and drop; Option-drag to duplicate; a right-click menu in the Layers panel
 - Copy and paste whole layers and groups (⌘C/⌘V with no selection), within a project or between projects, or drag them between projects
 

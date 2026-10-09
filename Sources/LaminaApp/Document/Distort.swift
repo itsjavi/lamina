@@ -269,8 +269,9 @@ extension EditorSession {
     /// when none is in progress (of the selected pixels when there is a selection, as ⌘T does), and from then on
     /// every handle moves its corner freely.
     var canDistort: Bool {
-        if let edit = transformEdit { return edit.corners == nil }
-        return canTransform || canTransformSelection
+        if let edit = transformEdit { return edit.corners == nil && !selectionPixelsLocked }
+        // Distorting resamples the pixels, which Lock image pixels keeps as they are.
+        return (canTransform && !selectionPixelsLocked) || canTransformSelection
     }
     func distortCommand() async {
         if transformEdit == nil {

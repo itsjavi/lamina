@@ -12,6 +12,30 @@ struct ProjectModelTests {
         #expect(ProjectManifest.supported.contains(ProjectManifest.current))
     }
 
+    /// Layer locks (version 12) write only the locks that are on, read missing keys as unlocked, and aren't allowed in
+    /// files declaring an older version.
+    @Test func layerLocksAreVersionTwelveAndWriteOnlyWhatIsOn() throws {
+        let locks = LayerLocks(position: true)
+        #expect(String(decoding: try JSONEncoder().encode(locks), as: UTF8.self) == #"{"position":true}"#)
+        #expect(try JSONDecoder().decode(LayerLocks.self, from: Data(#"{"all":true}"#.utf8)) == LayerLocks(all: true))
+        #expect(try JSONDecoder().decode(LayerLocks.self, from: Data("{}".utf8)).isEmpty)
+        #expect(LayerLocks(all: true).locksPixels(mask: true) && LayerLocks(all: true).locksPosition)
+        #expect(LayerLocks(imagePixels: true).locksPixels() && !LayerLocks(imagePixels: true).locksPixels(mask: true))
+        #expect(LayerLocks(imagePixels: true).union(LayerLocks(position: true)) == LayerLocks(imagePixels: true, position: true))
+
+        let transform = LayerTransform(origin: .zero, size: CGSize(width: 10, height: 10))
+        let id = UUID()
+        let layer = ProjectLayerRecord(id: id, name: "Locked", isVisible: true, transform: transform,
+                                       imageFile: "\(id.uuidString).png", locks: locks)
+        func manifest(version: Int) -> ProjectManifest {
+            ProjectManifest(version: version, documentID: UUID(), width: 10, height: 10, activeLayerID: id, layers: [layer])
+        }
+        try manifest(version: 12).validate()
+        #expect(throws: ProjectError.invalid) { try manifest(version: 11).validate() }
+        let decoded = try JSONDecoder().decode(ProjectManifest.self, from: JSONEncoder().encode(manifest(version: 12)))
+        #expect(decoded.layers.first?.locks == locks)
+    }
+
     @Test func malformedParentLinksAndCyclesAreRejected() throws {
         let id = UUID(), child = UUID()
         let transform = LayerTransform(origin: .zero, size: CGSize(width: 10, height: 10))

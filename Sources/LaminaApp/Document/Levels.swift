@@ -171,7 +171,7 @@ extension EditorSession {
             document?.layers[index] = ImageLayer(id: current.id, asset: asset, name: current.name, isVisible: current.isVisible,
                 transform: current.transform, parentID: current.parentID, isGroup: false,
                 opacity: current.opacity, blendMode: current.blendMode, mask: current.mask, maskSourceID: current.maskSourceID,
-                effects: current.effects)
+                effects: current.effects, locks: current.locks)
             endEdit()
         } catch { brushError = error.localizedDescription }
     }

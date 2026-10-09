@@ -1,4 +1,5 @@
 import CoreGraphics
+import LaminaCore
 import Foundation
 
 extension EditorSession {
@@ -7,7 +8,7 @@ extension EditorSession {
     /// throw away its editable source. Photoshop asks before applying a disabled mask; here it's simply left off.
     var canApplyLayerMask: Bool {
         guard canEditMask, let layer = activeLayer, let mask = layer.mask, mask.isEnabled,
-              !layer.isGroup, layer.adjustment == nil, layer.asset != nil else { return false }
+              !layer.isGroup, layer.adjustment == nil, layer.asset != nil, !activeLocks.locksPixels() else { return false }
         return layer.liveText == nil && layer.liveShape == nil
     }
 

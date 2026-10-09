@@ -19,7 +19,7 @@ nonisolated struct FillOptions: Equatable, Sendable {
 
 /// The dialogs that wait for OK before they change anything: Edit › Fill… and Select › Load Selection….
 enum CommandDialog: Equatable {
-    case fill, loadSelection
+    case fill, loadSelection, lockLayers
 }
 
 extension EditorSession {

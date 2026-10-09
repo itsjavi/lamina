@@ -89,7 +89,7 @@ extension EditorSession {
         _ = showsBusy
         guard document != nil, textDraft == nil, let layer = activeLayer, !isProjectBusy, !isImporting, brushStroke == nil, pixelMove == nil,
               renamingLayerID == nil, !showsNewDocument, !showsImporter, selectedLayerIDs.count == 1, !layer.isGroup || isMaskSelected,
-              document?.effectiveVisibleIDs.contains(layer.id) == true, selection?.isEmpty != true else { return false }
+              document?.effectiveVisibleIDs.contains(layer.id) == true, selection?.isEmpty != true, !activePixelsLocked else { return false }
         return isMaskSelected ? layer.mask?.isEnabled == true : layer.asset != nil
     }
 
@@ -126,7 +126,7 @@ extension EditorSession {
                 self.document?.layers[index] = ImageLayer(id: current.id, asset: asset, name: current.name,
                     isVisible: current.isVisible, transform: current.transform, parentID: current.parentID, isGroup: false,
                     opacity: current.opacity, blendMode: current.blendMode, mask: current.mask, maskSourceID: current.maskSourceID,
-                    effects: current.effects)
+                    effects: current.effects, locks: current.locks)
             }
             endEdit()
             brushRevision += 1

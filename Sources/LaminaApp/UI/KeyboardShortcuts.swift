@@ -153,6 +153,7 @@ struct ShortcutDefinition: Identifiable {
             entry("Toggle Clipping Mask", "g", 3, menu: true), entry("Group Layers", "g", 1, menu: true),
             entry("Ungroup Layers", "g", 9, menu: true), entry("Hide Layers", ",", 1, menu: true),
             entry("Bring Forward", "]", 1, menu: true), entry("Send Backward", "[", 1, menu: true),
+            entry("Lock Layers", "/", 1, menu: true),
             entry("Merge Down", "e", 1, menu: true), entry("Merge Visible", "e", 9, menu: true),
             entry("Select All", "a", 1, menu: true), entry("Deselect", "d", 1, menu: true),
             entry("Inverse Selection", "i", 9, menu: true), entry("Feather", ShortcutChord.functionKey(6), 8, menu: true),
@@ -183,6 +184,8 @@ struct ShortcutDefinition: Identifiable {
         // Photoshop's screen-mode and panel keys, for screen modes and hiding the panels (in progress, TASK-78).
         result += [entry("Next screen mode", "f"), entry("Previous screen mode", "f", 8),
                    entry("Show or hide panels", "\t"), entry("Show or hide panels but the toolbar", "\t", 8)]
+        // Photoshop's / toggles the lock last chosen in the Layers panel, Lock transparent pixels at first.
+        result.append(entry("Toggle the last layer lock", "/"))
         result += [entry("Decrease brush hardness", "[", 8), entry("Increase brush hardness", "]", 8),
                    entry("Previous blend mode", "-", 8), entry("Next blend mode", "=", 8)]
         // Shift and the key of a slot with several tools: the slot's next tool (`EditorSession.pressToolKey`).

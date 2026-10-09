@@ -34,7 +34,7 @@ struct ProjectTests {
         let url = try await savedProject("Saved.lam", in: root)
         let json = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: url.appendingPathComponent("manifest.json"))) as? [String: Any])
         #expect(json["format"] as? String == "com.itsjavi.lamina.project")
-        #expect(json["version"] as? Int == 11)
+        #expect(json["version"] as? Int == 12)
         #expect(url.isProjectPackage && URL(fileURLWithPath: "/a/B.COMP").isProjectPackage && !URL(fileURLWithPath: "/a/b.png").isProjectPackage)
         let controller = ProjectController(session: EditorSession())
         #expect(await controller.open(url))

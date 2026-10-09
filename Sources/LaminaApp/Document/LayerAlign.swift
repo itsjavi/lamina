@@ -108,7 +108,7 @@ extension EditorSession {
     /// with the upright box around the pixels they show. A layer inside a selected folder moves with the folder; a
     /// hidden one moves with it too, keeping its place, but isn't measured, and on its own it stays put.
     var alignmentItems: [(members: [ImageLayer], box: CGRect)] {
-        guard let document, canEditLayers else { return [] }
+        guard let document, canEditLayers, !selectionPositionLocked else { return [] }
         let visible = document.effectiveVisibleIDs
         let parents = Dictionary(uniqueKeysWithValues: document.layers.map { ($0.id, $0.parentID) })
         func selectedAncestor(of id: UUID) -> UUID? {
@@ -144,8 +144,8 @@ extension EditorSession {
     /// Align lines things up with the selection when there is one, with the canvas when one thing is selected, and
     /// otherwise with the box around them all.
     /// Cheap enough for menus and buttons to ask on every redraw; the commands themselves find what moves.
-    var canAlignLayers: Bool { canEditLayers && !selectedLayerIDs.isEmpty }
-    var canDistributeLayers: Bool { canEditLayers && selectedLayerIDs.count > 2 }
+    var canAlignLayers: Bool { canEditLayers && !selectedLayerIDs.isEmpty && !selectionPositionLocked }
+    var canDistributeLayers: Bool { canEditLayers && selectedLayerIDs.count > 2 && !selectionPositionLocked }
 
     func alignLayers(_ alignment: LayerAlignment) {
         commitTransform()

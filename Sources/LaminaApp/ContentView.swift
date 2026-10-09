@@ -225,6 +225,9 @@ struct ContentView: View {
                 commandDialogPanel.onClose = { session.finishLoadSelection(nil) }
                 commandDialogPanel.show(title: "Load Selection",
                     content: LoadSelectionSheet(session: session, channels: session.selectionChannels, initial: channel))
+            case .lockLayers:
+                commandDialogPanel.onClose = { session.finishLockLayers(nil) }
+                commandDialogPanel.show(title: "Lock Layers", content: LockLayersSheet(session: session))
             case nil: commandDialogPanel.close()
             }
         }

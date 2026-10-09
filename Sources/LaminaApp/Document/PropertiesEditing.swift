@@ -132,7 +132,8 @@ extension EditorSession {
     /// An adjustment layer's settings changed in Properties. The canvas shows them at once, and each change is one
     /// undo step: a slider's whole drag, a typed value, a menu choice.
     func changeAdjustment(_ id: UUID, _ update: (inout LayerAdjustment) -> Void) {
-        guard canEditLayers, let current = document?.layers.first(where: { $0.id == id })?.adjustment else { return }
+        guard canEditLayers, let current = document?.layers.first(where: { $0.id == id })?.adjustment,
+              document?.effectiveLocks(of: id).all != true else { return }
         var value = current
         update(&value)
         guard value != current, value.isValid else { return }

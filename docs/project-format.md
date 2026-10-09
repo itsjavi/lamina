@@ -1,8 +1,8 @@
-# Lamina project format, versions 1–11
+# Lamina project format, versions 1–12
 
 A `.lam` file is a macOS document package (exported type `com.itsjavi.lamina.project`) containing `manifest.json` and an `images/` directory of `<layer UUID>.png` assets.
 
-The manifest identifies `com.itsjavi.lamina.project`, version `11` for new saves (versions `1`–`10` remain readable), and the sRGB working space. It stores document UUID, pixel dimensions, active layer UUID, and layers in bottom-to-top order. Each layer stores its UUID, name, visibility, transform (origin, size, clockwise rotation, flips, sampling), and optional image filename. Blank layers have no image asset.
+The manifest identifies `com.itsjavi.lamina.project`, version `12` for new saves (versions `1`–`11` remain readable), and the sRGB working space. It stores document UUID, pixel dimensions, active layer UUID, and layers in bottom-to-top order. Each layer stores its UUID, name, visibility, transform (origin, size, clockwise rotation, flips, sampling), and optional image filename. Blank layers have no image asset.
 
 Embedded PNGs preserve source pixels and transparency; transforms remain separate. Projects survive moving or deleting imported source photos. Saving uses a coordinated atomic package replacement. Unsupported versions, invalid metadata, missing assets, unsafe paths, and oversized data are rejected before replacing the live document. Angles may be any finite number: on load, a rotation (of a layer or a placed mask) past one turn either way is read as the same angle within one turn, and Hue/Saturation band handles outside 0–360 as the same hue within it.
 
@@ -39,6 +39,8 @@ Version 9 adds three adjustment kinds that sample neighboring pixels: `Gaussian 
 Version 10 lets a text layer color some of its letters differently: optional `colorRuns` in its `text` metadata (see Editable text). Files declaring 1–9 cannot contain it.
 
 Version 11 lets those letters use different faces too: optional `fontRuns` in the same metadata. Files declaring 1–10 cannot contain it. `colorRuns` stays valid from version 10.
+
+Version 12 adds Photoshop's layer locks: an optional `locks` object on any layer record, with `imagePixels` (the layer's own pixels can't be edited; its mask can), `position` (it can't be moved or transformed) and `all` (neither, nor its mask, opacity, blend mode or layer effects), each `true` or left out. A group's locks hold for everything inside it. Files declaring 1–11 cannot contain `locks`.
 
 ### Additive layer fields
 

@@ -272,7 +272,8 @@ extension EditorSession {
         guard levels == nil, filterEdit == nil, textDraft == nil, document != nil, let layer = activeLayer, !isProjectBusy, !isImporting, brushStroke == nil,
               pixelMove == nil, renamingLayerID == nil, !showsNewDocument, !showsImporter,
               selectedLayerIDs.count == 1, !layer.isGroup, !isMaskSelected, layer.asset != nil || allowingEmpty,
-              document?.effectiveVisibleIDs.contains(layer.id) == true, selection?.isEmpty != true else { return false }
+              document?.effectiveVisibleIDs.contains(layer.id) == true, selection?.isEmpty != true,
+              !activePixelsLocked else { return false }
         return true
     }
 
@@ -353,7 +354,7 @@ extension EditorSession {
             asset: ImportedImage(image: adjusted.image, thumbnail: adjusted.thumbnail ?? adjusted.image, name: current.name),
             name: current.name, isVisible: current.isVisible, transform: current.transform, parentID: current.parentID,
             isGroup: false, opacity: current.opacity, blendMode: current.blendMode, mask: current.mask, maskSourceID: current.maskSourceID,
-            effects: current.effects)
+            effects: current.effects, locks: current.locks)
         endEdit()
     }
 

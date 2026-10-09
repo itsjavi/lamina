@@ -11,81 +11,20 @@ struct LayerEffectSelection: Equatable {
 extension EditorSession {
     var canEditEffects: Bool { canEditLayers && activeLayer?.isGroup == false && activeLayer?.asset != nil }
     var activeEffects: LayerEffects { activeLayer?.effects ?? LayerEffects() }
-    var editingEffects: LayerEffects {
-        document?.layers.first(where: { $0.id == effectsEditing?.layerID })?.effects ?? LayerEffects()
-    }
     var selectedEffect: LayerEffectSelection? {
         guard let effectSelection, effectSelection.layerID == activeLayerID,
               activeEffects.contains(effectSelection.kind) else { return nil }
         return effectSelection
     }
 
-    func addEffect(_ kind: LayerEffectKind) {
-        guard canEditEffects, let id = activeLayerID else { return }
-        if effectsEditing == LayerEffectSelection(layerID: id, kind: kind) { return }
-        finishEffectsEditing(commit: false)
-        let original = activeEffects
-        var effects = original
-        // A new stroke or overlay takes the background color: the foreground is usually what the layer is painted in.
-        switch kind {
-        case .stroke where effects.stroke == nil:
-            var new = StrokeEffect()
-            new.red = backgroundColor.red; new.green = backgroundColor.green; new.blue = backgroundColor.blue
-            effects.stroke = new
-        case .shadow where effects.shadow == nil:
-            effects.shadow = ShadowEffect()
-        case .colorOverlay where effects.colorOverlay == nil:
-            var new = ColorOverlayEffect()
-            new.red = backgroundColor.red; new.green = backgroundColor.green; new.blue = backgroundColor.blue
-            effects.colorOverlay = new
-        case .innerShadow where effects.innerShadow == nil:
-            effects.innerShadow = InnerShadowEffect()
-        case .outerGlow where effects.outerGlow == nil:
-            effects.outerGlow = OuterGlowEffect()
-        case .innerGlow where effects.innerGlow == nil:
-            effects.innerGlow = InnerGlowEffect()
-        default: break
-        }
-        setEffects(effects, on: id, name: "Add " + kind.rawValue)
-        selectEffect(kind, on: id, editing: true)
-        effectsEditingOriginal = original
-    }
-
+    /// Selects an effect row; `editing` (a double-click) opens the Layer Style dialog on its page.
     func selectEffect(_ kind: LayerEffectKind, on id: UUID, editing: Bool = false) {
         guard canEditLayers, document?.layers.first(where: { $0.id == id })?.effects?.contains(kind) == true else { return }
-        let selection = LayerEffectSelection(layerID: id, kind: kind)
-        if editing, effectsEditing != selection { finishEffectsEditing(commit: false) }
         selectLayer(id)
         selectedLayerIDs = [id]
         isMaskSelected = false
-        effectSelection = selection
-        if editing, effectsEditing != selection {
-            if let picker = colorPicker, case .effect = picker.target { closeColorPicker(commit: false) }
-            effectsEditingOriginal = document?.layers.first(where: { $0.id == id })?.effects ?? LayerEffects()
-            effectsEditing = selection
-        }
-    }
-
-    /// Cancel restores only this panel's effect, preserving edits to other effects or layers.
-    /// For a newly added effect the original value is absent, so Cancel removes it again.
-    func finishEffectsEditing(commit: Bool) {
-        guard let editing = effectsEditing else { return }
-        if let picker = colorPicker, case .effect = picker.target { closeColorPicker(commit: commit) }
-        if !commit, let original = effectsEditingOriginal,
-           var effects = document?.layers.first(where: { $0.id == editing.layerID })?.effects {
-            switch editing.kind {
-            case .stroke: effects.stroke = original.stroke
-            case .shadow: effects.shadow = original.shadow
-            case .colorOverlay: effects.colorOverlay = original.colorOverlay
-            case .innerShadow: effects.innerShadow = original.innerShadow
-            case .outerGlow: effects.outerGlow = original.outerGlow
-            case .innerGlow: effects.innerGlow = original.innerGlow
-            }
-            setEffects(effects, on: editing.layerID, name: "Cancel " + editing.kind.rawValue)
-        }
-        effectsEditing = nil
-        effectsEditingOriginal = nil
-        if selectedEffect == nil { effectSelection = nil }
+        effectSelection = LayerEffectSelection(layerID: id, kind: kind)
+        if editing { openLayerStyle(.effect(kind)) }
     }
 
     func setEffects(_ effects: LayerEffects, on id: UUID? = nil, name: String = "Layer Effects") {
@@ -99,16 +38,6 @@ extension EditorSession {
         endEdit()
     }
 
-    /// Panel edits stay bound to the layer that opened the panel, even if selection changes.
-    func changeEffects(_ change: (inout LayerEffects) -> Void) {
-        guard let editing = effectsEditing,
-              let layer = document?.layers.first(where: { $0.id == editing.layerID }),
-              layer.effects?.contains(editing.kind) == true else { return }
-        var effects = layer.effects ?? LayerEffects()
-        change(&effects)
-        setEffects(effects, on: layer.id, name: "Edit " + editing.kind.rawValue)
-    }
-
     func canCopyEffect(_ kind: LayerEffectKind, from source: UUID, to target: UUID) -> Bool {
         guard canEditLayers, source != target,
               document?.layers.first(where: { $0.id == source })?.effects?.contains(kind) == true,
@@ -120,10 +49,6 @@ extension EditorSession {
     func copyEffect(_ kind: LayerEffectKind, from source: UUID, to target: UUID) {
         guard canCopyEffect(kind, from: source, to: target),
               let original = document?.layers.first(where: { $0.id == source })?.effects else { return }
-        // Close the destination's editor before replacing its effect so a later Cancel cannot undo the copy.
-        if effectsEditing == LayerEffectSelection(layerID: target, kind: kind) {
-            finishEffectsEditing(commit: true)
-        }
         var effects = document?.layers.first(where: { $0.id == target })?.effects ?? LayerEffects()
         switch kind {
         case .stroke: effects.stroke = original.stroke
@@ -147,11 +72,6 @@ extension EditorSession {
     func removeSelectedEffect() {
         guard let selectedEffect, canEditLayers,
               var effects = document?.layers.first(where: { $0.id == selectedEffect.layerID })?.effects else { return }
-        if effectsEditing == selectedEffect {
-            if let picker = colorPicker, case .effect = picker.target { closeColorPicker(commit: false) }
-            effectsEditing = nil
-            effectsEditingOriginal = nil
-        }
         effects.remove(selectedEffect.kind)
         setEffects(effects, on: selectedEffect.layerID, name: "Remove " + selectedEffect.kind.rawValue)
         effectSelection = nil

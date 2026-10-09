@@ -113,6 +113,7 @@ struct ShortcutDefinition: Identifiable {
         titles += FilterKind.allCases.filter { $0 != .contentAwareFill && !$0.isImageAdjustment }.map { "Filter › \($0.rawValue)…" }
         titles += AdjustmentKind.allCases.map { "Layer › New Adjustment Layer › \($0.rawValue)" }
         titles += PlannedFeature.assignableMenuCommands
+        titles += LayerStylePage.all.map { "Layer › Layer Style › \($0.title)…" }
         return titles
     }()
 

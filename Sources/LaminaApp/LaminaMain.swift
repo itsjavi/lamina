@@ -448,6 +448,13 @@ struct LaminaMain: App {
                             .disabled(!session.canDistributeLayers)
                     }
                     Menu("Layer Style") {
+                        ForEach(LayerStylePage.all, id: \.self) { page in
+                            Button(page.title + "…") { session.openLayerStyle(page) }
+                                .assignableShortcut("Layer › Layer Style › \(page.title)…")
+                                .disabled(!session.canOpenLayerStyle)
+                            if page == .blendingOptions { Divider() }
+                        }
+                        Divider()
                         Button("Copy Layer Style") { session.copyLayerStyle() }
                             .assignableShortcut("Layer › Layer Style › Copy Layer Style")
                             .disabled(!session.canCopyLayerStyle)

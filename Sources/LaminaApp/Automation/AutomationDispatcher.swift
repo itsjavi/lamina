@@ -97,7 +97,7 @@ final class AutomationDispatcher {
         if s.colorRange != nil { return "The Color Range dialog is open." }
         if s.selectionAmountOperation != nil { return "A Modify Selection dialog is open." }
         if s.colorPicker != nil { return "The color picker is open." }
-        if s.effectsEditing != nil { return "Layer effects are being edited." }
+        if s.layerStyle != nil { return "The Layer Style dialog is open." }
         if s.cropRect != nil { return "A crop is in progress." }
         if s.gradientEdit != nil { return "A gradient is waiting to be applied." }
         if s.pixelMove != nil { return "Pixels are being moved." }

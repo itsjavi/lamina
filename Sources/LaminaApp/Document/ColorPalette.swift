@@ -86,10 +86,10 @@ extension EditorSession {
         }
         refreshCanvasPreview?()
     }
-    /// Opens the app's picker on a layer effect's color.
+    /// Opens the app's picker on the color of an effect in the Layer Style dialog.
     func openEffectColorPicker(_ kind: LayerEffectKind) {
-        guard canEditPalette, colorPicker == nil, effectsEditing != nil else { return }
-        colorPicker = ColorPickerState(target: .effect(kind: kind), original: editingEffects.color(kind) ?? .black)
+        guard canEditPalette, colorPicker == nil, let color = layerStyle?.working.effects.color(kind) else { return }
+        colorPicker = ColorPickerState(target: .effect(kind: kind), original: color)
     }
     func closeColorPicker(commit: Bool) {
         if let colorPicker {
@@ -113,7 +113,7 @@ extension EditorSession {
                 }
             case .effect(let kind):
                 let color = commit ? colorPicker.color : colorPicker.original
-                changeEffects { $0.setColor(color, for: kind) }
+                changeLayerStyle { $0.effects.setColor(color, for: kind) }
             case .gradientMap(let highlights):
                 // The end has been previewing the working color; Cancel puts the original back.
                 setGradientMapColor(commit ? colorPicker.color : colorPicker.original, highlights: highlights)
@@ -146,7 +146,7 @@ extension EditorSession {
     /// While the picker is open on an effect's color, the canvas follows its working color.
     func previewEffectColor() {
         guard let colorPicker, case .effect(let kind) = colorPicker.target else { return }
-        changeEffects { $0.setColor(colorPicker.color, for: kind) }
+        changeLayerStyle { $0.effects.setColor(colorPicker.color, for: kind) }
     }
     /// Preview the picker's working color in the active on-canvas text draft.
     func previewTextColor() {

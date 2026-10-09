@@ -45,7 +45,7 @@ struct DialogLayout<Settings: View, Extras: View>: View {
                             .disabled(defaultDisabled)
                         DialogButton("Cancel", action: cancel).configuredNativeShortcut(.escape)
                         extras
-                        if let preview { previewToggle(preview).padding(.top, 4) }
+                        if let preview { DialogPreviewToggle(isOn: preview).padding(.top, 4) }
                         if status != nil || reservesStatus { statusLine.padding(.top, 4) }
                     }
                     .frame(width: Self.columnWidth)
@@ -53,7 +53,7 @@ struct DialogLayout<Settings: View, Extras: View>: View {
             case .bottom:
                 settings
                 HStack(spacing: 10) {
-                    if let preview { previewToggle(preview) }
+                    if let preview { DialogPreviewToggle(isOn: preview) }
                     if status != nil || reservesStatus { statusLine }
                     Spacer(minLength: 0)
                     extras
@@ -66,11 +66,6 @@ struct DialogLayout<Settings: View, Extras: View>: View {
         }
         .padding(20)
         .fixedSize()
-    }
-
-    private func previewToggle(_ isOn: Binding<Bool>) -> some View {
-        Toggle("Preview", isOn: isOn).configuredNativeShortcut("p", modifiers: .option)
-            .help("Show the change on the canvas (⌥P)")
     }
 
     private var statusLine: some View {
@@ -101,6 +96,16 @@ extension DialogLayout {
         self.init(placement: placement, title: title, defaultTitle: defaultTitle, defaultDisabled: defaultDisabled,
                   preview: preview, status: status, reservesStatus: reservesStatus, confirm: confirm, cancel: cancel,
                   settings: settings(), extras: extras())
+    }
+}
+
+/// The Preview checkbox (⌥P). `DialogLayout` puts it under the column's buttons; a dialog with something to show
+/// under it (Layer Style's swatch) passes no `preview` and puts this in its `extras` instead.
+struct DialogPreviewToggle: View {
+    let isOn: Binding<Bool>
+    var body: some View {
+        Toggle("Preview", isOn: isOn).configuredNativeShortcut("p", modifiers: .option)
+            .help("Show the change on the canvas (⌥P)")
     }
 }
 

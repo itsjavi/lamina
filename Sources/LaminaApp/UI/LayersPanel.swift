@@ -39,13 +39,15 @@ struct LayersPanel: View {
                     .help("Group selected layers (⌘G)").accessibilityLabel("New folder").disabled(!session.canEditLayers)
                 LayerMaskMenu(session: session)
                 Menu {
-                    ForEach(LayerEffectKind.allCases, id: \.self) { kind in
-                        Button(kind.rawValue + "…") { session.addEffect(kind) }
+                    // The Layer ▸ Layer Style items, each opening the Layer Style dialog on its page.
+                    ForEach(LayerStylePage.all, id: \.self) { page in
+                        Button(page.title + "…") { session.openLayerStyle(page) }
+                        if page == .blendingOptions { Divider() }
                     }
                 } label: { Image(systemName: "sparkles").footerHitArea() }
                     .menuStyle(.borderlessButton).fixedSize()
-                    .help("Layer effects: stroke and drop shadow").accessibilityLabel("Layer effects")
-                    .accessibilityIdentifier("layerEffects").disabled(!session.canEditEffects)
+                    .help("Add a layer style").accessibilityLabel("Add a layer style")
+                    .accessibilityIdentifier("layerEffects").disabled(!session.canOpenLayerStyle)
                 Menu {
                     ForEach(AdjustmentKind.allCases, id: \.self) { kind in
                         Button(kind.rawValue) { session.addAdjustment(kind) }

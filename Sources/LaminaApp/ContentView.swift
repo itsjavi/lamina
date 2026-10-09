@@ -12,7 +12,7 @@ struct ContentView: View {
     @State private var selectionAmountPanel = FloatingPanelController(name: "selectionAmountPanel")
     @State private var colorRangePanel = FloatingPanelController(name: "colorRangePanel")
     @State private var filterPanel = FloatingPanelController(name: "filterPanel")
-    @State private var effectsPanel = FloatingPanelController(name: "effectsPanel")
+    @State private var layerStylePanel = FloatingPanelController(name: "layerStylePanel")
     @State private var isDropTargeted = false
     /// The dock's widths, split and open panels, shared with the Window menu.
     private let dockLayout = DockLayout.shared
@@ -199,18 +199,11 @@ struct ContentView: View {
                 adjustmentPanel.show(title: "Hue/Saturation", content: HueSaturationSheet(session: session))
             }
         }
-        .onChange(of: session.effectsEditing) { _, selection in
-            if let selection {
-                effectsPanel.onClose = { session.finishEffectsEditing(commit: false) }
-                effectsPanel.show(title: selection.kind.rawValue, content: EffectsSheet(session: session, kind: selection.kind))
-            } else { effectsPanel.close() }
-        }
-        .onChange(of: session.document?.layers) { _, layers in
-            if let editing = session.effectsEditing,
-               layers?.first(where: { $0.id == editing.layerID })?.effects?.contains(editing.kind) != true {
-                if let picker = session.colorPicker, case .effect = picker.target { session.closeColorPicker(commit: false) }
-                session.effectsEditing = nil
-                session.effectsEditingOriginal = nil
+        .onChange(of: session.layerStyle == nil) { _, closed in
+            if closed { layerStylePanel.close() }
+            else {
+                layerStylePanel.onClose = { session.finishLayerStyle(commit: false) }
+                layerStylePanel.show(title: "Layer Style", content: LayerStyleDialog(session: session))
             }
         }
         .onChange(of: session.selectionAmountOperation) { _, operation in

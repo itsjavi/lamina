@@ -6,7 +6,7 @@
     <title>Lamina: a simpler Photoshop and Affinity alternative for the Mac</title>
     <meta
       name="description"
-      content="A native macOS image editor for photo editing and compositing: layers, masks, adjustment layers, Camera Raw, brushes, healing and text, with Photoshop shortcuts. No subscription, no account, open source, agent ready and under 50 MB."
+      content="A native macOS image editor for photo editing and compositing: layers, masks, adjustment layers, Camera Raw, brushes, healing and text, in the familiar layout of Photoshop, Affinity and similar editors. No subscription, no account, open source, agent ready and under 50 MB."
     />
     <link rel="canonical" href="https://itsjavi.com/lamina/" />
     <meta name="color-scheme" content="light dark" />
@@ -36,7 +36,7 @@
     <meta name="twitter:title" content="Lamina: a simpler Photoshop and Affinity alternative for the Mac" />
     <meta
       name="twitter:description"
-      content="Layers, masks, adjustment layers, Camera Raw, brushes and text for macOS. No subscription, no account, open source and under 50 MB."
+      content="Layers, masks, adjustment layers, Camera Raw, brushes and text for macOS, in a layout you already know. No subscription, no account, open source and under 50 MB."
     />
     <meta name="twitter:image" content="https://itsjavi.com/lamina/assets/og-image.jpg" />
     <meta
@@ -51,7 +51,7 @@
         "name": "Lamina",
         "applicationCategory": "DesignApplication",
         "operatingSystem": "macOS 26",
-        "description": "A native macOS image editor for photo editing and compositing, with layers, masks, adjustment layers, Camera Raw and Photoshop shortcuts.",
+        "description": "A native macOS image editor for photo editing and compositing, with layers, masks, adjustment layers and Camera Raw in a familiar layout, in light and dark.",
         "url": "https://itsjavi.com/lamina/",
         "license": "https://opensource.org/licenses/MIT",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
@@ -98,8 +98,8 @@
           <h1>Photo editing and compositing, <br />without the bloat.</h1>
           <p class="lead">
             Lamina is a native Mac image editor with the tools you reach for every day: layers, masks, adjustment layers,
-            Camera Raw, brushes, healing and text, with the Photoshop shortcuts you already know. No subscription, no
-            account, and AI agents can work on your projects too.
+            Camera Raw, brushes, healing and text, laid out like the editors you already know, with their names and
+            shortcuts. No subscription, no account, and AI agents can work on your projects too.
           </p>
           <div class="actions">
             <a class="button button-primary" href="https://github.com/itsjavi/lamina">View on GitHub</a>
@@ -112,8 +112,8 @@
             <img
               src="assets/oil-painting.webp"
               width="2400"
-              height="1457"
-              alt="The Lamina window: an oil-painted seascape at sunset on the canvas, and the Layers panel with a Warm varnish adjustment, a Sun glow layer, a Surface folder with varnish sheen, impasto relief and canvas weave, and a Paint folder with accents, detail strokes and body strokes."
+              height="1376"
+              alt="The Lamina window in dark appearance: an oil-painted seascape at sunset on the canvas, the toolbar at the left, Properties showing the Warm varnish Curves adjustment, and the Layers panel with a Sun glow layer, a Surface group with varnish sheen, impasto relief and canvas weave, and a Paint group with accents, detail strokes, body strokes and block-in."
               fetchpriority="high"
             />
           </a>
@@ -172,8 +172,8 @@
               <h3>Why Lamina</h3>
               <p>
                 Retouch a photo, cut something out, put a few layers together, add some text, export. That is most of what
-                I open an image editor for, so Lamina keeps <strong>those tools</strong>, with the shortcuts and layer model
-                you already know, in a <strong>native Mac app under 50 MB</strong>.
+                I open an image editor for, so Lamina keeps <strong>those tools</strong>, laid out the way you already know,
+                in a <strong>native Mac app under 50 MB</strong>.
               </p>
               <p>
                 Projects are <strong>plain folders</strong> of PNG layers and a manifest, so nothing is locked in, and AI
@@ -182,7 +182,7 @@
               <ul class="tasks">
                 <li>Layers, masks and adjustment layers</li>
                 <li>Camera Raw, brushes, healing and text</li>
-                <li>Photoshop shortcuts, remappable</li>
+                <li>A familiar layout and shortcuts</li>
                 <li>Plain project folders, no lock-in</li>
                 <li>Agents via the command line or MCP</li>
                 <li>No subscription, no account</li>
@@ -197,6 +197,30 @@
         <div class="container">
           <p class="eyebrow">Features</p>
           <h2 id="features-title">Layers first. Every edit stays editable.</h2>
+
+          <div class="feature">
+            <div class="feature-copy">
+              <h3>A layout you already know</h3>
+              <p>
+                Tools in a column at the left, the active tool's options above the canvas, and Properties, Adjustments and
+                Layers docked at the right, as in Photoshop, Affinity and similar editors. Commands sit where you'd look,
+                under the names you'd look for: Free Transform on ⌘T, Levels in Image › Adjustments, Liquify in Filter.
+              </p>
+              <p>
+                Properties shows whatever is selected, from a layer's size and alignment to a type layer's character
+                settings. It's drawn with native Mac controls, in light and dark.
+              </p>
+            </div>
+            <a class="feature-shot" data-lightbox href="assets/screenshot.webp">
+              <img
+                src="assets/screenshot.webp"
+                width="2400"
+                height="1376"
+                loading="lazy"
+                alt="The Lamina window in dark appearance: a sunset composition with its text title selected by the Move tool, the toolbar at the left, the Move tool's options bar above the canvas, Properties showing the type layer's transform and character settings, and the Layers panel with a Curves adjustment, a group holding the text layer, a masked lake, hills and a sun with an outer glow."
+              />
+            </a>
+          </div>
 
           <div class="feature">
             <div class="feature-copy">
@@ -215,9 +239,9 @@
               <img
                 src="assets/camera-raw.webp"
                 width="1600"
-                height="972"
+                height="918"
                 loading="lazy"
-                alt="The Camera Raw filter docked beside the canvas, with its histogram, Light and Color sliders and color grading wheels."
+                alt="The Camera Raw Filter beside the canvas in dark appearance, with its histogram, Light and Color sliders and color grading wheels, applied to the sky layer."
               />
             </a>
           </div>
@@ -227,21 +251,21 @@
               <h3>Adjustments that stay adjustable</h3>
               <p>
                 Curves, Levels, Hue/Saturation, Exposure, Gradient Map, Black &amp; White, Color Balance, blurs and noise
-                as adjustment layers: reopen them any time, mask them, clip them to a layer or tone them down with opacity
-                and blend modes.
+                as adjustment layers, one click away in the Adjustments panel. Change them any time in Properties, mask
+                them, clip them to a layer or tone them down with opacity and blend modes.
               </p>
               <p>
-                Layer effects work the same way: stroke, shadows, glows and color overlay, drawn on the GPU and editable
-                whenever you like.
+                Layer styles work the same way: stroke, shadows, glows and color overlay in one Layer Style dialog, drawn
+                on the GPU and editable whenever you like.
               </p>
             </div>
             <a class="feature-shot" data-lightbox href="assets/curves.webp">
               <img
                 src="assets/curves.webp"
                 width="1600"
-                height="972"
+                height="918"
                 loading="lazy"
-                alt="A Curves adjustment layer being edited in its floating panel over the canvas."
+                alt="Lamina in light appearance with the Warm grade Curves adjustment layer selected, its curve shown in the Properties panel above the Layers panel."
               />
             </a>
           </div>
@@ -281,15 +305,15 @@ claude mcp add lamina -- \
             <li>
               <h3>Selections that think</h3>
               <p>
-                Marquee, lasso, the Magic Wand and Object selection, Select Subject, and Content-Aware Fill that can also
-                extend an image past its edges.
+                Marquees, lassos, Object Selection and the Magic Wand, Select Subject and Color Range, and Content-Aware
+                Fill that can also extend an image past its edges.
               </p>
             </li>
             <li>
               <h3>Paint and retouch</h3>
               <p>
-                Brush with flow and pen pressure, Dodge and Burn, Spot Healing, Clone Stamp, Gradient and Paint Bucket, on
-                pixels or masks.
+                Brush and Eraser with flow and pen pressure, Dodge and Burn, Blur and Smudge, Spot Healing, Clone Stamp,
+                Gradient and Paint Bucket, on pixels or masks, and Liquify.
               </p>
             </li>
             <li>
@@ -309,15 +333,15 @@ claude mcp add lamina -- \
             <li>
               <h3>Export anything</h3>
               <p>
-                PNG, JPEG with a live preview, HEIC, AVIF, WebP, TIFF and PDF, plus Copy Merged and tabs for several
-                projects at once.
+                Quick Export as PNG, or Export As… to PNG, JPEG, HEIC, AVIF, WebP, TIFF and PDF with a preview, plus Copy
+                Merged and tabs for several projects at once.
               </p>
             </li>
             <li>
               <h3>Native and light</h3>
               <p>
-                SwiftUI, AppKit and Metal, App Sandboxed, a History panel for every step, and Photoshop shortcuts you can
-                remap. All under 50 MB.
+                SwiftUI, AppKit and Metal in light and dark, App Sandboxed, History for every step, and familiar shortcuts
+                you can remap. All under 50 MB.
               </p>
             </li>
           </ul>

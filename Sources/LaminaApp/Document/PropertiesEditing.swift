@@ -34,7 +34,8 @@ enum PropertiesKind: Equatable {
         case .type: "textformat"
         case .group: "folder"
         case .layers: "square.stack"
-        case .adjustment(let kind): kind.symbol
+        // As the Adjustments panel shows it.
+        case .adjustment(let kind): kind.panelSymbol
         case .mask: "rectangle.inset.filled"
         }
     }

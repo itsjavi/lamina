@@ -356,8 +356,8 @@ Layers' contents are **m-5** (TASK-61).
   | Adjustment layer | the kind ("Curves") | the adjustment's controls, live · footer: Clip to Layer Below, Reset to Adjustment Defaults, Hide/Show Layer, Delete Layer |
   | Layer mask (its thumbnail targeted) | Layer Mask | Masks (Refine: Color Range…, Invert) · footer: Load Selection from Mask, Apply Mask, Delete Mask |
 
-  - The title row (32 pt) shows the kind's 15 pt icon in `icon` and its name in 12 pt semibold; Curves' icon is turned
-    a quarter, as in Layers. Sections have an 11.5 pt semibold heading with a chevron that folds them; which headings
+  - The title row (32 pt) shows the kind's 15 pt icon in `icon` and its name in 12 pt semibold; an adjustment takes its
+    Adjustments panel symbol. Sections have an 11.5 pt semibold heading with a chevron that folds them; which headings
     are folded is remembered for every selection (ToolDefaults `propertiesCollapsed`). Sections are separated by
     `separator` lines, padded 10 pt, and scroll when the group is too short; the footer (30 pt, 15 pt icons) stays at
     the bottom. Fields use monospaced digits; row labels in the panel have no colon ("Resolution", "Units",

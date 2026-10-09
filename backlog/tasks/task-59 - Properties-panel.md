@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-09 02:14'
-updated_date: '2026-10-09 06:46'
+updated_date: '2026-10-09 06:52'
 labels: []
 milestone: m-5
 dependencies:
@@ -71,6 +71,8 @@ Verification:
 - New PropertiesTests: each selection's state (none, document, pixel, mask, type, shape, 2 layers, group, adjustment); transform fields one step each, a Free Transform takes them, values survive save and reopen; Character edits one step each (held field = one step), join a text draft, survive reopening; text color one step and Cancel none; a held-mouse drag on an adjustment is one step; adjustment edits and footer (clip, hide) survive reopening; Levels counts only the layers below; mask Color Range replaces the mask and survives reopening; canvas W/H and resolution go through Canvas Size and Image Size and survive reopening. AdjustmentEditorTests now drives every editable kind through Properties (live value, one step, undo/redo, Reset, Codable). AutomationTests pass (add-adjustment-layer is one step, nothing left open).
 - Visual (make dev, demo project, lamina --pid select-layer, window captures; light via the -appearance argument and a tall group via -dockTopHeight arguments, so no Dev defaults were written): backlog/assets/task-59/ document-light, document-dark, pixel-light, pixel-dark, type-light, type-dark, group-light, curves-light, curves-dark, exposure-dark, hue-saturation-dark, mask-light, mask-dark, window-type-dark-1500x860. Fixed after the first captures: disabled distribute buttons didn't dim (panel-wide foreground style removed), Curves' Remove Point truncated (moved under its fields in compact), mask Refine buttons truncated.
 - Not checked by hand: a real slider drag in the running app producing one History step (another agent's Lamina Dev was running, so no mouse automation); covered by the unit test with the pointer stood in. Light shots of the Type bar without leading/tracking not captured (removal is in code).
+
+Rebased onto main after TASK-53, TASK-55, TASK-60 and TASK-64 landed: resolved EditorSession (kept layerStyle, dropped adjustmentEditingID), Dock (AdjustmentsPanel's layout plus Properties' projects) and DESIGN.md; updated AdjustmentsPanelTests, which assumed a new adjustment layer blocks layer edits (it no longer does; renaming a layer stands in). The Properties title now uses an adjustment's Adjustments panel symbol (TASK-60's panelSymbol). Full swift test after the rebase: 758 tests in 110 suites plus 47 and 22 passing; rebased Dev build checked (window-curves-dark-1500x860.png).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

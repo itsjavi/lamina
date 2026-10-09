@@ -82,9 +82,7 @@ struct PropertiesTitle: View {
 
     var body: some View {
         HStack(spacing: 7) {
-            // Curves' symbol turned a quarter, as the Layers panel shows it, so it reads as a curve.
             Image(systemName: kind.symbol).font(.system(size: 15))
-                .rotationEffect(.degrees(kind == .adjustment(.curves) ? 90 : 0))
                 .foregroundStyle(ColorRole.icon.color).frame(width: 18)
                 .accessibilityHidden(true)
             Text(kind.title).font(.system(size: 12, weight: .semibold)).lineLimit(1)

@@ -76,8 +76,8 @@ Rules:
 - Status: **shipping** (TASK-52). The frame is `ContentView` (`editorStack`); the options bar is `OptionsBar`
   (`UI/OptionsBar.swift`), the tool → icon mapping `ToolIcon` (`UI/ToolIcon.swift`, with a size: 18 pt in the toolbar,
   16 pt in the options bar), the zoom field `ZoomField` (`UI/StatusBar.swift`); the hint is the tool's `hint`. The
-  toolbar is still the 56 pt rail listing every tool, which scrolls at 1500 × 860 pt until TASK-55 groups it into
-  slots. The panel icon column and the dock shipped with TASK-58 (see [Dock and panels](#dock-and-panels)): at
+  toolbar is still the 56 pt rail listing every tool and planned tool, which scrolls at 1500 × 860 pt until TASK-55
+  groups it into slots. The panel icon column and the dock shipped with TASK-58 (see [Dock and panels](#dock-and-panels)): at
   1500 × 860 pt with the dock at its default width the canvas measures about 1115 × 761 pt (at the dock's widest,
   360 pt, about 1047 pt wide).
 
@@ -168,6 +168,11 @@ Every numeric field uses monospaced digits so values don't jitter while scrubbin
 | Horizontal Type | a serif "T" (not "Aa") |
 | Rectangle / Ellipse / Line | `rectangle.fill` / `oval.fill` / `line.diagonal` |
 | Hand / Zoom | `hand.raised` / `magnifyingglass` |
+| Pen (in progress) | `pencil.tip` |
+| Path Selection / Direct Selection (in progress) | `cursorarrow` / `point.topleft.down.to.point.bottomright.curvepath` |
+| Mixer Brush / Palette Knife (in progress) | `paintbrush` / custom palette knife (`PaletteKnifeToolIcon`) |
+| Polygon / Star (in progress) | `hexagon.fill` / `star.fill` |
+| Stroke options / path operations (shape bars, in progress) | `lineweight` / `square.on.square` |
 | History panel | `clock.arrow.circlepath` |
 
 Until TASK-55 draws the custom icons, Dodge and Burn show `sun.max` and `flame`, and Move, Type and Hand keep the
@@ -190,7 +195,10 @@ plus the key, with that slot's tool active, picks the next tool in the slot (rou
 tool picks the slot's last-used one. A held key counts once. Help tags and accessibility labels read "Tool name (Key)".
 Status: the separate tools, their keys and Shift cycling are **shipping** (TASK-54: `NavigationTool` and `ToolSlot` in
 `Sources/LaminaApp/Document/NavigationTool.swift`, with each slot's last tool in `EditorSession.slotTools`); the slot
-column with flyouts is **m-5** (TASK-55). Until then the tool rail lists every tool on its own.
+column with flyouts is **m-5** (TASK-55). Until then the tool rail lists every slot's items on its own, planned tools
+included. The planned tools in this table are **shipping** as placeholders (TASK-53): `ToolSlot.items` lists them in
+flyout order, P shows the Pen's message, and Shift-cycling passes through them (see
+[In-progress placeholders](#in-progress-placeholders)).
 
 Each tool remembers its settings. Brush and Spot Healing share one tip (size, hardness, opacity); Eraser, Dodge and Burn,
 Blur and Smudge, Clone Stamp and Liquify each keep their own, and settings saved before the split start Eraser, Dodge
@@ -272,7 +280,7 @@ are dimmed: the corner handles are the controls.
 | Crop | Ratio (Ratio, Original Ratio, 1:1 (Square), 4:3, 16:9, …) · W ⇄ H · Clear │ … Cancel · Commit |
 | Eyedropper | Show Sampling Ring |
 | Spot Healing Brush | brush picker │ Type: Content-Aware \| Create Texture \| Proximity Match │ pressure for size |
-| Brush | brush picker (Size, Hardness; bristle presets in progress, TASK-46) │ Opacity · pressure for opacity · Flow │ Smoothing │ pressure for size |
+| Brush | brush picker (Size, Hardness; bristle presets in progress, TASK-46, shipping as a Presets pop-up at the start of today's bar until TASK-57 builds the picker) │ Opacity · pressure for opacity · Flow │ Smoothing │ pressure for size |
 | Clone Stamp | brush picker │ Opacity · pressure for opacity │ Aligned · Sample: Current Layer, All Layers │ pressure for size |
 | Eraser | brush picker │ Opacity · pressure for opacity · Flow · Smoothing │ pressure for size |
 | Gradient | gradient preset picker · Linear, Radial │ Opacity · Reverse |
@@ -280,7 +288,7 @@ are dimmed: the corner handles are the controls.
 | Blur / Smudge | brush picker │ Strength · Radius (Blur only, Lamina) │ pressure for size |
 | Dodge / Burn | brush picker │ Range: Shadows, Midtones, Highlights · Exposure │ pressure for size |
 | Horizontal Type | font family · font style · size │ Left, Center, Right · color · Character panel │ … Cancel · Commit |
-| Rectangle / Ellipse / Line | Fill swatch · Stroke swatch and width (in progress, TASK-32) · stroke options (in progress, TASK-34) │ path operations (in progress, TASK-34) │ Radius (Rectangle) or Weight (Line) |
+| Rectangle / Ellipse / Line | Fill swatch · Stroke swatch and width (in progress, TASK-32) · stroke options (in progress, TASK-34) │ path operations (in progress, TASK-34) │ Radius (Rectangle) or Weight (Line). This order and the placeholders ship with TASK-53 (the stroke swatch shows "none": an empty `field` well crossed by a `secondaryText` line; the width reads "1 px"); the labels keep today's wording, without colons, until TASK-57 |
 | Hand | 100% · Fit Screen · Fill Screen (shipping, TASK-52) |
 | Zoom | Zoom In, Zoom Out │ Scrubby Zoom │ 100% · Fit Screen · Fill Screen (the three buttons ship with TASK-52; the rest is TASK-57) |
 
@@ -344,7 +352,10 @@ Edit ▸ Transform ▸ (Distort │ Flip Horizontal · Flip Vertical) are **ship
 Layer / Transform Selection and Flip Layer Horizontal / Vertical; TASK-62 puts them in the order below. During a Free
 Transform, Flip turns the box over across the reference point as part of the edit (dimmed while distorting);
 otherwise it flips the selected layers about their middle at once. Until TASK-62, View ▸ Show Transform Controls stays
-in the View menu with no shortcut.
+in the View menu with no shortcut. The in-progress menu items ship with TASK-53 in today's menus, as close to these
+places as today's order allows: Save a Copy… after Save As…, Rasterize and Convert to Editable Vectors after Apply
+Layer Mask, Combine Shapes ▸ and Release to Layers after Move Layer Down, Contextual Task Bar above the open documents
+in Window. TASK-62 moves them with the rest.
 
 - **Lamina:** About Lamina · Check for Updates… │ Settings… ⌘K │ Services ▸ │ Hide Lamina ⌃⌘H · Hide Others ⌥⌘H · Show All │ Quit Lamina ⌘Q
 - **File:** New… ⌘N · New from Clipboard ⌥⌘N · Open… ⌘O · Open Recent ▸ │ Close ⌘W │ Save ⌘S · Save As… ⇧⌘S · Save a Copy… ⌥⌘S (in progress: layered Photoshop files, TASK-27) │ Export ▸ (Quick Export as PNG │ Export As… ⌥⇧⌘W) │ Place Embedded…
@@ -380,6 +391,7 @@ What changes from the shortcuts Lamina shipped before m-5 (applied by TASK-62; c
 | Layer ▸ Hide Layers | none | ⌘, |
 | Edit ▸ Keyboard Shortcuts… | none | ⌥⇧⌘K |
 | Lamina ▸ Settings… | none (no Settings window) | ⌘K (shipping, TASK-51) |
+| File ▸ Save a Copy… / Pen Tool | none | ⌥⌘S / P (shipping as placeholders, TASK-53) |
 | Tools (shipped with TASK-54) | B with Tab cycling modes, R for Smear | E Eraser, O Dodge and Burn, R Blur and Smudge, Shift plus key cycles a slot; Tab does nothing on the canvas |
 
 ### Dialogs
@@ -471,7 +483,8 @@ How it works (`Sources/LaminaApp/Document/PlannedFeature.swift`):
   shows its message and leaves the tool and the slot's last-used tool as they were. While the message shows, Shift and
   the slot's key step on from it, so Shift-U goes Rectangle, Ellipse, Polygon, Star, Line, and Shift-B Brush, Mixer
   Brush, Palette Knife, Brush.
-- Help tags read "Pen Tool (P) · In progress", "Rasterize · In progress". Menu placeholders are `PlannedMenuItem`,
+- Help tags read "Pen Tool (P) · In progress", "Shape Stroke · In progress" (macOS shows none on menu items, so menu
+  placeholders are told apart only by their message). Menu placeholders are `PlannedMenuItem`,
   bar controls `BristlePresetsMenu` and `ShapeStrokePlaceholders` (`UI/PlannedControls.swift`). Menu items without a
   default key take one in Keyboard Shortcuts like any other (`PlannedFeature.assignableMenuCommands`).
 

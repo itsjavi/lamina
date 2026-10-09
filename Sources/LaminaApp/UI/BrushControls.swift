@@ -16,7 +16,6 @@ struct BrushControls: View {
 
     private func controls(sliders: Bool) -> some View {
         HStack(spacing: 12) {
-            Text(session.tool.title).font(ToolHeaderStyle.titleFont)
             if session.tool == .spotHealing {
                 Picker("Type", selection: $session.spotHealingMode) {
                     ForEach(SpotHealingMode.allCases, id: \.self) { Text($0.rawValue).tag($0) }

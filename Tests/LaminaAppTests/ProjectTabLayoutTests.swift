@@ -66,4 +66,26 @@ struct ProjectTabLayoutTests {
         #expect(right <= 500, "row ends at \(right)")
         #expect(layout.visible.first?.id == order[0])
     }
+
+    @Test func tabLabelsReadNameZoomLayerAndMode() {
+        #expect(projectTabLabel(name: "Golden Hour", zoom: 0.445, layerName: "Golden hour") == "Golden Hour @ 44.5% (Golden hour, RGB/8)")
+        #expect(projectTabLabel(name: "Portrait", zoom: 1, layerName: "Layer 1") == "Portrait @ 100% (Layer 1, RGB/8)")
+        #expect(projectTabLabel(name: "Portrait", zoom: 0.25, layerName: nil) == "Portrait @ 25% (RGB/8)")
+        #expect(projectTabLabel(name: "Untitled", zoom: nil, layerName: nil) == "Untitled")
+    }
+
+    @Test func crowdedTabsNarrowTheWidestFirstBeforeOverflowing() {
+        let order = [a, b, c]
+        let natural: [UUID: CGFloat] = [a: 300, b: 200, c: 120]
+        // Room enough: nothing changes.
+        #expect(projectTabFittedWidths(natural, minimum: 100, availableWidth: 700) == natural)
+        // 532 available, less 12 of spacing: a and b share what c leaves, 200 each.
+        let fitted = projectTabFittedWidths(natural, minimum: 100, availableWidth: 532)
+        #expect(fitted == [a: 200, b: 200, c: 120])
+        // Too crowded even at the minimum: each stops there and the overflow takes the rest.
+        let crowded = projectTabFittedWidths(natural, minimum: 100, availableWidth: 250)
+        #expect(crowded == [a: 100, b: 100, c: 100])
+        let layout = projectTabOverflow(order: order, widths: crowded, selectedID: c, availableWidth: 250, pillWidth: pill)
+        #expect(layout.hiddenIDs == [a, b])
+    }
 }

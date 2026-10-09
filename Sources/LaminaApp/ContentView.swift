@@ -24,66 +24,53 @@ struct ContentView: View {
         return workspace.canReceiveDrag(into: workspace.current.id)
     }
     // Extracted from `body`: as one expression the type checker times out (Xcode 26.1).
+    /// The active tool's settings, which the options bar shows after the tool's icon.
     @ViewBuilder private var toolHeaders: some View {
         Group {
             if session.tool == .move {
                 TransformInspector(session: session).id(session.activeLayerID)
-                Divider()
             }
             if session.tool.isBrushTool {
                 BrushControls(session: session)
-                Divider()
             }
             if session.tool.isSelectionTool {
                 LassoControls(session: session)
-                Divider()
             }
             if session.tool == .gradient {
                 GradientControls(session: session)
-                Divider()
             }
             if session.tool == .paintBucket {
                 PaintBucketControls(session: session)
-                Divider()
             }
             if session.tool == .type {
                 TypeControls(session: session)
-                Divider()
             }
             if session.tool.shapeKind != nil {
                 ShapeControls(session: session)
-                Divider()
             }
             if session.tool == .eyedropper {
                 HStack(spacing: 16) {
-                    Text("Eyedropper").font(ToolHeaderStyle.titleFont)
                     Toggle("Sample Ring", isOn: $session.showsSampleRing).toggleStyle(.checkbox)
                     Spacer()
                 }.padding(.horizontal, 18).toolHeaderBar()
-                Divider()
             }
             if session.tool == .hand || session.tool == .zoom {
                 NavigationToolHeader(session: session)
-                Divider()
             }
             if session.tool == .crop {
                 CropControls(session: session)
-                Divider()
             }
-            // No tool (A) keeps the header, so the canvas doesn't jump.
+            // No tool (A) keeps the bar, its icon and nothing after it, so the canvas doesn't jump.
             if session.tool == .idle {
-                HStack(spacing: 16) {
-                    Text("Select a tool").font(ToolHeaderStyle.titleFont)
-                    Spacer()
-                }.padding(.horizontal, 18).toolHeaderBar()
-                Divider()
+                Spacer().toolHeaderBar()
             }
         }
     }
 
     @ViewBuilder private var editorStack: some View {
         VStack(spacing: 0) {
-            toolHeaders
+            OptionsBar(session: session) { toolHeaders }
+            Divider()
             HStack(spacing: 0) {
                 toolRail
                 Divider()
@@ -112,15 +99,16 @@ struct ContentView: View {
                         }
                         .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("editor")) } action: { canvasFrame = $0 }
                     }
+                    // Under the canvas only, as in a document window: the tools and panels run to the window's foot.
+                    Divider()
+                    // Keeps its own height however short the window gets; the tools scroll instead.
+                    statusBar.fixedSize(horizontal: false, vertical: true)
                 }
                 PanelResizeEdge(width: $layersPanelWidth, range: LayersPanel.widths)
                 SidePanels(session: session, width: layersPanelWidth).background(ColorRole.panel.color)
             }
-            Divider()
-            // Keeps its own height however short the window gets; the tools scroll instead.
-            statusBar.fixedSize(horizontal: false, vertical: true)
-                .modifier(WidthReader(width: $windowWidth))
         }
+        .modifier(WidthReader(width: $windowWidth))
     }
 
     // Split again for 1.1: the chain outgrew the type checker once more.
@@ -172,37 +160,13 @@ struct ContentView: View {
             if let workspace = applicationDelegate?.workspace {
                 ToolbarItem(placement: .navigation) {
                     ProjectTabStrip(workspace: workspace)
-                        // As wide as the toolbar allows: the window less the traffic lights and New button before it
-                        // and the zoom controls after it. Bounded, so adding tabs never pushes those aside; the
-                        // strip scrolls instead.
-                        .frame(width: max(200, windowWidth - 352), height: 34, alignment: .center)
+                        // As wide as the title bar allows: the window less the traffic lights and New button before
+                        // it. Bounded, so adding tabs never pushes New aside; crowded tabs narrow, then overflow.
+                        .frame(width: max(200, windowWidth - ProjectTabStrip.titleBarInset), height: 34, alignment: .center)
                 }
                 .sharedBackgroundVisibility(.hidden)
             }
-            // Absorb all remaining navigation-toolbar width before the zoom controls.
-            // Without this spacer, the growing tab strip pushes the primary actions left.
             ToolbarSpacer(.flexible, placement: .navigation)
-            ToolbarItem(placement: .primaryAction) {
-                Button("Fit") { session.fit() }.help("Fit canvas in window (⌘0)")
-                    .accessibilityIdentifier("fitCanvas").disabled(session.document == nil)
-                    .padding(.horizontal, 4)
-            }
-            ToolbarItem(placement: .primaryAction) {
-                Button("100%") { session.zoom(to: 1) }.help("Actual pixels (⌘1)")
-                    .accessibilityIdentifier("actualPixels").disabled(session.document == nil)
-                    .padding(.horizontal, 4)
-            }
-            ToolbarItem(placement: .primaryAction) {
-                HStack(spacing: 0) {
-                    Button { session.zoomKeyboard(by: 1) } label: {
-                        Image(systemName: "plus.magnifyingglass")
-                    }.help("Zoom in (⌘+)").disabled(session.document == nil)
-                    Button { session.zoomKeyboard(by: -1) } label: {
-                        Image(systemName: "minus.magnifyingglass")
-                    }.help("Zoom out (⌘−)").disabled(session.document == nil)
-                }
-                .padding(.horizontal, 4)
-            }
         }
     }
 
@@ -319,14 +283,13 @@ struct ContentView: View {
             onOpen: { Task { await applicationDelegate?.projects.open() } })
     }
     private var statusBar: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 14) {
             if let document = session.document {
-                Text(session.viewport.zoom, format: .percent.precision(.fractionLength(0...1)))
-                    .frame(width: 62, alignment: .leading).accessibilityIdentifier("zoomStatus")
-                Text("\(document.width) × \(document.height) px").accessibilityIdentifier("canvasDimensions")
-                Text("sRGB · Transparent")
+                ZoomField(session: session).fixedSize()
+                Text(document.sizeDescription).foregroundStyle(ColorRole.text.color).fixedSize()
+                    .accessibilityIdentifier("canvasDimensions")
             } else { Text("Ready when you are") }
-            Spacer()
+            Spacer(minLength: 12)
             if session.showsBusy {
                 ProgressView().controlSize(.mini)
                 Text("Working…")
@@ -337,8 +300,10 @@ struct ContentView: View {
                 Text(session.tool.hint)
             }
         }
+        // The hints give way first: one line, cut off at the end, while the zoom and size keep their width.
+        .lineLimit(1)
         .font(.system(size: 11).monospacedDigit()).foregroundStyle(.secondary)
-        .padding(.horizontal, 18).frame(height: 30)
+        .padding(.horizontal, 8).frame(height: StatusBarStyle.height)
         .accessibilityElement(children: .contain)
     }
 }

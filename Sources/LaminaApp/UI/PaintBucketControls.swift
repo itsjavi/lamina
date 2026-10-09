@@ -5,7 +5,6 @@ struct PaintBucketControls: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text("Paint Bucket").font(ToolHeaderStyle.titleFont)
             HStack(spacing: 6) {
                 Text("Tolerance").scrubbable(sensitivity: 1, value: $session.bucketSettings.tolerance, range: 0...255)
                 TextField("Tolerance", value: Binding(get: { session.bucketSettings.tolerance },

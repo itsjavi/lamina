@@ -63,11 +63,17 @@ struct ProjectTabStrip: View {
     /// could inflate would let it feed back into itself and get stuck believing it has unlimited room.
     @State private var slotWidth: CGFloat = 0
 
-    private func widths() -> [UUID: CGFloat] {
-        Dictionary(uniqueKeysWithValues: workspace.tabs.map { ($0.id, projectTabPillWidth($0, active: workspace.selectedID == $0.id)) })
+    /// What the title bar keeps beside the strip: the traffic lights, the New button and the gaps around them, and the
+    /// toolbar's own trailing margin. Any wider and macOS slides the strip left over the New button.
+    static let titleBarInset: CGFloat = 250
+
+    /// Each pill's width at `availableWidth`: its label's natural width, narrowed when the tabs are crowded.
+    private func widths(availableWidth: CGFloat) -> [UUID: CGFloat] {
+        let natural = Dictionary(uniqueKeysWithValues: workspace.tabs.map { ($0.id, projectTabPillWidth($0, active: workspace.selectedID == $0.id)) })
+        return projectTabFittedWidths(natural, minimum: projectTabMinimumPillWidth, availableWidth: availableWidth)
     }
     private func overflow(availableWidth: CGFloat) -> ProjectTabOverflow {
-        projectTabOverflow(order: workspace.tabs.map(\.id), widths: widths(), selectedID: workspace.selectedID,
+        projectTabOverflow(order: workspace.tabs.map(\.id), widths: widths(availableWidth: availableWidth), selectedID: workspace.selectedID,
                            availableWidth: availableWidth, pillWidth: projectTabOverflowPillWidth)
     }
     private func contentWidth(_ layout: ProjectTabOverflow) -> CGFloat {
@@ -132,7 +138,7 @@ struct ProjectTabStrip: View {
     @ViewBuilder private func tabView(for slot: ProjectTabSlot, contentWidth: CGFloat) -> some View {
         if let tab = workspace.tabs.first(where: { $0.id == slot.id }) {
             let isDragged = reorder?.id == slot.id
-            ProjectTabButton(workspace: workspace, tab: tab) { handleReorder(tab.id, $0) }
+            ProjectTabButton(workspace: workspace, tab: tab, labelWidth: slot.width - projectTabPillChrome) { handleReorder(tab.id, $0) }
                 .frame(width: slot.width, height: 28)
                 .offset(x: renderX(for: slot, contentWidth: contentWidth), y: 3)
                 .zIndex(isDragged ? 1 : 0)
@@ -174,7 +180,7 @@ struct ProjectTabStrip: View {
 
     private func makeReorderState(for id: UUID) -> TabReorderState {
         let layout = currentLayout
-        let tabWidths = widths()
+        let tabWidths = widths(availableWidth: slotWidth)
         let others = layout.visible.map(\.id).filter { $0 != id }
         let startX = layout.visible.first?.x ?? 0
         var x = startX
@@ -205,16 +211,29 @@ struct ProjectTabStrip: View {
     }
 }
 
-private func projectTabLabelWidth(_ tab: ProjectTab, active: Bool) -> CGFloat {
-    let font = NSFont.systemFont(ofSize: 12, weight: active ? .semibold : .medium)
-    let titleWidth = (tab.title as NSString).size(withAttributes: [.font: font]).width
-    let dotWidth: CGFloat = tab.session.isModified ? 10 : 0 // 5 px dot and 5 px gap
-    return min(155, max(35, ceil(titleWidth) + dotWidth))
+extension ProjectTab {
+    /// What the tab reads: "Golden Hour @ 44.5% (Sky, RGB/8)". Every tab keeps its own session, so the zoom and active
+    /// layer are that document's, selected or not.
+    var label: String {
+        projectTabLabel(name: title, zoom: session.document == nil ? nil : session.viewport.zoom,
+                        layerName: session.activeLayer?.name)
+    }
 }
 
+private func projectTabLabelWidth(_ tab: ProjectTab, active: Bool) -> CGFloat {
+    let font = NSFont.systemFont(ofSize: 12, weight: active ? .semibold : .medium)
+    let titleWidth = (tab.label as NSString).size(withAttributes: [.font: font]).width
+    let dotWidth: CGFloat = tab.session.isModified ? 10 : 0 // 5 px dot and 5 px gap
+    return min(320, max(35, ceil(titleWidth) + dotWidth))
+}
+
+/// 11 px leading, 8 px trailing, 16 px close button, 5 px after close.
+private let projectTabPillChrome: CGFloat = 40
+/// How narrow a crowded tab gets before tabs move into the overflow menu instead.
+private let projectTabMinimumPillWidth: CGFloat = 140
+
 private func projectTabPillWidth(_ tab: ProjectTab, active: Bool) -> CGFloat {
-    // 11 px leading, 8 px trailing, 16 px close button, 5 px after close.
-    projectTabLabelWidth(tab, active: active) + 40
+    projectTabLabelWidth(tab, active: active) + projectTabPillChrome
 }
 
 /// Sized the same way the tab pills are: text measured at the same weight, plus the chevron and padding.
@@ -327,6 +346,8 @@ private struct OverflowMenuAnchor: NSViewRepresentable {
 private struct ProjectTabButton: View {
     let workspace: ProjectWorkspace
     let tab: ProjectTab
+    /// The label's width in its slot: narrower than its text when the tabs are crowded, which cuts out the middle.
+    let labelWidth: CGFloat
     let onReorder: (TabDragPhase) -> Void
     @State private var targeted = false
     private var active: Bool { workspace.selectedID == tab.id }
@@ -337,9 +358,10 @@ private struct ProjectTabButton: View {
                     if tab.session.isModified {
                         Circle().frame(width: 5, height: 5).accessibilityLabel("Unsaved changes")
                     }
-                    Text(tab.title).font(.system(size: 12, weight: active ? .semibold : .medium)).lineLimit(1)
+                    Text(tab.label).font(.system(size: 12, weight: active ? .semibold : .medium))
+                        .lineLimit(1).truncationMode(.middle)
                 }
-                .frame(width: projectTabLabelWidth(tab, active: active), alignment: .leading)
+                .frame(width: max(0, labelWidth), alignment: .leading)
                 .padding(.leading, 11).padding(.trailing, 8)
                 .frame(height: 28)
                 .contentShape(Rectangle())
@@ -363,7 +385,7 @@ private struct ProjectTabButton: View {
         .frame(height: 28)
         .background(targeted ? Color.accentColor.opacity(0.3) : active ? ColorRole.control.color : Color.clear, in: Capsule())
         .overlay(Capsule().strokeBorder(targeted ? Color.accentColor : ColorRole.edge.color, lineWidth: targeted ? 2 : 1))
-        .help(targeted ? "Add to \(tab.title)" : tab.title)
+        .help(targeted ? "Add to \(tab.title)" : tab.label)
         .onDrop(of: [UTType.fileURL.identifier, UTType.image.identifier, ProjectWorkspace.layerType], delegate:
             ProjectTabDropDelegate(workspace: workspace, destination: tab.id, targeted: $targeted))
     }

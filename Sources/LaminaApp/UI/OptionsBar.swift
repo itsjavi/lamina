@@ -1,0 +1,27 @@
+import SwiftUI
+
+/// The bar above the canvas: the active tool's icon, then that tool's settings. It is the same height for every tool,
+/// so switching tools never moves the canvas.
+struct OptionsBar<Settings: View>: View {
+    let session: EditorSession
+    @ViewBuilder var settings: Settings
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ToolIcon(tool: session.tool, size: 16)
+                .foregroundStyle(ColorRole.text.color)
+                .frame(width: OptionsBarStyle.iconSlotWidth)
+                .help(session.tool.label)
+                .accessibilityLabel(session.tool.label)
+                .accessibilityIdentifier("optionsBarTool")
+            ColorRole.separator.color.frame(width: 1, height: 20)
+            settings.frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(height: ToolHeaderStyle.height)
+    }
+}
+
+enum OptionsBarStyle {
+    /// The toolbar's width in docs/DESIGN.md, so the icon sits over the column it was picked from.
+    static let iconSlotWidth: CGFloat = 44
+}

@@ -25,6 +25,33 @@ struct ProjectTabOverflow: Equatable {
     var contentWidth: CGFloat { visible.last.map { $0.x + $0.width } ?? pill.map { $0.x + $0.width } ?? 0 }
 }
 
+/// A document tab's label, as image editors write it: "Golden Hour @ 44.5% (Sky, RGB/8)", the name, the zoom, the
+/// active layer, then the mode and depth (always 8-bit RGB in Lamina). Without a document it is just the name; without
+/// an active layer, the parentheses hold only the mode.
+func projectTabLabel(name: String, zoom: CGFloat?, layerName: String?) -> String {
+    guard let zoom else { return name }
+    // Written the way the status bar's zoom field writes it, one decimal at most.
+    let percent = String(format: "%.1f", Double(zoom) * 100).replacingOccurrences(of: ".0", with: "", options: .anchored.union(.backwards))
+    let details = [layerName, "RGB/8"].compactMap { $0 }.joined(separator: ", ")
+    return "\(name) @ \(percent)% (\(details))"
+}
+
+/// Narrows tabs that don't all fit in `availableWidth`, so crowded labels truncate before any tab moves into the
+/// overflow menu: the widest narrow first, all to one common width, never below `minimum`. Tabs that still don't fit
+/// at `minimum` are left to `projectTabOverflow`.
+func projectTabFittedWidths(_ widths: [UUID: CGFloat], minimum: CGFloat, availableWidth: CGFloat) -> [UUID: CGFloat] {
+    let spacing = projectTabSpacing * CGFloat(max(0, widths.count - 1))
+    func total(cap: CGFloat) -> CGFloat { widths.values.reduce(spacing) { $0 + min($1, max(cap, minimum)) } }
+    guard availableWidth > 0, let widest = widths.values.max(), total(cap: widest) > availableWidth else { return widths }
+    // The widest whole-point cap that fits, found by halving: total(cap:) only grows with the cap.
+    var low = minimum.rounded(.down), high = widest.rounded(.up)
+    while low < high {
+        let mid = ((low + high + 1) / 2).rounded(.down)
+        if total(cap: mid) <= availableWidth { low = mid } else { high = mid - 1 }
+    }
+    return widths.mapValues { min($0, max(low, minimum)) }
+}
+
 /// "N more tabs", singular for one.
 func projectTabOverflowLabel(for hiddenCount: Int) -> String {
     hiddenCount == 1 ? "1 more tab" : "\(hiddenCount) more tabs"

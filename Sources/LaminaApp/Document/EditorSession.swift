@@ -1048,6 +1048,12 @@ final class EditorSession {
         viewport.fit(documentSize: document.size)
     }
 
+    /// Fill Screen: the canvas covers the whole viewport.
+    func fillScreen() {
+        guard let document else { return }
+        viewport.fill(documentSize: document.size)
+    }
+
     func zoom(to value: CGFloat, anchor: CGPoint? = nil) {
         guard let document else { return }
         viewport.setZoom(value, anchoredAt: anchor ?? viewport.center, documentSize: document.size)

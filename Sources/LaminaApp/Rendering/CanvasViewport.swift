@@ -40,6 +40,14 @@ struct CanvasViewport: Equatable {
         followsFit = true
     }
 
+    /// Zooms so the document covers the whole view, centered: its shorter fit runs past the edges.
+    mutating func fill(documentSize: CGSize) {
+        guard viewSize.width > 0, viewSize.height > 0, documentSize.width > 0, documentSize.height > 0 else { return }
+        zoom = clamp(max(viewSize.width / documentSize.width, viewSize.height / documentSize.height) * backingScale)
+        pan = .zero
+        followsFit = false
+    }
+
     mutating func resize(to size: CGSize, backingScale newScale: CGFloat, documentSize: CGSize?) {
         // Preserve the center document point when moving between displays.
         let oldScale = pointsPerPixel

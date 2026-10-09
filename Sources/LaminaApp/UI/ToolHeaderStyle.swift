@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// Shared metrics keep tool switching from changing typography or canvas layout.
+/// Shared metrics keep tool switching from changing typography or canvas layout. The bars have no titles: the options
+/// bar starts with the tool's icon instead (`OptionsBar`).
 enum ToolHeaderStyle {
-    static let height: CGFloat = 42
-    static let titleFont = Font.system(size: 13, weight: .semibold)
+    static let height: CGFloat = 36
     static let controlFont = Font.system(size: 12)
 }
 

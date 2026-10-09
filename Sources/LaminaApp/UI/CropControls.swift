@@ -11,7 +11,6 @@ struct CropControls: View {
         // Cancel and Apply sit by the ratio, where the eye already is, rather than across the bar; the size comes
         // after them, so its changing width never moves them.
         HStack(spacing: 14) {
-            Text("Crop").font(ToolHeaderStyle.titleFont)
             Picker("Ratio", selection: $session.cropRatioChoice) {
                 ForEach(CropRatio.builtIn, id: \.self) { Text($0) }
                 if !ratios.ratios.isEmpty {

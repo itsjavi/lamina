@@ -43,6 +43,19 @@ struct AppTests {
         #expect(abs(before.y - after.y) < 0.000001)
     }
 
+    /// Fill Screen covers the view: the document's looser side meets the view's edges, the other runs past them.
+    @Test func fillScreenCoversTheView() {
+        let session = EditorSession()
+        session.viewport.resize(to: CGSize(width: 1000, height: 700), backingScale: 2, documentSize: nil)
+        session.createDocument(width: 1920, height: 1080)
+        session.viewport.translate(by: CGSize(width: 120, height: -40))
+        session.fillScreen()
+        let rect = session.viewport.documentRect(document)
+        #expect(abs(rect.height - 700) < 0.000001) // 700/1080 > 1000/1920: the height decides
+        #expect(rect.width > 1000)
+        #expect(abs(rect.midX - 500) < 0.000001 && abs(rect.midY - 350) < 0.000001)
+    }
+
     @Test func keyboardZoomKeepsPannedViewportCenterFixed() {
         let session = EditorSession()
         session.viewport.resize(to: CGSize(width: 1000, height: 800), backingScale: 1, documentSize: nil)

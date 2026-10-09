@@ -5,7 +5,6 @@ struct LassoControls: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(session.tool.title).font(ToolHeaderStyle.titleFont)
             // Shows held Shift/Option (or an outline's mode) live; clicking sets the choice.
             Picker("Mode", selection: Binding(get: { session.displayedSelectionMode },
                                               set: { session.selectionModeChoice = $0 })) {

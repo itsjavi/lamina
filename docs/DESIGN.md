@@ -50,7 +50,7 @@ The window is one frame with five regions. Sizes are in points.
 
 | Region | Size | Contents |
 | --- | --- | --- |
-| Title bar | 38 high | Traffic lights, New (+), document tabs. Nothing else. |
+| Title bar | 38 high (the system's unified toolbar draws it about 40 on macOS 26) | Traffic lights, New (+), document tabs. Nothing else. |
 | Options bar | 36 high | The active tool's icon, then its settings (see [Options bars](#options-bars)). |
 | Toolbar | 44 wide | One column of tool slots, colors at the bottom. |
 | Canvas column | the rest | Pasteboard, the document centered on it, the status bar under it. |
@@ -62,10 +62,22 @@ Rules:
 
 - At 1500 × 860 pt nothing is clipped and nothing scrolls except panel contents. The canvas keeps at least
   1100 × 740 pt.
-- Document tabs read `Golden Hour @ 44.5% (Golden hour, RGB/8)`: name, zoom, active layer, mode and depth. Long names
-  truncate in the middle.
+- Document tabs read `Golden Hour @ 44.5% (Golden hour, RGB/8)`: name, zoom (one decimal at most), active layer, mode
+  and depth; without an active layer `Name @ 25% (RGB/8)`, and before a document exists just the name. Every tab shows
+  its own document's zoom and layer. When the tabs don't fit, the widest narrow first, down to 140 pt, their labels
+  truncating in the middle; past that the oldest move into the "N more tabs" menu. The help tag shows the full label.
 - Fit, 100% and zoom buttons do not live in the title bar. Zoom lives in View, the status bar and the Hand and Zoom bars.
-- The canvas starts 36 pt below the title bar for every tool. Switching tools never moves the canvas.
+  The tab strip takes the title bar's width less the traffic lights and New (`ProjectTabStrip.titleBarInset`).
+- The canvas starts 36 pt below the title bar for every tool. Switching tools never moves the canvas: every tool's
+  settings sit in one 36 pt bar, and No Tool (A) shows only its icon (`circle.slash`).
+- The status bar reads, left to right: the zoom field (`88.53%`, 58 pt wide; Return or leaving the field applies it,
+  Up and Down step 1%, Shift 10%), `2400 px × 1500 px (72 ppi)`, then the active tool's hint, right-aligned, cut off
+  at its end when the column is narrow. Busy work ("Working…", "Importing images…") shows in the hint's place.
+- Status: **shipping** (TASK-52). The frame is `ContentView` (`editorStack`); the options bar is `OptionsBar`
+  (`UI/OptionsBar.swift`), the tool → icon mapping `ToolIcon` (`UI/ToolIcon.swift`, with a size: 18 pt in the toolbar,
+  16 pt in the options bar), the zoom field `ZoomField` (`UI/StatusBar.swift`); the hint is the tool's `hint`. The
+  toolbar is still the 56 pt rail listing every tool, which scrolls at 1500 × 860 pt until TASK-55 groups it into
+  slots; the side panels are still the Layers | History panel until TASK-58.
 
 ## Colors and surfaces
 
@@ -105,8 +117,8 @@ No literal grays (`Color(white:)`, hex) in interface code. The roles live in `So
   and points; image previews in dialogs (Export, Camera Raw develop) sit on `pasteboard`; swatch and well borders are
   `edge`; pressed mode buttons in dialogs and options bars are `activeTool`; selected history states and effect rows
   are `selection`.
-- Until the frame is rebuilt (TASK-52, TASK-55, TASK-58), the bars, tool rail and status bar sit on `chrome`, the side
-  panels on `panel`, and the active document tab is a `control` capsule with an `edge` outline.
+- The options bar, tool rail and status bar sit on `chrome`, the side panels on `panel` (until TASK-58 rebuilds the
+  dock), and the active document tab is a `control` capsule with an `edge` outline.
 - Appearance follows macOS and switches live. Lamina ▸ Settings… (⌘K) opens the Lamina Settings window (an AppKit
   window, `SettingsWindow` in `UI/SettingsView.swift`: a SwiftUI `Settings` scene would keep its own ⌘, item), whose
   Appearance setting (System, Light, Dark, as radio buttons) is saved as `appearance` in UserDefaults and applied to the whole app
@@ -221,7 +233,10 @@ empty layer, a mask targeted). Status: **shipping** (TASK-54). Tools familiar ed
 
 ### Options bars
 
-Each bar starts with the active tool's icon, then groups separated by 1 × 20 pt dividers (│ below). Controls: icon
+Each bar starts with the active tool's icon (16 pt, `text`, in a 44 pt slot with the tool's name as its help tag and
+accessibility label; no tool name is written out), then groups separated by 1 × 20 pt `separator` dividers (│ below).
+Fit Screen fits the document with a margin, as View ▸ Fit Canvas does; Fill Screen zooms until the document covers the
+whole canvas area, centered. Controls: icon
 buttons 24 × 22, pop-ups and fields 22 high, percent fields with a slider pop-up. Edits in progress end with Cancel and
 Commit icon buttons at the far right. Status: **m-5** (TASK-56 for Move and Free Transform, TASK-57 for the rest).
 
@@ -245,8 +260,8 @@ Commit icon buttons at the far right. Status: **m-5** (TASK-56 for Move and Free
 | Dodge / Burn | brush picker │ Range: Shadows, Midtones, Highlights · Exposure │ pressure for size |
 | Horizontal Type | font family · font style · size │ Left, Center, Right · color · Character panel │ … Cancel · Commit |
 | Rectangle / Ellipse / Line | Fill swatch · Stroke swatch and width (in progress, TASK-32) · stroke options (in progress, TASK-34) │ path operations (in progress, TASK-34) │ Radius (Rectangle) or Weight (Line) |
-| Hand | 100% · Fit Screen · Fill Screen |
-| Zoom | Zoom In, Zoom Out │ Scrubby Zoom │ 100% · Fit Screen · Fill Screen |
+| Hand | 100% · Fit Screen · Fill Screen (shipping, TASK-52) |
+| Zoom | Zoom In, Zoom Out │ Scrubby Zoom │ 100% · Fit Screen · Fill Screen (the three buttons ship with TASK-52; the rest is TASK-57) |
 
 The painting bars carry no color swatch: color comes from the toolbar's swatches, black and white for masks included.
 

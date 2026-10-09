@@ -6,7 +6,6 @@ struct ShapeControls: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(session.tool.title).font(ToolHeaderStyle.titleFont)
             if session.tool == .line {
                 HStack(spacing: 6) {
                     Text("Width").scrubbable(sensitivity: 1, value: $session.shapeLineWidth, range: 1...5000)

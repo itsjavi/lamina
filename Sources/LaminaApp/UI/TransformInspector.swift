@@ -9,8 +9,6 @@ struct TransformInspector: View {
     }
     var body: some View {
         HStack(spacing: 12) {
-          Text(session.transformTargetsMask ? "Transform Mask" : "Transform").font(ToolHeaderStyle.titleFont)
-              .padding(.leading, 18)
           // Command flips Auto Select while it's held, and the box shows it flipped (see HeldModifiers).
           Toggle("Auto Select", isOn: Binding(get: { session.transformAutoSelect != held.contains(.command) },
                                               set: { session.transformAutoSelect = $0 != held.contains(.command) }))
@@ -80,7 +78,7 @@ struct TransformInspector: View {
           }
           .opacity(pending ? 1 : 0).allowsHitTesting(pending).accessibilityHidden(!pending)
           .animation(.easeOut(duration: 0.12), value: pending)
-        }.padding(.trailing, 18).toolHeaderBar().releasesFocusOnCommit(session)
+        }.padding(.horizontal, 18).toolHeaderBar().releasesFocusOnCommit(session)
     }
 
     /// 100% scale: the layer's pixels (a blank layer's size before this edit, so typing doesn't compound).

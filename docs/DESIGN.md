@@ -77,7 +77,9 @@ Rules:
   (`UI/OptionsBar.swift`), the tool → icon mapping `ToolIcon` (`UI/ToolIcon.swift`, with a size: 18 pt in the toolbar,
   16 pt in the options bar), the zoom field `ZoomField` (`UI/StatusBar.swift`); the hint is the tool's `hint`. The
   toolbar is still the 56 pt rail listing every tool, which scrolls at 1500 × 860 pt until TASK-55 groups it into
-  slots; the side panels are still the Layers | History panel until TASK-58.
+  slots. The panel icon column and the dock shipped with TASK-58 (see [Dock and panels](#dock-and-panels)): at
+  1500 × 860 pt with the dock at its default width the canvas measures about 1115 × 761 pt (at the dock's widest,
+  360 pt, about 1047 pt wide).
 
 ## Colors and surfaces
 
@@ -117,8 +119,8 @@ No literal grays (`Color(white:)`, hex) in interface code. The roles live in `So
   and points; image previews in dialogs (Export, Camera Raw develop, filter previews) sit on `pasteboard`; swatch and well borders are
   `edge`; pressed mode buttons in dialogs and options bars are `activeTool`; selected history states and effect rows
   are `selection`.
-- The options bar, tool rail and status bar sit on `chrome`, the side panels on `panel` (until TASK-58 rebuilds the
-  dock), and the active document tab is a `control` capsule with an `edge` outline.
+- The options bar, tool rail, status bar and panel icon column sit on `chrome`, the dock's panels on `panel` with
+  their tab rows on `panelHeader`, and the active document tab is a `control` capsule with an `edge` outline.
 - Appearance follows macOS and switches live. Lamina ▸ Settings… (⌘K) opens the Lamina Settings window (an AppKit
   window, `SettingsWindow` in `UI/SettingsView.swift`: a SwiftUI `Settings` scene would keep its own ⌘, item), whose
   Appearance setting (System, Light, Dark, as radio buttons) is saved as `appearance` in UserDefaults and applied to the whole app
@@ -144,7 +146,7 @@ Every numeric field uses monospaced digits so values don't jitter while scrubbin
 - SF Symbols first, at the symbol weight that matches 1.5 pt strokes; draw a custom icon only when no symbol reads as
   the tool. Custom icons are SwiftUI shapes (like today's `GradientToolIcon`) with the same stroke weight and corner
   treatment as the symbols around them.
-- Sizes: 18 pt in toolbar slots, 16 pt in options bars and menus, 15 pt in panels and footers.
+- Sizes: 18 pt in toolbar slots, 16 pt in options bars, menus and the panel icon column, 15 pt in panels and footers.
 - Icons take the `icon` role; the active tool's icon takes `text`. No colored icons except the color swatches.
 - A slot whose group has more than one tool shows a small triangle in its bottom-right corner.
 
@@ -287,7 +289,28 @@ The painting bars carry no color swatch: color comes from the toolbar's swatches
 ### Dock and panels
 
 Tab groups with a 26 pt tab row and a panel menu (≡) at the right; the active tab is `text` with an underline.
-Status: **m-5** (TASK-58).
+Status: the frame is **shipping** (TASK-58); the panels' contents are **m-5** (TASK-59, TASK-60, TASK-61).
+
+- Right of the canvas: the 34 pt panel icon column (`chrome`, 28 pt buttons with 16 pt icons, the open panel's
+  button on `activeTool`), then the dock, 292 pt wide by default and 240–360 pt by dragging its left edge. Properties
+  | Adjustments sits on top, 340 pt high with its tab row by default; Layers takes the rest. Dragging the line between
+  them moves the split; the top group keeps at least 120 pt and Layers at least 160 pt (a split set in a taller window
+  shows clamped). Width, split, closed panels and the top group's front tab are remembered (UserDefaults `dockWidth`,
+  `dockTopHeight`, `dockClosedPanels`, `dockTopTab`).
+- The panel menu (≡) holds Close (the front tab's panel) and Close Tab Group. A group with every panel closed collapses
+  and gives its height to the other; with every dock panel closed only the icon column stays and the canvas takes the
+  dock's width. Renaming a layer or editing an adjustment layer opens Layers again.
+- Window lists Adjustments, History, Layers and Properties alphabetically, as familiar editors do. A panel is checked
+  while it is on screen (open and in front of its group); choosing a checked panel closes it, choosing any other opens
+  it and brings it to the front. Window ▸ Workspace ▸ Essentials (Default) is the only workspace and always checked;
+  Reset Essentials restores the default width and split, opens every dock panel with Properties in front, and closes
+  History. All of them take a shortcut in Keyboard Shortcuts; none has a default key.
+- Until TASK-59 and TASK-60 fill them, Properties reads "No properties" and Adjustments "Add an adjustment" with a
+  pointer to Layer › New Adjustment Layer. Layers moved in unchanged, its own title row included, until TASK-61.
+- Code: `UI/Dock.swift` (`DockArea`, `Dock`, `DockGroup`, `PanelIconColumn`, `HistoryFlyout`, `DockResizeEdge`),
+  `UI/DockLayout.swift` (`DockLayout.shared`, `DockPanel`), `UI/DockCommands.swift` (the Window items). A panel fills
+  its tab through `Dock`'s content builder: `PropertiesPanel` (`UI/PropertiesPanel.swift`), `AdjustmentsPanel`
+  (`UI/AdjustmentsPanel.swift`), `LayersPanel`.
 
 - **Properties** shows what is selected (TASK-59):
 
@@ -308,7 +331,11 @@ Status: **m-5** (TASK-58).
   one 22 pt row per effect, each with an eye. Footer, left to right: Add a layer style (menu: Blending Options…, Stroke,
   Inner Shadow, Inner Glow, Color Overlay, Outer Glow, Drop Shadow), Add layer mask, New fill or adjustment layer, New
   group, New layer, Delete.
-- **History** lives in the panel icon column and opens beside the dock.
+- **History** lives in the panel icon column. Clicking its icon opens it as a floating panel, 240 pt wide and up to
+  420 pt high, at the top right of the canvas column against the icon column (`panel` with an `edge` outline, 6 pt
+  corners and the system shadow), with a History tab row and its panel menu; it stays open while you work and closes
+  from its icon, Close in its panel menu or Window ▸ History. It lists the states (Initial State first), with Undo and
+  Redo and the number of steps kept in its footer; clicking a state goes back or forward to it. It starts closed.
 
 ### Menus
 
@@ -328,7 +355,7 @@ in the View menu with no shortcut.
 - **Select:** All ⌘A · Deselect ⌘D · Inverse ⇧⌘I │ Color Range… · Subject │ Modify ▸ (Expand… · Contract… · Feather… ⇧F6) │ Load Selection…
 - **Filter:** Last Filter ⌃⌘F │ Camera Raw Filter… ⇧⌘A · Lens Correction… ⇧⌘R · Liquify… ⇧⌘X │ Blur ▸ (Gaussian Blur… · Motion Blur…) · Noise ▸ Add Noise… · Pixelate ▸ Dither… · Render ▸ Vignette… · Sharpen ▸ (Unsharp Mask… │ Tonal Contrast…) · Stylize ▸ Bloom / Glow… · Other ▸ High Pass…
 - **View:** Zoom In ⌘+ · Zoom Out ⌘− · Fit on Screen ⌘0 · 100% ⌘1 │ Extras ⌘H · Show ▸ (Grid ⌘' · Guides ⌘; · Pixel Grid) │ Rulers ⌘R │ Snap ⇧⌘; · Snap To ▸ (Guides · Grid · Layers · Document Bounds) │ Guides ▸ (Lock Guides ⌥⌘; · Clear Guides) │ Grid Settings…
-- **Window:** Workspace ▸ (Essentials (Default) │ Reset Essentials) │ Adjustments · History · Layers · Properties │ Contextual Task Bar (in progress, TASK-67) │ open documents
+- **Window:** Workspace ▸ (Essentials (Default) │ Reset Essentials) │ Adjustments · History · Layers · Properties │ Contextual Task Bar (in progress, TASK-67) │ open documents. The Workspace submenu and the panel items are shipping (TASK-58), after the system's Minimize, Zoom and Bring All to Front.
 - **Help:** Search
 
 ### Shortcut changes
@@ -454,7 +481,8 @@ control replaces the placeholder and the row goes. When a task is dropped, its p
   ([references/redesign_v2.html](references/redesign_v2.html)) shows layout and contents, not pixels to copy; its HTML
   imitates controls that the app draws natively.
 - The frame lives in `Sources/LaminaApp/ContentView.swift`, menus in `LaminaMain.swift`, tool bars in
-  `Sources/LaminaApp/UI/*Controls.swift`, panels in `UI/LayersPanel.swift` and `UI/HistoryPanel.swift`, shortcuts in
+  `Sources/LaminaApp/UI/*Controls.swift`, the dock in `UI/Dock.swift` and `UI/DockLayout.swift`, panels in
+  `UI/PropertiesPanel.swift`, `UI/AdjustmentsPanel.swift`, `UI/LayersPanel.swift` and `UI/HistoryPanel.swift`, shortcuts in
   `UI/KeyboardShortcuts.swift` (`ShortcutDefinition.all`). Custom shortcuts for menu commands without a default are
   saved by menu title, so renaming an item means carrying its saved key over.
 - `lamina` commands and the MCP server don't depend on menu names, but README, website and screenshots do

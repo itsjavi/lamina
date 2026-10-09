@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-09 02:14'
-updated_date: '2026-10-09 05:54'
+updated_date: '2026-10-09 06:00'
 labels: []
 milestone: m-5
 dependencies:
@@ -68,6 +68,8 @@ Verification:
 - Window test theNextClickTakesTheMessageAway (.showsWindows) ran once alone with LAMINA_UI_TESTS=1: passed (a posted mouse down dismisses through the monitor).
 - Dev app at 1500 × 860, driven over the Accessibility API: Pen rail button shows 'Pen Tool is in progress' at the canvas top center with Move still active, gone after 3 s; Rectangle bar shows Fill, Stroke swatch, 1 px, stroke options │ path ops │ Radius; Stroke swatch press shows 'Shape Stroke is in progress'; every planned tool and bar control reports its '… · In progress' help; Presets pop-up in the Brush bar; all six placeholder menu items enabled and pressed (Save a Copy shows ⌥⌘S), the last showing 'Contextual Task Bar is in progress'; light appearance checked with Polygon (appearance default set and removed again). Screenshots: backlog/assets/task-53/pen-in-progress-dark.png, shape-bar-stroke-in-progress-dark.png, polygon-in-progress-light.png.
 - Not covered by automation: pressing the SwiftUI bar controls from unit tests (SwiftUI builds no accessibility tree without an AX client), so the bars and menus were checked in the running app instead.
+
+Rebased onto main with TASK-63, TASK-56 and TASK-58: kept TASK-56's OptionsBarDivider (dropped the duplicate), merged DESIGN.md (Menus status, workspace note), moved Window › Contextual Task Bar into DockCommands after the panels with a separator (checked over AX in the Dev app: Workspace │ Adjustments, History, Layers, Properties │ Contextual Task Bar), overlay still in the canvas ZStack under the new dock (checked: Pen message at the canvas top center). swift test: 724 tests in 106 suites passed.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

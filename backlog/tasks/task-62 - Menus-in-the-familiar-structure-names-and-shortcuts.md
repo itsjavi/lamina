@@ -1,9 +1,11 @@
 ---
 id: TASK-62
 title: 'Menus in the familiar structure, names and shortcuts'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-09 02:14'
+updated_date: '2026-10-09 06:37'
 labels: []
 milestone: m-5
 dependencies:
@@ -40,3 +42,16 @@ Lamina's menus hold the right commands in unfamiliar places: adjustments directl
 <!-- DOD:BEGIN -->
 - [ ] #1 docs/DESIGN.md matches what shipped
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Menus (LaminaMain.swift): rebuild every menu to DESIGN.md's tree and menu-bar order (Lamina, File, Edit, Image, Layer, Type, Select, Filter, View, Window, Help), with its names, submenus, separators and placeholders; Remove Background moves to Layer; View built as a CommandMenu after Filter; Help keeps only Search.
+2. Shortcuts (UI/KeyboardShortcuts.swift): apply the Shortcut changes table (⌃⌘F, ⇧⌘E, ⌥⌘A freed, ⌘H Extras, ⌃⌘H Hide, ⇧F5 Fill with ⇧⌫ as a second key, ⌘B, ⌥⇧⌘B, ⇧⌘A, ⇧⌘R, ⇧F6, ⌘, Hide Layers, ⌥⇧⌘K, ⌥⇧⌘W); function keys in ShortcutChord; ⌘, no longer reserved; renamed entries and every moved or renamed More Menu Commands title carried over through renamedIDs (resolved transitively, a key saved under the current id wins); ⌥⌫/⌘⌫ become window-wide keys without menu items.
+3. Edit > Fill...: FillContents/FillOptions and EditorSession.fill (foreground, background, color, black, 50% gray, white, opacity; Content-Aware opens today's Content-Aware Fill); FillDialog in DialogLayout, a floating panel like the selection dialogs.
+4. Select > Load Selection...: channels (each layer's Transparency, each mask as a document-sized channel), Invert, New/Add/Subtract; LoadSelectionDialog in DialogLayout; replaces Layer's Pixels and Mask's Black Areas.
+5. View: one Snap (snapEnabled, saved as 'snap'; the session-only snappingEnabled folds into it); Extras (saved as 'extras') hides grid, guides, pixel grid and selection edges and turning one of them on shows Extras again.
+6. Layer commands the new names need: Layer Mask submenu items, Hide Layers for the selected layers, Delete > Layer, New > Layer.../Group.../Group from Layers... and Duplicate Layer... open the new layer's name for editing.
+7. Tests: shortcut changes and collisions, carried-over custom keys, Fill (each content kind, opacity, mask), Load Selection (transparency, mask, invert, operations), Extras, Snap.
+8. DESIGN.md, README facts (Last Filter key), brand/README step names; Accessibility dump of the menu bar, screenshots of both dialogs.
+<!-- SECTION:PLAN:END -->

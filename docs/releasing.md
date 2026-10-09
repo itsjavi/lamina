@@ -64,3 +64,7 @@ signs and notarizes when `DEVELOPER_ID` (from `security find-identity -v -p code
 set; the profile is made once with `xcrun notarytool store-credentials lamina --apple-id … --team-id …`. Otherwise it
 builds ad-hoc and lists what's missing. Check a build with `spctl -a -vv build/release/Lamina.app` and
 `xcrun stapler validate build/release/Lamina-X.Y.Z.dmg`.
+
+`make install-notarized` does the same with the Keychain's Developer ID identity and the `lamina` profile (override
+them with `DEVELOPER_ID` and `NOTARY_PROFILE`), then installs the notarized app to `/Applications` like
+`make install`. Without an identity it stops instead of installing an ad-hoc build.

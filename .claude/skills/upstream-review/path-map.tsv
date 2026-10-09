@@ -1,0 +1,5 @@
+Compositor/CompositorApp.swift	Sources/LaminaApp/LaminaMain.swift
+Compositor/IO/CompositorApplicationDelegate.swift	Sources/LaminaApp/IO/LaminaApplicationDelegate.swift
+Compositor/UI/JPEGExportSheet.swift	Sources/LaminaApp/UI/ExportSheet.swift
+Compositor/UI/ExportAsSheet.swift	Sources/LaminaApp/UI/ExportSheet.swift
+Compositor/UI/NewCanvasSheet.swift	Sources/LaminaApp/UI/NewDocumentView.swift

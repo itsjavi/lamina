@@ -1,0 +1,4 @@
+# Where the last upstream review stopped. Advance it with scripts/advance-checkpoint.sh.
+commit=22c7b8d5b23bb1e27a5746912061b23757c4f554
+since=2026-10-09T15:48:05Z
+doc=doc-4

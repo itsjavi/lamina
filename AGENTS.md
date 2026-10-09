@@ -3,7 +3,9 @@
 macOS image editor for compositing and photo work (SwiftUI + AppKit, Swift 6.2 toolchain in Swift 5 language mode,
 SwiftPM, no Xcode project), with C for pixel loops and Metal for the canvas and effects. A fork of
 [robbietilton/Compositor](https://github.com/robbietilton/Compositor) with its own identity and update feed: upstream
-changes are ported by hand, never merged. Distributed outside the App Store (Developer ID), App Sandboxed.
+changes are ported by hand, never merged; reviewing what upstream did since the last review follows
+[.claude/skills/upstream-review/SKILL.md](.claude/skills/upstream-review/SKILL.md). Distributed outside the App Store
+(Developer ID), App Sandboxed.
 
 ## Designing or editing a Lamina project
 

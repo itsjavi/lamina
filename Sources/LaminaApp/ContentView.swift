@@ -53,10 +53,10 @@ struct ContentView: View {
                 ShapeControls(session: session)
             }
             if session.tool == .eyedropper {
-                HStack(spacing: 16) {
-                    Toggle("Sample Ring", isOn: $session.showsSampleRing).toggleStyle(.checkbox)
-                    Spacer()
-                }.padding(.horizontal, 18).toolHeaderBar()
+                OptionsBarRow {
+                    Toggle("Show Sampling Ring", isOn: $session.showsSampleRing).toggleStyle(.checkbox)
+                        .help("Show a ring of the color under the pointer and the one before it while sampling")
+                }
             }
             if session.tool == .hand || session.tool == .zoom {
                 NavigationToolHeader(session: session)

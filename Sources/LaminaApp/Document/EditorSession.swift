@@ -94,6 +94,11 @@ final class EditorSession {
     var document: CanvasDocument?
     var canvasFocusRequest = 0
     var showsSampleRing = true
+    /// The Zoom bar's Zoom Out is chosen: a click zooms out, and Option-click in.
+    var zoomToolZoomsOut = false
+    /// Scrubby Zoom: dragging with the Zoom tool zooms smoothly, right in and left out. Off, a drag zooms one step
+    /// where it began, as a click does.
+    var scrubbyZoom = ToolDefaults.bool("scrubbyZoom", true) { didSet { ToolDefaults.set(scrubbyZoom, "scrubbyZoom") } }
     /// The open Layer Style dialog (LayerStyle.swift).
     var layerStyle: LayerStyleEdit? { didSet { if (layerStyle == nil) != (oldValue == nil) { resumeFileRequests() } } }
     var effectSelection: LayerEffectSelection?
@@ -1077,6 +1082,9 @@ final class EditorSession {
         guard let document else { return }
         viewport.setZoom(value, anchoredAt: anchor ?? viewport.center, documentSize: document.size)
     }
+
+    /// What one click of the Zoom tool multiplies the zoom by: the bar's Zoom In or Zoom Out, Option the other way.
+    func zoomClickFactor(option: Bool) -> CGFloat { zoomToolZoomsOut != option ? 0.5 : 2 }
 
     /// Step through stable keyboard zoom levels while keeping the viewport center fixed.
     enum PreviewZoomCommand { case zoomIn, zoomOut, fit, actual }

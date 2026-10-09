@@ -56,6 +56,15 @@ struct AppTests {
         #expect(abs(rect.midX - 500) < 0.000001 && abs(rect.midY - 350) < 0.000001)
     }
 
+    /// The Zoom bar's Zoom In and Zoom Out say what a click does, and Option still turns it the other way.
+    @Test func zoomBarChoosesWhatAClickDoesAndOptionFlipsIt() {
+        let session = EditorSession()
+        #expect(session.zoomClickFactor(option: false) == 2 && session.zoomClickFactor(option: true) == 0.5)
+        session.zoomToolZoomsOut = true
+        #expect(session.zoomClickFactor(option: false) == 0.5 && session.zoomClickFactor(option: true) == 2)
+        #expect(session.scrubbyZoom, "on by default, as dragging zoomed before it could be turned off")
+    }
+
     @Test func keyboardZoomKeepsPannedViewportCenterFixed() {
         let session = EditorSession()
         session.viewport.resize(to: CGSize(width: 1000, height: 800), backingScale: 1, documentSize: nil)

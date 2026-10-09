@@ -119,7 +119,8 @@ struct SelectionEditTests {
         session.addLayerMask(revealing: true)
         session.selectLayerTarget(try #require(session.activeLayerID), mask: true)
         select(session, CGRect(x: 20, y: 10, width: 30, height: 20))
-        // Mask palette: foreground black (hide), background white (reveal).
+        // The default colors (D) on a mask: foreground black (hide), background white (reveal).
+        session.resetPaletteColors()
         await session.fillSelection(with: .foreground)
         #expect(session.history.undoName == "Fill Mask")
         var result = try await render(session)

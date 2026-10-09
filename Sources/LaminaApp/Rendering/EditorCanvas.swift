@@ -1460,7 +1460,7 @@ final class CanvasView: NSView {
             : session.tool == .move ? window.map { transformCursor(at: convert($0.mouseLocationOutsideOfEventStream, from: nil)) } ?? .arrow
             : session.tool == .type ? .iBeam
             : session.tool == .idle ? .arrow
-            : session.tool == .zoom ? (optionHeld ? Self.zoomOutCursor : Self.zoomInCursor)
+            : session.tool == .zoom ? (session.zoomClickFactor(option: optionHeld) < 1 ? Self.zoomOutCursor : Self.zoomInCursor)
             : .crosshair
     }
 
@@ -1874,6 +1874,8 @@ final class CanvasView: NSView {
         if textBoxAnchor != nil { dragTextGesture(to: point); return }
         if var drag = zoomDrag {
             let dx = point.x - drag.start.x
+            // With Scrubby Zoom off a drag is a click where it began.
+            guard session.scrubbyZoom else { return }
             if abs(dx) >= 3 { drag.moved = true; zoomDrag = drag }
             // Right zooms in, left out: doubling for every 100 points dragged.
             if drag.moved { session.zoom(to: drag.zoom * pow(2, dx / 100), anchor: drag.start) }
@@ -2051,7 +2053,8 @@ final class CanvasView: NSView {
         if let drag = zoomDrag {
             zoomDrag = nil
             if !drag.moved {
-                session.zoom(to: session.viewport.zoom * (event.modifierFlags.contains(.option) ? 0.5 : 2), anchor: drag.start)
+                session.zoom(to: session.viewport.zoom * session.zoomClickFactor(option: event.modifierFlags.contains(.option)),
+                             anchor: drag.start)
             }
             return
         }

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-09 02:14'
-updated_date: '2026-10-09 07:02'
+updated_date: '2026-10-09 07:05'
 labels: []
 milestone: m-5
 dependencies:
@@ -70,4 +70,6 @@ Gradient: preset swatch pop-over (GradientSwatch per GradientStyle), Linear/Radi
 Rebased onto main after TASK-59 landed (Properties ▸ Character, with its own FontFaces and FontFamilyPopUp): the Type bar uses that FontFaces (family(of:), styles(of:), face(in:like:)) instead of a second copy. Type: FontMenuPicker (generalized from TypeFontPicker: family list loaded once, styles rebuilt per open, names drawn in their faces via StyledName, hover previews kept), size with a textformat.size label, alignment icon buttons, color, Character panel button (DockLayout.shared.show(.properties)), ⊘/✓ while textDraft exists. Edit Text button dropped (clicking text, double-click in Layers edit it). EditorSession.textFontName / textFace(inFamily:) / setTextFont back both pop-ups.
 
 Shapes: Fill: swatch, Stroke: placeholders (colon added), path operations, then Radius: or Weight: (was Width) as OptionsBarField; the sliders went, like every other bar's px fields. ShapeStrokePlaceholders no longer ends with a divider, so the Ellipse bar doesn't end on one.
+
+Navigation: Zoom In/Out icon buttons set zoomToolZoomsOut (a click's direction, Option flips; cursor follows via zoomClickFactor), Scrubby Zoom checkbox (ToolDefaults scrubbyZoom, on by default). Decision: with Scrubby Zoom off a drag zooms one step where it began, like a click; no zoom-rectangle drag (Lamina has no overlay for it; possible follow-up). Hand: 100%/Fit/Fill unchanged. Eyedropper: Show Sampling Ring checkbox. Full swift test: 762 tests passed (after updating SelectionEditTests' mask fill to press D first, since masks now paint the foreground's gray).
 <!-- SECTION:NOTES:END -->

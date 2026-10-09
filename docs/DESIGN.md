@@ -270,10 +270,15 @@ Each bar starts with the active tool's icon (16 pt, `text`, in a 44 pt slot with
 accessibility label; no tool name is written out), then groups separated by 1 × 20 pt `separator` dividers (│ below).
 Fit Screen fits the document with a margin, as View ▸ Fit Canvas does; Fill Screen zooms until the document covers the
 whole canvas area, centered. Controls: icon
-buttons 24 × 22, pop-ups and fields 22 high, percent fields with a slider pop-up. Edits in progress end with Cancel and
-Commit icon buttons at the far right. Status: **m-5** (TASK-57 for the rest); the Move and Free Transform bars are
-**shipping** (TASK-56: `MoveToolBar`, `FreeTransformBar`; `OptionsBarDivider` and `OptionsBarIconButton` are the shared
-divider and 24 × 22 icon button).
+buttons 24 × 22, pop-ups and fields 22 high, percent fields with a slider pop-up. Labels end with a colon
+("Opacity:", "Tolerance:"), checkboxes and buttons don't. Edits in progress end with Cancel ⊘ and Commit ✓ icon
+buttons at the far right, after a divider. Status: every bar is **shipping**: Move and Free Transform with TASK-56
+(`MoveToolBar`, `FreeTransformBar`), the rest with TASK-57. Shared pieces (`UI/OptionsBar.swift`,
+`UI/OptionsBarFields.swift`): `OptionsBarRow` (a bar's controls, 10 pt apart, 12 pt in from the edge, with
+`OptionsBarCommitButtons` at the right end while an edit is pending), `OptionsBarDivider`, `OptionsBarIconButton`
+(24 × 22, on `activeTool` while pressed: a chosen mode, a toggle that is on), `OptionsBarField` ("Label:" that scrubs
+when dragged, the field, its unit), `PercentField` (the same with % and a chevron opening a slider) and
+`OptionsBarPicker` ("Label:" and a pop-up).
 
 | Tool | Bar, left to right |
 | --- | --- |
@@ -284,7 +289,7 @@ divider and 24 × 22 icon button).
 | Object Selection | selection icons │ Sample All Layers · Edge: px (Lamina) · Anti-alias │ Select Subject |
 | Magic Wand | selection icons │ Sample Size: · Tolerance: · Anti-alias · Contiguous · Sample All Layers │ Select Subject |
 | Crop | Ratio (Ratio, Original Ratio, 1:1 (Square), 4:3, 3:4, 16:9, 9:16, 9:20, 2.39:1, then ratios typed before) · W ⇄ H · Clear · the crop's size in px │ … Cancel ⊘ · Commit ✓ (while a crop is pending) |
-| Eyedropper | Show Sampling Ring |
+| Eyedropper | Show Sampling Ring ☑ |
 | Spot Healing Brush | brush picker │ Type: Content-Aware \| Create Texture \| Proximity Match │ Opacity: (Lamina) |
 | Brush | brush picker (Size, Hardness; bristle presets in progress, TASK-46) │ Opacity: · pressure for opacity · Flow: │ Smoothing: │ pressure for size |
 | Clone Stamp | brush picker │ Opacity: │ Aligned · Sample: Current Layer, All Layers |
@@ -296,8 +301,8 @@ divider and 24 × 22 icon button).
 | Dodge / Burn | brush picker │ Range: Shadows, Midtones, Highlights · Exposure: │ pressure for size |
 | Horizontal Type | font family · font style · size px │ Left, Center, Right · color · Character panel │ … Cancel ⊘ · Commit ✓ (while editing; leading and tracking are in Properties ▸ Character, TASK-59) |
 | Rectangle / Ellipse / Line | Fill: swatch · Stroke: swatch and width (in progress, TASK-32) · stroke options (in progress, TASK-34) │ path operations (in progress, TASK-34) │ Radius: px (Rectangle) or Weight: px (Line, was Width). The placeholders shipped with TASK-53 (the stroke swatch shows "none": an empty `field` well crossed by a `secondaryText` line; the width reads "1 px") |
-| Hand | 100% · Fit Screen · Fill Screen (shipping, TASK-52) |
-| Zoom | Zoom In, Zoom Out │ Scrubby Zoom │ 100% · Fit Screen · Fill Screen (the three buttons ship with TASK-52; the rest is TASK-57) |
+| Hand | 100% · Fit Screen · Fill Screen |
+| Zoom | Zoom In, Zoom Out (`plus.magnifyingglass`, `minus.magnifyingglass`) │ Scrubby Zoom ☑ │ 100% · Fit Screen · Fill Screen |
 
 The painting bars carry no color swatch: color comes from the toolbar's swatches, black and white for masks included.
 While a mask is targeted, the swatches show their colors in gray and every tool paints, fills and draws gradients in
@@ -323,6 +328,12 @@ that family's styles. Letters in several faces show (Multiple). The size field t
 the alignments are icon buttons, then the color swatch and the Character panel button (`character.textbox`), which
 brings Properties to the front. Cancel ⊘ and Commit ✓ show while text is being edited (Escape and ⌘Return on the
 canvas); the bar has no Edit Text button, since a click on the text edits it.
+
+The Zoom bar's Zoom In and Zoom Out say what a click does (Zoom In at launch; Option-click does the other, and the
+pointer shows which). Scrubby Zoom (on by default, remembered as `scrubbyZoom`) zooms smoothly while dragging, right
+in and left out; off, a drag zooms one step where it began, as a click does (familiar editors draw a zoom rectangle
+there, which Lamina doesn't have). Hand and Zoom share `NavigationToolHeader`; the Eyedropper's Show Sampling Ring
+was Sample Ring.
 
 The painting bars (`BrushControls`, **shipping**, TASK-57) start with the brush picker (`BrushPicker`,
 `UI/BrushPicker.swift`): the tip drawn in `text`, solid to its hardness and fading to its edge, with the size in pixels

@@ -437,27 +437,47 @@ selection; rotate and flip while transforming. Status: **in progress (TASK-67)**
 A feature with an open Backlog task shows its control where it will live. Using it (click, menu choice or tool key)
 shows a non-blocking message over the top of the canvas, "*Name* is in progress", that goes away after a few seconds or
 on the next click and is announced to VoiceOver. A placeholder looks like a shipping control (its help tag ends with
-"In progress") and never changes the document, the selection or the active tool. TASK-53 builds the message and the
-registry.
+"In progress") and never changes the document, the selection or the active tool. Status: **shipping** (TASK-53).
 
 | Placeholder | Where | Delivered by |
 | --- | --- | --- |
-| Pen Tool | toolbar, P | TASK-28 |
-| Path Selection Tool, Direct Selection Tool | toolbar slot after Type | TASK-28 |
+| Pen Tool | toolbar, its own slot before Type, P | TASK-28 |
+| Path Selection Tool, Direct Selection Tool | toolbar slot after Type, no key yet (A stays No Tool) | TASK-28 |
 | Mixer Brush Tool | Brush flyout | TASK-47 |
 | Palette Knife Tool | Brush flyout | TASK-50 |
 | Polygon Tool, Star Tool | Shapes flyout | TASK-32 |
-| Bristle presets (Flat Bristle, Round Bristle, Fan, Dry Brush) | brush picker | TASK-46 |
-| Stroke swatch and width | shape tool bars | TASK-32 |
-| Stroke options, path operations | shape tool bars | TASK-34 |
-| Save a Copy… | File | TASK-27 |
+| Bristle presets: Flat Bristle, Round Bristle, Fan, Dry Brush | brush picker (until TASK-57, a Presets pop-up at the start of the Brush bar) | TASK-46 |
+| Shape Stroke: the stroke swatch and width | shape tool bars | TASK-32 |
+| Stroke Options, Path Operations | shape tool bars | TASK-34 |
+| Save a Copy… ⌥⌘S | File, after Save As… | TASK-27 |
 | Rasterize | Layer | TASK-32 |
 | Convert to Editable Vectors | Layer | TASK-35 |
-| Combine Shapes ▸, Release to Layers | Layer | TASK-34 |
+| Combine Shapes ▸ (Unite Shapes, Subtract Front Shape, Unite Shapes at Overlap, Subtract Shapes at Overlap), Release to Layers | Layer | TASK-34 |
 | Contextual Task Bar | Window | TASK-67 |
 
-When a feature task with visible interface is created, add its row and its placeholder. When the task ships, the real
-control replaces the placeholder and the row goes. When a task is dropped, its placeholder goes too.
+How it works (`Sources/LaminaApp/Document/PlannedFeature.swift`):
+
+- `PlannedFeature` is the registry: one case per name in this table, with its `name`, the `task` that delivers it and
+  its `home` (`.toolbar`, `.menu("Layer › Rasterize")` or `.optionsBar(tools)`). `PlannedFeatureTests` checks every
+  case against this table and that each one has a way in.
+- Every placeholder calls `EditorSession.showInProgress(_:)` and nothing else. It sets `inProgressNotice` (one at a time:
+  a new one replaces the one showing), which `InProgressNoticeView` (`UI/InProgressNoticeView.swift`) draws centered
+  12 pt below the top of the canvas: 12 pt `text` in a `regularMaterial` capsule with an `edge` outline and a soft
+  shadow, fading in and out, never taking clicks. It goes after 3 s (`InProgressNotice.duration`) or at the next mouse
+  down anywhere in the app, which still goes where it was aimed. VoiceOver hears the message as an announcement.
+- Planned tools are items of their toolbar slot: `ToolSlot.items` lists `SlotItem.tool` and `SlotItem.planned` entries
+  in flyout order, while `ToolSlot.tools` keeps the tools that work. Pen and Path Selection are slots of their own with
+  planned items only. Choosing a planned item (`EditorSession.choose(_:)`, from the toolbar, its key or Shift-cycling)
+  shows its message and leaves the tool and the slot's last-used tool as they were. While the message shows, Shift and
+  the slot's key step on from it, so Shift-U goes Rectangle, Ellipse, Polygon, Star, Line, and Shift-B Brush, Mixer
+  Brush, Palette Knife, Brush.
+- Help tags read "Pen Tool (P) · In progress", "Rasterize · In progress". Menu placeholders are `PlannedMenuItem`,
+  bar controls `BristlePresetsMenu` and `ShapeStrokePlaceholders` (`UI/PlannedControls.swift`). Menu items without a
+  default key take one in Keyboard Shortcuts like any other (`PlannedFeature.assignableMenuCommands`).
+
+When a feature task with visible interface is created, add its row, its `PlannedFeature` case and its placeholder. When
+the task ships, the real control replaces the placeholder and the row and case go. When a task is dropped, its
+placeholder goes too.
 
 ## Accessibility and quality bar
 

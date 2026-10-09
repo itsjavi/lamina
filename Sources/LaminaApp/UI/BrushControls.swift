@@ -33,6 +33,8 @@ struct BrushControls: View {
                 .pickerStyle(.segmented).labelsHidden().fixedSize()
                 .help("Copy from the active layer only, or from every visible layer as shown")
             }
+            // Where the brush picker will be: the bristle presets (in progress, TASK-46).
+            if session.tool == .brush { BristlePresetsMenu(session: session) }
             Text("Size").scrubbable(sensitivity: 1.0, value: $session.brushSettings.diameter, range: 1...2000)
             TextField("Size", value: Binding<Double>(get: { Double(session.brushSettings.diameter) },
                 set: { session.brushSettings.diameter = $0.isFinite ? CGFloat(min(2000, max(1, $0))) : 40 }),

@@ -87,6 +87,8 @@ struct LaminaMain: App {
                     Button("Save As…") { Task { await applicationDelegate.projects.save(asNew: true) } }
                         .configuredKeyboardShortcut("s", modifiers: [.command, .shift])
                         .disabled(session.document == nil || !applicationDelegate.projects.canStart)
+                    PlannedMenuItem(feature: .saveACopy, session: session)
+                        .configuredKeyboardShortcut("s", modifiers: [.command, .option])
                     Divider()
                     Button("Export PNG…") { Task { await applicationDelegate.projects.exportPNG() } }
                         .configuredKeyboardShortcut("e", modifiers: [.command, .shift])
@@ -113,6 +115,11 @@ struct LaminaMain: App {
                     }
                     CommandGroup(replacing: .appSettings) {
                         Button("Settings…") { SettingsWindow.shared.show() }.configuredKeyboardShortcut("k")
+                    }
+                    // Window: the open documents come after this.
+                    CommandGroup(before: .windowList) {
+                        PlannedMenuItem(feature: .contextualTaskBar, session: session)
+                        Divider()
                     }
                     CommandGroup(after: .toolbar) {
                         // With a dialog's preview open (Export JPEG), these zoom that preview rather than the canvas.
@@ -387,6 +394,9 @@ struct LaminaMain: App {
                         .assignableShortcut("Layer › Apply Layer Mask")
                         .disabled(!session.canApplyLayerMask)
                     Divider()
+                    PlannedMenuItem(feature: .rasterize, session: session)
+                    PlannedMenuItem(feature: .convertToEditableVectors, session: session)
+                    Divider()
                     Button("Group Selected Layers") { session.groupSelectedLayers() }
                         .configuredKeyboardShortcut("g").disabled(!session.canEditLayers)
                     Button("Ungroup Layers") { session.ungroupLayers() }
@@ -411,6 +421,11 @@ struct LaminaMain: App {
                         .configuredKeyboardShortcut("]").disabled(!session.canMoveActiveLayer(by: 1))
                     Button("Move Layer Down") { session.moveActiveLayer(by: -1) }
                         .configuredKeyboardShortcut("[").disabled(!session.canMoveActiveLayer(by: -1))
+                    Menu("Combine Shapes") {
+                        ForEach(PlannedFeature.combineShapes) { PlannedMenuItem(feature: $0, session: session) }
+                    }
+                    PlannedMenuItem(feature: .releaseToLayers, session: session)
+                    Divider()
                     Group {
                         Button(session.mergeTitle) { session.mergeLayers() }
                             .configuredKeyboardShortcut("e").disabled(!session.canMergeLayers)

@@ -100,6 +100,7 @@ struct ContentView: View {
                                     .padding(.bottom, 14)
                                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                             }
+                            InProgressNoticeView(session: session)
                         }
                         .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("editor")) } action: { canvasFrame = $0 }
                     }
@@ -262,18 +263,19 @@ struct ContentView: View {
         // Scrolls when the window is too short for every tool, rather than pushing the bars above and below away.
         IndicatorlessScrollView {
         VStack(spacing: 4) {
-            // Every tool with a toolbar slot, in toolbar order; Liquify (Filter menu) and No Tool have none.
-            ForEach(NavigationTool.allCases.filter { $0.slot != nil }, id: \.self) { tool in
-                Button { session.selectTool(tool) } label: {
-                    ToolIcon(tool: tool)
+            // Every slot's items, in toolbar order, planned tools included; Liquify (Filter menu) and No Tool have none.
+            ForEach(ToolSlot.allCases.flatMap(\.items), id: \.self) { item in
+                let active = item == .tool(session.tool)
+                Button { session.choose(item) } label: {
+                    ToolIcon(item: item)
                     .frame(width: 36, height: 36)
-                        .background(session.tool == tool ? ColorRole.activeTool.color : .clear,
+                        .background(active ? ColorRole.activeTool.color : .clear,
                                     in: RoundedRectangle(cornerRadius: 7))
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain).help(tool.label).accessibilityLabel(tool.label)
-                .foregroundStyle(session.tool == tool ? ColorRole.text.color : ColorRole.icon.color)
-                .accessibilityAddTraits(session.tool == tool ? .isSelected : [])
+                .buttonStyle(.plain).help(item.helpTag).accessibilityLabel(item.label)
+                .foregroundStyle(active ? ColorRole.text.color : ColorRole.icon.color)
+                .accessibilityAddTraits(active ? .isSelected : [])
             }
             ColorPaletteControls(session: session).padding(.top, 8)
         }

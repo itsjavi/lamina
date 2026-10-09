@@ -88,7 +88,7 @@ enum NavigationTool: String, CaseIterable {
         }
     }
     /// The key that picks it, as the toolbar shows it.
-    var key: String? { slot.map { $0.key.uppercased() } ?? (self == .idle ? "A" : nil) }
+    var key: String? { slot?.key?.uppercased() ?? (self == .idle ? "A" : nil) }
     /// Help tag and accessibility label: "Rectangular Marquee Tool (M)".
     var label: String {
         switch self {
@@ -162,11 +162,23 @@ enum NavigationTool: String, CaseIterable {
 }
 
 /// A place in the toolbar: the tools that share it, in flyout order, and the key that picks them. The key picks the
-/// slot's last-used tool (`EditorSession.tool(in:)`); Shift and the key steps through the slot's tools.
+/// slot's last-used tool (`EditorSession.tool(in:)`); Shift and the key steps through the slot's items.
 enum ToolSlot: CaseIterable {
     case move, marquee, lasso, objectSelection, crop, eyedropper, spotHealing, brush, cloneStamp, eraser, gradient, blur,
-         dodge, type, shapes, hand, zoom
+         dodge, pen, type, pathSelection, shapes, hand, zoom
 
+    /// What its flyout lists, in order: its tools and the planned ones (docs/DESIGN.md, Toolbar).
+    var items: [SlotItem] {
+        switch self {
+        case .brush: [.tool(.brush), .planned(.mixerBrushTool), .planned(.paletteKnifeTool)]
+        case .pen: [.planned(.penTool)]
+        case .pathSelection: [.planned(.pathSelectionTool), .planned(.directSelectionTool)]
+        case .shapes: [.tool(.rectangle), .tool(.ellipse), .planned(.polygonTool), .planned(.starTool), .tool(.line)]
+        default: tools.map(SlotItem.tool)
+        }
+    }
+
+    /// The tools that work today, in flyout order; none in a slot of planned tools only (Pen, Path Selection).
     var tools: [NavigationTool] {
         switch self {
         case .move: [.move]
@@ -182,6 +194,7 @@ enum ToolSlot: CaseIterable {
         case .gradient: [.gradient, .paintBucket]
         case .blur: [.blur, .smudge]
         case .dodge: [.dodge, .burn]
+        case .pen, .pathSelection: []
         case .type: [.type]
         case .shapes: [.rectangle, .ellipse, .line]
         case .hand: [.hand]
@@ -189,8 +202,8 @@ enum ToolSlot: CaseIterable {
         }
     }
 
-    /// Lowercase, as the canvas reads keys.
-    var key: String {
+    /// Lowercase, as the canvas reads keys; nil for Path Selection, whose A stays No Tool until TASK-28 ships it.
+    var key: String? {
         switch self {
         case .move: "v"
         case .marquee: "m"
@@ -206,7 +219,9 @@ enum ToolSlot: CaseIterable {
         // A Lamina extra: familiar editors give Blur and Smudge no key.
         case .blur: "r"
         case .dodge: "o"
+        case .pen: "p"
         case .type: "t"
+        case .pathSelection: nil
         case .shapes: "u"
         case .hand: "h"
         case .zoom: "z"
@@ -214,22 +229,59 @@ enum ToolSlot: CaseIterable {
     }
 }
 
+/// One entry in a slot's flyout: a tool, or a planned one that only says it's in progress (`PlannedFeature`).
+enum SlotItem: Hashable {
+    case tool(NavigationTool)
+    case planned(PlannedFeature)
+
+    /// Accessibility label: "Pen Tool (P)".
+    var label: String {
+        switch self {
+        case .tool(let tool): tool.label
+        case .planned(let feature): feature.label
+        }
+    }
+    /// Help tag: the label, then "In progress" for a planned tool.
+    var helpTag: String {
+        switch self {
+        case .tool(let tool): tool.label
+        case .planned(let feature): feature.helpTag
+        }
+    }
+}
+
 extension EditorSession {
-    /// The tool a slot shows and its key picks: the one last used there, or its first.
-    func tool(in slot: ToolSlot) -> NavigationTool { slotTools[slot] ?? slot.tools[0] }
+    /// The tool a slot shows and its key picks: the one last used there, or its first; nil in a slot of planned tools.
+    /// A planned tool is never the last used: choosing one leaves the slot as it was.
+    func tool(in slot: ToolSlot) -> NavigationTool? { slotTools[slot] ?? slot.tools.first }
 
     /// Whether `key` (lowercase) picks a tool: a slot's key, or A for No Tool.
     static func isToolKey(_ key: String) -> Bool { key == "a" || ToolSlot.allCases.contains { $0.key == key } }
 
     /// A tool key from the canvas or the Layers panel. The plain key picks its slot's last-used tool; with Shift, and
-    /// that slot's tool already chosen, it picks the next one in the slot, round to the first.
+    /// that slot's tool already chosen, it picks the next item in the slot, round to the first. A planned item shows
+    /// its message, and while that shows, Shift and the key step on from it: Shift-U goes past Polygon and Star to Line.
     func pressToolKey(_ key: String, shift: Bool = false) {
         if key == "a" { selectTool(.idle); return }
         guard let slot = ToolSlot.allCases.first(where: { $0.key == key }) else { return }
-        if shift, let index = slot.tools.firstIndex(of: tool) {
-            selectTool(slot.tools[(index + 1) % slot.tools.count])
+        let items = slot.items
+        let showing = inProgressNotice.flatMap { items.firstIndex(of: .planned($0.feature)) }
+        if shift, let index = showing ?? items.firstIndex(of: .tool(tool)) {
+            choose(items[(index + 1) % items.count])
         } else {
-            selectTool(tool(in: slot))
+            choose(tool(in: slot).map(SlotItem.tool) ?? items[0])
+        }
+    }
+
+    /// A slot item picked from the toolbar, its flyout or its key: a tool becomes the tool; a planned one only shows its
+    /// message.
+    func choose(_ item: SlotItem) {
+        switch item {
+        case .tool(let value):
+            dismissInProgressNotice()
+            selectTool(value)
+        case .planned(let feature):
+            showInProgress(feature)
         }
     }
 

@@ -112,6 +112,7 @@ struct ShortcutDefinition: Identifiable {
         titles += [FilterKind.blackWhite, .colorBalance, .exposure, .gradientMap, .grain].map { "Image › \($0.rawValue)…" }
         titles += FilterKind.allCases.filter { $0 != .contentAwareFill && !$0.isImageAdjustment }.map { "Filter › \($0.rawValue)…" }
         titles += AdjustmentKind.allCases.map { "Layer › New Adjustment Layer › \($0.rawValue)" }
+        titles += PlannedFeature.assignableMenuCommands
         return titles
     }()
 
@@ -123,7 +124,7 @@ struct ShortcutDefinition: Identifiable {
             entry("Undo", "z", 1, menu: true), entry("Redo", "z", 9, menu: true),
             entry("New Canvas", "n", 1, menu: true), entry("New from Clipboard", "n", 3, menu: true),
             entry("Open Project", "o", 1, menu: true),
-            entry("Save", "s", 1, menu: true), entry("Save As", "s", 9, menu: true),
+            entry("Save", "s", 1, menu: true), entry("Save As", "s", 9, menu: true), entry("Save a Copy", "s", 3, menu: true),
             entry("Export PNG", "e", 9, menu: true), entry("Export JPEG", "s", 11, menu: true),
             entry("Close Project", "w", 1, menu: true), entry("Fit Canvas", "0", 1, menu: true),
             entry("Actual Pixels", "1", 1, menu: true), entry("Zoom In", "=", 1, menu: true),
@@ -151,6 +152,7 @@ struct ShortcutDefinition: Identifiable {
             ("Clone Stamp", "s"), ("Type tool", "t"), ("Gradient / Paint Bucket", "g"), ("Shape tool", "u"),
             ("Eyedropper tool", "i"), ("Rectangular / Elliptical Marquee", "m"), ("Object Selection / Magic Wand", "w"),
             ("Lasso / Polygonal Lasso", "l"), ("Blur / Smudge", "r"), ("Dodge / Burn", "o"), ("Crop tool", "c"),
+            ("Pen tool", "p"),
             ("Swap foreground/background", "x"), ("Reset colors", "d"),
             ("Temporary Hand tool (hold)", " "), ("Delete selection / layer / effect / lasso point", "\u{7f}"),
             ("Apply current canvas operation", "\r"), ("Cancel current canvas operation", "\u{1b}"),
@@ -161,7 +163,8 @@ struct ShortcutDefinition: Identifiable {
                    entry("Previous blend mode", "-", 8), entry("Next blend mode", "=", 8)]
         // Shift and the key of a slot with several tools: the slot's next tool (`EditorSession.pressToolKey`).
         for (title, key) in [("Next marquee tool", "m"), ("Next lasso tool", "l"), ("Next Object Selection / Magic Wand", "w"),
-            ("Next Gradient / Paint Bucket", "g"), ("Next Blur / Smudge", "r"), ("Next Dodge / Burn", "o"), ("Next shape tool", "u")] {
+            ("Next Gradient / Paint Bucket", "g"), ("Next Blur / Smudge", "r"), ("Next Dodge / Burn", "o"), ("Next shape tool", "u"),
+            ("Next brush tool", "b")] {
             result.append(entry(title, key, 8))
         }
         for digit in 0...9 { result.append(entry("Opacity digit \(digit) (type two for exact %)", String(digit))) }

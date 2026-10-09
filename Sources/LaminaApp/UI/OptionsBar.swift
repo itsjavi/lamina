@@ -14,11 +14,16 @@ struct OptionsBar<Settings: View>: View {
                 .help(session.tool.label)
                 .accessibilityLabel(session.tool.label)
                 .accessibilityIdentifier("optionsBarTool")
-            ColorRole.separator.color.frame(width: 1, height: 20)
+            OptionsBarDivider()
             settings.frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(height: ToolHeaderStyle.height)
     }
+}
+
+/// The 1 × 20 pt line between an options bar's groups.
+struct OptionsBarDivider: View {
+    var body: some View { ColorRole.separator.color.frame(width: 1, height: 20) }
 }
 
 enum OptionsBarStyle {

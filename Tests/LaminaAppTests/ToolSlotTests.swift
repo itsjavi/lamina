@@ -16,10 +16,11 @@ struct ToolSlotTests {
         let slotted = ToolSlot.allCases.flatMap(\.tools)
         #expect(slotted == NavigationTool.allCases.filter { $0 != .liquify && $0 != .idle }, "toolbar order, each tool once")
         #expect(NavigationTool.liquify.slot == nil && NavigationTool.idle.slot == nil)
-        let keys = Dictionary(uniqueKeysWithValues: ToolSlot.allCases.map { ($0, $0.key) })
+        let keys = Dictionary(uniqueKeysWithValues: ToolSlot.allCases.compactMap { slot in slot.key.map { (slot, $0) } })
         #expect(keys == [.move: "v", .marquee: "m", .lasso: "l", .objectSelection: "w", .crop: "c", .eyedropper: "i",
                          .spotHealing: "j", .brush: "b", .cloneStamp: "s", .eraser: "e", .gradient: "g", .blur: "r",
-                         .dodge: "o", .type: "t", .shapes: "u", .hand: "h", .zoom: "z"])
+                         .dodge: "o", .pen: "p", .type: "t", .shapes: "u", .hand: "h", .zoom: "z"])
+        #expect(ToolSlot.pathSelection.key == nil, "A stays No Tool until the Path Selection tools ship")
         #expect(Set(keys.values).count == keys.count)
         #expect(ToolSlot.marquee.tools == [.rectangularMarquee, .ellipticalMarquee])
         #expect(ToolSlot.lasso.tools == [.lasso, .polygonalLasso])
@@ -42,26 +43,28 @@ struct ToolSlotTests {
         #expect(Set(hints).count == hints.count)
         #expect(!hints.contains { $0.contains("Tab") })
         for slot in ToolSlot.allCases where slot.tools.count > 1 {
-            for tool in slot.tools { #expect(tool.hint.contains("Shift-\(slot.key.uppercased())"), "\(tool)") }
+            for tool in slot.tools { #expect(tool.hint.contains("Shift-\((slot.key ?? "").uppercased())"), "\(tool)") }
         }
     }
 
-    /// Every slot: its key picks the first tool, Shift steps through the rest and round, and the key alone then picks
-    /// the one left there. Shift from another slot's tool picks the slot's tool without stepping.
+    /// Every slot of tools only: its key picks the first tool, Shift steps through the rest and round, and the key alone
+    /// then picks the one left there. Shift from another slot's tool picks the slot's tool without stepping. Slots with
+    /// planned tools are `PlannedFeatureTests`'.
     @Test func aKeyPicksTheSlotsLastToolAndShiftStepsThroughTheSlot() {
         let session = EditorSession()
-        for slot in ToolSlot.allCases {
+        for slot in ToolSlot.allCases where slot.items == slot.tools.map(SlotItem.tool) {
+            guard let key = slot.key else { Issue.record("\(slot) has tools and no key"); continue }
             session.selectTool(.idle)
-            session.pressToolKey(slot.key)
+            session.pressToolKey(key)
             #expect(session.tool == slot.tools[0], "\(slot)")
             var seen = [session.tool]
-            for _ in slot.tools.indices { session.pressToolKey(slot.key, shift: true); seen.append(session.tool) }
+            for _ in slot.tools.indices { session.pressToolKey(key, shift: true); seen.append(session.tool) }
             #expect(seen == slot.tools + [slot.tools[0]], "\(slot)")
-            session.pressToolKey(slot.key, shift: true)
+            session.pressToolKey(key, shift: true)
             session.selectTool(.idle)
-            session.pressToolKey(slot.key, shift: true)
+            session.pressToolKey(key, shift: true)
             #expect(session.tool == slot.tools[1 % slot.tools.count], "\(slot): Shift from elsewhere doesn't step")
-            session.pressToolKey(slot.key)
+            session.pressToolKey(key)
             #expect(session.tool(in: slot) == session.tool)
         }
         session.pressToolKey("a")

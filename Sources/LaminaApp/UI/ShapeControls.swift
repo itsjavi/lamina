@@ -6,6 +6,19 @@ struct ShapeControls: View {
 
     var body: some View {
         HStack(spacing: 12) {
+            // Fill, then the stroke and path operations to come (placeholders), then the shape's own setting.
+            HStack(spacing: 6) {
+                Text("Fill")
+                Button { session.openColorPicker(background: false) } label: {
+                    let swatch = RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    swatch.fill(Color(nsColor: session.foregroundColor.nsColor))
+                        .overlay { swatch.strokeBorder(ColorRole.edge.color, lineWidth: 1) }
+                        .frame(width: 36, height: 18)
+                }
+                .buttonStyle(.plain)
+                .help("Shapes fill with the foreground color; click to change it")
+            }
+            ShapeStrokePlaceholders(session: session)
             if session.tool == .line {
                 HStack(spacing: 6) {
                     Text("Width").scrubbable(sensitivity: 1, value: $session.shapeLineWidth, range: 1...5000)
@@ -36,17 +49,6 @@ struct ShapeControls: View {
                         .unitSuffix("px")
                 }
                 .help("Round the rectangle's corners by this many pixels; 0 keeps them square")
-            }
-            HStack(spacing: 6) {
-                Text("Fill")
-                Button { session.openColorPicker(background: false) } label: {
-                    let swatch = RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    swatch.fill(Color(nsColor: session.foregroundColor.nsColor))
-                        .overlay { swatch.strokeBorder(ColorRole.edge.color, lineWidth: 1) }
-                        .frame(width: 36, height: 18)
-                }
-                .buttonStyle(.plain)
-                .help("Shapes fill with the foreground color; click to change it")
             }
             Spacer(minLength: 0)
         }

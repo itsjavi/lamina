@@ -104,20 +104,28 @@ struct ShapeToolTests {
         session.cancelShape()
     }
 
-    /// U picks the shape tool last used; Shift-U steps Rectangle, Ellipse, Line and round again. Each draws its own.
+    /// U picks the shape tool last used; Shift-U steps Rectangle, Ellipse, then past Polygon and Star (in progress: they
+    /// only say so) to Line and round again. Each draws its own.
     @Test func uPicksTheShapeLastUsedAndShiftUStepsThroughThem() {
         let session = makeSession()
+        session.announceInProgress = { _ in }
         session.selectTool(.move)
         session.pressToolKey("u")
         #expect(session.tool == .rectangle)
         var drawn: [ShapeKind] = []
-        for _ in 0..<3 {
-            session.beginShape(at: CGPoint(x: 5, y: 5))
-            if let kind = session.shapeDraft?.kind { drawn.append(kind) }
-            session.cancelShape()
+        var planned: [PlannedFeature] = []
+        for _ in 0..<5 {
+            if let notice = session.inProgressNotice {
+                planned.append(notice.feature)
+            } else {
+                session.beginShape(at: CGPoint(x: 5, y: 5))
+                if let kind = session.shapeDraft?.kind { drawn.append(kind) }
+                session.cancelShape()
+            }
             session.pressToolKey("u", shift: true)
         }
-        #expect(drawn == [.rectangle, .ellipse, .line] && session.tool == .rectangle)
+        #expect(drawn == [.rectangle, .ellipse, .line] && planned == [.polygonTool, .starTool])
+        #expect(session.tool == .rectangle && session.inProgressNotice == nil)
         session.pressToolKey("u", shift: true)
         session.selectTool(.brush)
         session.pressToolKey("u")

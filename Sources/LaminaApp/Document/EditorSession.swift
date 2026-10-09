@@ -168,6 +168,10 @@ final class EditorSession {
     /// The tool each toolbar slot last had (`tool(in:)`), while this document is open. The Dodge slot's starts as the
     /// last document left it (`BrushDefaults.burns`).
     var slotTools: [ToolSlot: NavigationTool] = [:] { didSet { if slotTools[.dodge] != oldValue[.dodge] { saveBrushDefaults() } } }
+    /// The "<name> is in progress" message a placeholder is showing (`showInProgress`).
+    var inProgressNotice: InProgressNotice?
+    /// Reads the message out to VoiceOver; tests listen here.
+    @ObservationIgnored var announceInProgress: (String) -> Void = InProgressNotice.announce
     /// Liquify's way back: the tool chosen before it, and how many History steps were applied then.
     @ObservationIgnored var liquifyEntry: (tool: NavigationTool, position: Int)?
     var collapsedGroupIDs: Set<UUID> = []

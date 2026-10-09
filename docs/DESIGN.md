@@ -562,7 +562,7 @@ one in Keyboard Shortcuts (More Menu Commands), as every menu item does.
 - **Filter:** Last Filter ⌃⌘F │ Camera Raw Filter… ⇧⌘A · Lens Correction… ⇧⌘R · Liquify… ⇧⌘X │ Blur ▸ (Gaussian Blur… · Motion Blur…) · Noise ▸ Add Noise… · Pixelate ▸ Dither… · Render ▸ Vignette… · Sharpen ▸ (Unsharp Mask… │ Tonal Contrast…) · Stylize ▸ Bloom / Glow… · Other ▸ High Pass…
 - **View:** Proof Setup ▸ Custom… · Proof Colors ⌘Y · Gamut Warning ⇧⌘Y (in progress, TASK-89) │ Zoom In ⌘+ · Zoom Out ⌘− · Fit on Screen ⌘0 · 100% ⌘1 │ Screen Mode ▸ (Standard Screen Mode ✓ · Full Screen Mode With Menu Bar · Full Screen Mode; the last two in progress, TASK-78) │ Extras ⌘H · Show ▸ (Grid ⌘' · Guides ⌘; · Pixel Grid) │ Rulers ⌘R │ Snap ⇧⌘; · Snap To ▸ (Guides · Grid · Layers · Document Bounds) │ Guides ▸ (Lock Guides ⌥⌘; · Clear Guides) │ Grid Settings… │ Enter Full Screen (Exit Full Screen while in it; no default key, since ⌃⌘F is Last Filter)
 - **Window:** Minimize · Zoom (then the system's tiling items and Bring All to Front) │ Workspace ▸ (Essentials (Default) │ Reset Essentials) │ Adjustments · History · Layers · Navigator (in progress, TASK-80) · Properties │ Contextual Task Bar (in progress, TASK-67) │ open documents
-- **Help:** Search
+- **Help:** Search │ Features in Progress… (Lamina's; see In-progress placeholders)
 
 How the menus behave where the names alone don't say:
 
@@ -804,6 +804,14 @@ on the next click and is announced to VoiceOver. A placeholder looks like a ship
 | Proof Setup, Proof Colors, Gamut Warning | View: Proof Setup ▸ Custom…, Proof Colors ⌘Y, Gamut Warning ⇧⌘Y | TASK-89 |
 | 16 Bits/Channel, 32 Bits/Channel | Image ▸ Mode | TASK-90 |
 | Lock transparent pixels | Layers panel's Lock row, the Lock Layers dialog's Transparency, and `/` until another lock is chosen | TASK-93 |
+
+Help ▸ Features in Progress… (Lamina's own, where help lives; no default key, assignable in Keyboard Shortcuts) opens a
+floating panel listing every placeholder, grouped as Tools, Menu commands, Options bars, Panels and dialogs, and Keys:
+each row has the control's icon when it has one (a planned tool's toolbar icon, a panel or bar control's symbol;
+none for menu items and text controls), its name, where to find it ("Edit › Search (⌘F)", "Brush Tool's flyout (B)",
+"Layers panel · / on the canvas") in `secondaryText`, and its task in `tertiaryText`, on `panel` with `separator`
+lines. It reads `PlannedFeature` (`category`, `location`, `symbol`), so it always matches this table.
+(`InProgressListView`, `PlannedFeatureIcon` in `UI/InProgressList.swift`.)
 
 How it works (`Sources/LaminaApp/Document/PlannedFeature.swift`):
 

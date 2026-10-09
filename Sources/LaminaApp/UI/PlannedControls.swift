@@ -67,7 +67,7 @@ struct ShapeStrokePlaceholders: View {
             .help(PlannedFeature.shapeStroke.helpTag)
             .accessibilityLabel("Stroke width, 1 pixel")
             Button { session.showInProgress(.strokeOptions) } label: {
-                Image(systemName: PlannedFeature.strokeOptions.symbol)
+                PlannedFeatureIcon(feature: .strokeOptions)
             }
             .help(PlannedFeature.strokeOptions.helpTag)
             .accessibilityLabel(PlannedFeature.strokeOptions.name)
@@ -75,7 +75,7 @@ struct ShapeStrokePlaceholders: View {
         .fixedSize()
         OptionsBarDivider()
         Button { session.showInProgress(.pathOperations) } label: {
-            Image(systemName: PlannedFeature.pathOperations.symbol)
+            PlannedFeatureIcon(feature: .pathOperations)
         }
         .help(PlannedFeature.pathOperations.helpTag)
         .accessibilityLabel(PlannedFeature.pathOperations.name)
@@ -121,7 +121,7 @@ struct TwoColumnToolbarPlaceholder: View {
     var body: some View {
         let feature = PlannedFeature.twoColumnToolbar
         Button { session.showInProgress(feature) } label: {
-            Image(systemName: "chevron.right.2").font(.system(size: 9, weight: .semibold))
+            PlannedFeatureIcon(feature: feature).font(.system(size: 9, weight: .semibold))
                 .foregroundStyle(ColorRole.icon.color)
                 .frame(width: 32, height: 22).contentShape(Rectangle())
         }

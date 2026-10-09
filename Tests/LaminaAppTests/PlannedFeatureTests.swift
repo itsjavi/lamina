@@ -129,6 +129,23 @@ struct PlannedFeatureTests {
                 "Hide Panels is in progress"], "VoiceOver hears each one")
     }
 
+    /// Help › Features in Progress… lists every placeholder in its group, saying where to find it.
+    @Test func helpListsEveryPlaceholderWithWhereToFindIt() {
+        let listed = PlannedFeature.Category.allCases.flatMap { category in PlannedFeature.allCases.filter { $0.category == category } }
+        #expect(Set(listed) == Set(PlannedFeature.allCases) && listed.count == PlannedFeature.allCases.count)
+        #expect(PlannedFeature.allCases.allSatisfy { !$0.location.isEmpty })
+        #expect(PlannedFeature.search.location == "Edit › Search (⌘F)")
+        #expect(PlannedFeature.pencilTool.location == "Brush Tool's flyout (B)")
+        #expect(PlannedFeature.penTool.location == "Toolbar, its own slot (P)")
+        #expect(PlannedFeature.shapeStroke.location == "Rectangle, Ellipse and Line options bars")
+        #expect(PlannedFeature.flatBristle.location == "Brush options bar")
+        #expect(PlannedFeature.hidePanels.location == "Tab and ⇧Tab on the canvas")
+        #expect(PlannedFeature.lockTransparentPixels.location == "Layers panel · / on the canvas")
+        #expect(PlannedFeature.fullScreenMode.location == "View › Screen Mode › Full Screen Mode · ⇧F on the canvas")
+        #expect(PlannedFeature.twoColumnToolbar.symbol == "chevron.right.2" && PlannedFeature.search.symbol == nil)
+        #expect(ShortcutDefinition.all.contains { $0.title == "Help › Features in Progress…" && $0.original.isNone })
+    }
+
     /// One message at a time: a new one replaces the one showing. It goes after a few seconds, or on the next click,
     /// and the timer of one replaced doesn't take down the next.
     @Test func theMessageGoesAfterAWhileOrOnTheNextClick() async throws {

@@ -117,6 +117,7 @@ struct ShortcutDefinition: Identifiable {
             "View › Guides › Clear Guides", "View › Grid Settings…", "View › Enter Full Screen",
             "Window › Minimize", "Window › Zoom",
             "Window › Workspace › Essentials (Default)", "Window › Workspace › Reset Essentials",
+            "Help › Features in Progress…",
         ]
         titles += DockPanel.windowMenuOrder.map { "Window › \($0.title)" }
         titles += CanvasRotation.allCases.map { "Image › Image Rotation › \($0.rawValue)" }

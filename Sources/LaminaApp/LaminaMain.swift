@@ -44,8 +44,11 @@ struct LaminaMain: App {
                             .assignableShortcut("Window › Zoom")
                     }
                     DockCommands(layout: DockLayout.shared, session: session)
-                    // Lamina has no help book; the system's Search stays.
-                    CommandGroup(replacing: .help) {}
+                    // Lamina has no help book; the system's Search stays, then what is still being built.
+                    CommandGroup(replacing: .help) {
+                        Button("Features in Progress…") { InProgressList.shared.show() }
+                            .assignableShortcut("Help › Features in Progress…")
+                    }
                 }
             }
     }

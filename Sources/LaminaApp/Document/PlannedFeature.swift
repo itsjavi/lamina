@@ -182,13 +182,69 @@ enum PlannedFeature: String, CaseIterable, Identifiable {
         return path
     }
 
-    /// The SF Symbol of an options-bar placeholder that shows one (planned tools' icons are `ToolIcon`'s).
-    var symbol: String {
+    /// The SF Symbol of a placeholder that shows one; nil for menu items and text controls (planned tools' icons are
+    /// `ToolIcon`'s).
+    var symbol: String? {
         switch self {
         case .strokeOptions: "lineweight"
         case .pathOperations: "square.on.square"
-        default: "hammer"
+        case .twoColumnToolbar: "chevron.right.2"
+        case .lockTransparentPixels: "checkerboard.rectangle"
+        default: nil
         }
+    }
+
+    /// Help ▸ Features in Progress…'s groups, in its order.
+    enum Category: CaseIterable {
+        case tools, menus, optionsBars, panels, keys
+        var title: String {
+            switch self {
+            case .tools: "Tools"
+            case .menus: "Menu commands"
+            case .optionsBars: "Options bars"
+            case .panels: "Panels and dialogs"
+            case .keys: "Keys"
+            }
+        }
+    }
+    var category: Category {
+        switch home {
+        case .toolbar: .tools
+        case .menu: .menus
+        case .optionsBar: .optionsBars
+        case .panel: .panels
+        case .key: .keys
+        }
+    }
+    /// Where its control is, as Help ▸ Features in Progress… says it: "Edit › Search (⌘F)", "Brush Tool's flyout (B)".
+    var location: String {
+        let canvasKey: String? = switch self {
+        case .fullScreenModeWithMenuBar: "F on the canvas"
+        case .fullScreenMode: "⇧F on the canvas"
+        case .lockTransparentPixels: "/ on the canvas"
+        default: nil
+        }
+        let place: String
+        switch home {
+        case .toolbar:
+            let key = slot?.key.map { " (\($0.uppercased()))" } ?? ""
+            if let first = slot?.items.first, first != .planned(self) { place = "\(first.name)'s flyout\(key)" }
+            else { place = "Toolbar, its own slot\(key)" }
+        case .menu(let path):
+            let key = Self.defaultKeyTitles[self].flatMap { title in
+                ShortcutDefinition.all.first { $0.isMenu && $0.title == title }?.original.label
+            }
+            place = path + (key.map { " (\($0))" } ?? "")
+        case .optionsBar(let tools):
+            let names = tools.map(\.title)
+            place = (names.count > 1 ? names.dropLast().joined(separator: ", ") + " and " + names.last! : names.first ?? "")
+                + (names.count > 1 ? " options bars" : " options bar")
+        case .panel(let name):
+            place = name == "Toolbar" ? "Toolbar, at the top" : name + (name == "Layer Style" ? " dialog" : " panel")
+        case .key(let key):
+            place = key == "Tab" ? "Tab and ⇧Tab on the canvas" : "\(key) on the canvas"
+        }
+        return canvasKey.map { "\(place) · \($0)" } ?? place
     }
 }
 

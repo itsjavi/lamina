@@ -52,6 +52,26 @@ struct CropRatioTests {
         #expect(session.cropRatioChoice == "9:21", "nothing changes for something that isn't a ratio")
     }
 
+    /// The bar's Cancel ⊘ and Commit ✓ are Escape and Return on the canvas, which still end a pending crop.
+    @Test func escapeCancelsAndReturnCommitsAPendingCrop() async throws {
+        let session = EditorSession()
+        session.createDocument(width: 400, height: 300)
+        session.selectTool(.crop)
+        let canvas = CanvasView(session: session)
+        func press(_ characters: String, code: UInt16) {
+            canvas.keyDown(with: NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
+                windowNumber: 0, context: nil, characters: characters, charactersIgnoringModifiers: characters,
+                isARepeat: false, keyCode: code)!)
+        }
+        session.cropRect = CGRect(x: 10, y: 10, width: 200, height: 100)
+        press("\u{1b}", code: 53)
+        #expect(session.cropRect == nil && session.document?.width == 400)
+        session.cropRect = CGRect(x: 10, y: 10, width: 200, height: 100)
+        press("\r", code: 36)
+        for _ in 0..<100 where session.document?.width != 200 { try await Task.sleep(for: .milliseconds(20)) }
+        #expect(session.document?.width == 200 && session.document?.height == 100 && session.cropRect == nil)
+    }
+
     /// The Ratio pop-up names its choices as familiar editors do, and its W and H show the ratio's sides, which ⇄
     /// swaps and Clear empties.
     @Test func ratiosHaveFamiliarNamesAndSidesThatSwapAndClear() throws {

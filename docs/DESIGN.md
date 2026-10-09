@@ -6,14 +6,14 @@
 - **Supported appearances:** light and dark, following macOS, with an override in Settings
 - **Target window:** 1500 × 860 pt, the usable area of a 14-inch MacBook Pro at default scaling
 - **Visual reference:** [references/redesign_v2.html](references/redesign_v2.html), the approved interactive mockup
-- **Policy:** decision-9 · **Delivery:** milestone m-5, Familiar workspace (TASK-51 to TASK-66)
+- **Policy:** decision-9 · **Delivery:** milestone m-5, Familiar workspace (TASK-51 to TASK-66), done October 2026
 
 This is the maintained spec for Lamina's interface. Every change to what people see (a tool, a menu item, a panel, a
 dialog, a shortcut, a color, a size) updates this file in the same commit. If the app and this file disagree, one of
 them is a bug: fix the one that is wrong, never leave them apart.
 
-Status markers used below: **shipping** (in the app), **m-5** (being rebuilt by the milestone), **in progress (TASK-n)**
-(a planned feature shown as a placeholder, see [In-progress placeholders](#in-progress-placeholders)).
+Status markers used below: **shipping** (in the app) and **in progress (TASK-n)** (a planned feature shown as a
+placeholder, see [In-progress placeholders](#in-progress-placeholders)).
 
 ## Overview and north star
 

@@ -22,8 +22,6 @@ the names people know from Photoshop, Affinity and similar editors, drawn with n
   spec.
 - A planned feature with an open Backlog task shows its control as an in-progress placeholder (the spec lists them).
   Creating such a task adds its placeholder row; shipping or dropping the task removes it.
-- Milestone m-5 (Familiar workspace, TASK-51 to TASK-66) comes before any other new feature: don't start feature work
-  outside it until m-5 is done. Fixes and releases can still ship.
 
 ## Commands
 

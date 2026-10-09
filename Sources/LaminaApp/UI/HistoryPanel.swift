@@ -1,54 +1,17 @@
 import SwiftUI
 
-/// The side panel beside the canvas: Layers, or History in its place.
-struct SidePanels: View {
-    enum Panel: String { case layers = "Layers", history = "History" }
-    @Bindable var session: EditorSession
-    var width: CGFloat = 252
-    @AppStorage("sidePanel") private var panel = Panel.layers
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Picker("Panel", selection: $panel) {
-                Text(Panel.layers.rawValue).tag(Panel.layers)
-                Text(Panel.history.rawValue).tag(Panel.history)
-            }
-            .pickerStyle(.segmented).labelsHidden()
-            .padding(.horizontal, 12).padding(.vertical, 8)
-            Divider()
-            switch panel {
-            case .layers: LayersPanel(session: session, width: width)
-            case .history: HistoryPanel(session: session, width: width)
-            }
-        }
-        .frame(width: width)
-        // Renaming a layer and editing an adjustment happen in the Layers panel (Layer › Rename Layer…, Edit
-        // Adjustment…), so it comes back for them.
-        .onChange(of: session.renamingLayerID != nil || session.adjustmentEditingID != nil) { _, needsLayers in
-            if needsLayers { panel = .layers }
-        }
-    }
-}
-
 /// The undo steps by name, oldest first, as Photoshop's History panel lists them. Clicking one goes back or forward
 /// to it; the steps after it stay, dimmed, until a new edit replaces them.
 struct HistoryPanel: View {
     @Bindable var session: EditorSession
-    var width: CGFloat = 252
     /// The first row: the document before the oldest step kept.
     static let startName = "Initial State"
 
     var body: some View {
         let names = session.history.stepNames
         let position = session.history.position
+        // The panel's name is on its tab (HistoryFlyout), so the steps start at the top.
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text("History").font(.system(size: 12, weight: .semibold))
-                Spacer()
-                Text("\(names.count)").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
-                    .help("Steps kept")
-            }.padding(18)
-            Divider()
             if session.document == nil && names.isEmpty {
                 VStack(spacing: 10) {
                     Image(systemName: "clock.arrow.circlepath").font(.system(size: 25, weight: .light))
@@ -78,11 +41,12 @@ struct HistoryPanel: View {
                 Button { session.redo() } label: { Image(systemName: "arrow.uturn.forward").footerHitArea() }
                     .help("Redo (⇧⌘Z)").accessibilityLabel("Redo").disabled(!session.canRedo)
                 Spacer()
+                Text("\(names.count)").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
+                    .padding(.trailing, 6).help("Steps kept")
             }
             .buttonStyle(.plain).foregroundStyle(.secondary)
             .padding(.horizontal, 8).padding(.vertical, 4)
         }
-        .frame(width: width)
     }
 
     /// A state: current is highlighted, those after it (what Redo would bring back) are dimmed.

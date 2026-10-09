@@ -103,7 +103,9 @@ struct ShortcutDefinition: Identifiable {
             "Layer › Layer Style › Copy Layer Style", "Layer › Layer Style › Paste Layer Style",
             "Layer › Layer Style › Clear Layer Style",
             "Layer › Delete Layer",
+            "Window › Workspace › Essentials (Default)", "Window › Workspace › Reset Essentials",
         ]
+        titles += DockPanel.windowMenuOrder.map { "Window › \($0.title)" }
         titles += CanvasRotation.allCases.map { "Image › Image Rotation › \($0.rawValue)" }
         titles += LayerAlignment.allCases.map { "Layer › Align › \($0.rawValue)" }
         titles += LayerDistribution.allCases.map { "Layer › Distribute › \($0.rawValue)" }

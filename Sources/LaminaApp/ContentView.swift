@@ -3,8 +3,6 @@ import UniformTypeIdentifiers
 import LaminaCore
 
 struct ContentView: View {
-    /// The Layers panel's width, remembered across launches.
-    @AppStorage("layersPanelWidth") private var layersPanelWidth = 252.0
     @Bindable var session: EditorSession
     var applicationDelegate: LaminaApplicationDelegate? = nil
     @Environment(\.openWindow) private var openWindow
@@ -16,6 +14,8 @@ struct ContentView: View {
     @State private var filterPanel = FloatingPanelController(name: "filterPanel")
     @State private var effectsPanel = FloatingPanelController(name: "effectsPanel")
     @State private var isDropTargeted = false
+    /// The dock's widths, split and open panels, shared with the Window menu.
+    private let dockLayout = DockLayout.shared
     /// The window's width, so the tab strip can use the toolbar's free space.
     @State private var windowWidth: CGFloat = 1180
     /// A layer dragged from this canvas's own tab has nowhere to go, so the canvas doesn't light up for it.
@@ -108,8 +108,9 @@ struct ContentView: View {
                     // Keeps its own height however short the window gets; the tools scroll instead.
                     statusBar.fixedSize(horizontal: false, vertical: true)
                 }
-                PanelResizeEdge(width: $layersPanelWidth, range: LayersPanel.widths)
-                SidePanels(session: session, width: layersPanelWidth).background(ColorRole.panel.color)
+                .modifier(HistoryFlyout(session: session, layout: dockLayout))
+                Divider()
+                DockArea(session: session, layout: dockLayout)
             }
         }
         .modifier(WidthReader(width: $windowWidth))
@@ -309,28 +310,6 @@ struct ContentView: View {
         .font(.system(size: 11).monospacedDigit()).foregroundStyle(.secondary)
         .padding(.horizontal, 8).frame(height: StatusBarStyle.height)
         .accessibilityElement(children: .contain)
-    }
-}
-
-/// A panel's divider that resizes the panel to its right: drag left to widen, right to narrow, within `range`.
-private struct PanelResizeEdge: View {
-    @Binding var width: Double
-    let range: ClosedRange<Double>
-    @State private var startWidth: Double?
-
-    var body: some View {
-        Divider().overlay {
-            Color.clear.frame(width: 8).contentShape(Rectangle())
-                .pointerStyle(.columnResize)
-                .gesture(DragGesture(minimumDistance: 1, coordinateSpace: .global)
-                    .onChanged { value in
-                        let start = startWidth ?? width
-                        startWidth = start
-                        width = min(range.upperBound, max(range.lowerBound, (start - value.translation.width).rounded()))
-                    }
-                    .onEnded { _ in startWidth = nil })
-                .help("Drag to resize the panel")
-        }
     }
 }
 

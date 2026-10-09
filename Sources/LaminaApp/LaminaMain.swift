@@ -181,6 +181,7 @@ struct LaminaMain: App {
                                 .disabled(!session.canClearGuides)
                         }
                     }
+                    DockCommands(layout: DockLayout.shared)
                     // ⌘H is kept for View ▸ Extras (docs/DESIGN.md, Shortcut changes), so Hide keeps its place in the
                     // app menu without the shortcut.
                     CommandGroup(replacing: .appVisibility) {

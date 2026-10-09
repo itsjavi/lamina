@@ -3,9 +3,8 @@ import LaminaCore
 
 struct LayersPanel: View {
     @Bindable var session: EditorSession
-    /// Dragging the panel's left edge sets it, within `widths`.
+    /// The dock's width (DockLayout).
     var width: CGFloat = 252
-    static let widths: ClosedRange<Double> = 202...352
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {

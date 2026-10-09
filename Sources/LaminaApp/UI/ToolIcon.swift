@@ -25,6 +25,7 @@ struct ToolIcon: View {
                 case .tool(.dodge): DodgeToolIcon()
                 case .tool(.burn): BurnToolIcon()
                 case .tool(.type): TypeToolIcon()
+                case .planned(.pencilTool): PencilToolIcon()
                 case .planned(.paletteKnifeTool): PaletteKnifeToolIcon()
                 default: EmptyView()
                 }
@@ -65,7 +66,6 @@ struct ToolIcon: View {
             case .pathSelectionTool: "cursorarrow"
             case .directSelectionTool: "point.topleft.down.to.point.bottomright.curvepath"
             case .mixerBrushTool: "paintbrush"
-            case .pencilTool: "pencil"
             case .perspectiveCropTool: "perspective"
             case .polygonTool: "hexagon.fill"
             case .starTool: "star.fill"
@@ -145,28 +145,53 @@ struct TypeToolIcon: View {
     }
 }
 
-/// A palette knife for the toolbar (SF Symbols has none): a handle, a cranked neck and a flat rounded blade.
-struct PaletteKnifeToolIcon: View {
+/// Draws paths laid out lying flat on the 24-unit grid with the working end at the left, turned to point down-left as
+/// `paintbrush.pointed` does, so the Brush slot's icons share its angle: `strokes` in StrokeIcon's weight, `fills` solid.
+private struct DiagonalToolIcon: View {
+    let strokes: [Path]
+    var fills: [Path] = []
     var body: some View {
         Canvas { context, size in
-            let w = size.width, h = size.height
-            var handle = Path()
-            handle.move(to: CGPoint(x: w * 0.08, y: h * 0.92))
-            handle.addLine(to: CGPoint(x: w * 0.36, y: h * 0.64))
-            context.stroke(handle, with: .foreground, style: StrokeStyle(lineWidth: w * 0.16, lineCap: .round))
-            var neck = Path()
-            neck.move(to: CGPoint(x: w * 0.36, y: h * 0.64))
-            neck.addLine(to: CGPoint(x: w * 0.46, y: h * 0.62))
-            neck.addLine(to: CGPoint(x: w * 0.52, y: h * 0.50))
-            context.stroke(neck, with: .foreground, style: StrokeStyle(lineWidth: w * 0.07, lineCap: .round, lineJoin: .round))
-            // The blade: a long teardrop from the neck up to the top right.
-            var blade = Path()
-            blade.move(to: CGPoint(x: w * 0.50, y: h * 0.52))
-            blade.addQuadCurve(to: CGPoint(x: w * 0.94, y: h * 0.06), control: CGPoint(x: w * 0.60, y: h * 0.18))
-            blade.addQuadCurve(to: CGPoint(x: w * 0.50, y: h * 0.52), control: CGPoint(x: w * 0.86, y: h * 0.42))
-            blade.closeSubpath()
-            context.fill(blade, with: .foreground)
+            let unit = size.width / 24
+            let turn = CGAffineTransform(scaleX: unit, y: unit).translatedBy(x: 12, y: 12).rotated(by: -.pi / 4)
+                .translatedBy(x: -12, y: -12)
+            let style = StrokeStyle(lineWidth: 2 * unit, lineCap: .round, lineJoin: .round)
+            for path in strokes { context.stroke(path.applying(turn), with: .foreground, style: style) }
+            for path in fills { context.fill(path.applying(turn), with: .foreground) }
         }
         .accessibilityHidden(true)
+    }
+}
+
+/// The Pencil tool (SF Symbols' pencil is a hairline at toolbar size): an outlined pencil, its sharpened cone and a
+/// band before the eraser, with the lead solid.
+struct PencilToolIcon: View {
+    var body: some View {
+        DiagonalToolIcon(strokes: [
+            Path { $0.addLines([CGPoint(x: -1, y: 12), CGPoint(x: 5.5, y: 8.9), CGPoint(x: 25.5, y: 8.9),
+                                CGPoint(x: 25.5, y: 15.1), CGPoint(x: 5.5, y: 15.1)]); $0.closeSubpath() },
+            Path { $0.addLines([CGPoint(x: 5.5, y: 8.9), CGPoint(x: 5.5, y: 15.1)]) },
+            Path { $0.addLines([CGPoint(x: 21.2, y: 8.9), CGPoint(x: 21.2, y: 15.1)]) },
+        ], fills: [
+            Path { $0.addLines([CGPoint(x: -1, y: 12), CGPoint(x: 2.2, y: 10.5), CGPoint(x: 2.2, y: 13.5)]); $0.closeSubpath() },
+        ])
+    }
+}
+
+/// A palette knife for the toolbar (SF Symbols has none): an outlined leaf-shaped blade, the cranked neck that keeps
+/// the knuckles off the paint, and a rounded handle.
+struct PaletteKnifeToolIcon: View {
+    var body: some View {
+        DiagonalToolIcon(strokes: [
+            Path { blade in
+                blade.move(to: CGPoint(x: -1, y: 14.4))
+                blade.addQuadCurve(to: CGPoint(x: 11, y: 10.2), control: CGPoint(x: 3.5, y: 9.2))
+                blade.addLine(to: CGPoint(x: 11, y: 16.4))
+                blade.addQuadCurve(to: CGPoint(x: -1, y: 14.4), control: CGPoint(x: 3.5, y: 17.6))
+                blade.closeSubpath()
+            },
+            Path { $0.addLines([CGPoint(x: 11, y: 13.3), CGPoint(x: 13.6, y: 13.3), CGPoint(x: 15.4, y: 12)]) },
+            Path(roundedRect: CGRect(x: 15.4, y: 9.4, width: 10.1, height: 5.2), cornerRadius: 2.6),
+        ])
     }
 }

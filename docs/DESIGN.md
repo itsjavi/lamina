@@ -161,7 +161,7 @@ Every numeric field uses monospaced digits so values don't jitter while scrubbin
 | Crop / Perspective Crop (in progress) | `crop` / `perspective` |
 | Eyedropper | `eyedropper` |
 | Spot Healing Brush | `bandage` |
-| Brush / Pencil (in progress) | `paintbrush.pointed` / `pencil` |
+| Brush / Pencil (in progress) | `paintbrush.pointed` / custom outlined pencil at the brush's angle (SF Symbols' `pencil` is a hairline at 18 pt) |
 | Clone Stamp | custom stamp |
 | Eraser | `eraser` |
 | Gradient / Paint Bucket | custom filled square / custom bucket |
@@ -172,7 +172,7 @@ Every numeric field uses monospaced digits so values don't jitter while scrubbin
 | Hand / Zoom | `hand.raised` / `magnifyingglass` |
 | Pen (in progress) | `pencil.tip` |
 | Path Selection / Direct Selection (in progress) | `cursorarrow` / `point.topleft.down.to.point.bottomright.curvepath` |
-| Mixer Brush / Palette Knife (in progress) | `paintbrush` / custom palette knife (`PaletteKnifeToolIcon`) |
+| Mixer Brush / Palette Knife (in progress) | `paintbrush` / custom palette knife: leaf blade, cranked neck and rounded handle, outlined at the brush's angle (`PaletteKnifeToolIcon`) |
 | Polygon / Star (in progress) | `hexagon.fill` / `star.fill` |
 | Stroke options / path operations (shape bars, in progress) | `lineweight` / `square.on.square` |
 | History panel | `clock.arrow.circlepath` |
@@ -180,7 +180,8 @@ Every numeric field uses monospaced digits so values don't jitter while scrubbin
 
 Status: **shipping** (TASK-55). `ToolIcon` (`Sources/LaminaApp/UI/ToolIcon.swift`) is the one tool → icon mapping:
 `ToolIcon.symbol(for:)` gives each symbol, and the custom icons are SwiftUI drawings beside it (`DodgeToolIcon`,
-`BurnToolIcon`, `TypeToolIcon`, `PaletteKnifeToolIcon`; `GradientToolIcon`, `PaintBucketToolIcon`, `CloneStampToolIcon`,
+`BurnToolIcon`, `TypeToolIcon`, `PencilToolIcon`, `PaletteKnifeToolIcon`, the last two outlined at
+`paintbrush.pointed`'s angle and length through `DiagonalToolIcon`; `GradientToolIcon`, `PaintBucketToolIcon`, `CloneStampToolIcon`,
 `PolygonalLassoToolIcon`, `ObjectSelectionToolIcon` sit with their tools' bars), stroked 1.5 pt at 18 pt.
 The toolbar's flyouts draw `ToolIcon` itself, so drawings and symbols alike take the appearance's colors.
 

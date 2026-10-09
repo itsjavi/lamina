@@ -1,0 +1,1372 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Lamina Essentials Workspace</title>
+<style>
+/* Layout: a review sheet. The 1500 × 860 window at true proportion, scaled to the page, with the change ledger under it. */
+:root{
+  --bg:#fbf6f0; --surface:#ffffff; --soft:#f5ece2; --text:#24160f; --muted:#6b5a50; --line:#eadccf;
+  --accent:#c4521f; --link:#a8441a; --shadow:rgb(60 28 12 / .28);
+  --k-m:#2a64c9; --k-r:#a5650f; --k-s:#7d45c4; --k-n:#24814f; --k-k:#0f7f7a; --k-L:#c4521f; --k-g:#8d8d94;
+  --font-sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;
+  --font-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;
+  --font-mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  --gutter:clamp(16px,4vw,40px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15100d; --surface:#221913; --soft:#1b1410; --text:#f3ebe5; --muted:#b5a397; --line:#36281f;
+    --accent:#ff6a45; --link:#ffb27a; --shadow:rgb(0 0 0 / .6);
+    --k-m:#6fa8ff; --k-r:#f0b54a; --k-s:#c39bff; --k-n:#4fd18c; --k-k:#4fd6d0; --k-L:#ff8a66; --k-g:#8d8d94;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15100d; --surface:#221913; --soft:#1b1410; --text:#f3ebe5; --muted:#b5a397; --line:#36281f;
+  --accent:#ff6a45; --link:#ffb27a; --shadow:rgb(0 0 0 / .6);
+  --k-m:#6fa8ff; --k-r:#f0b54a; --k-s:#c39bff; --k-n:#4fd18c; --k-k:#4fd6d0; --k-L:#ff8a66; --k-g:#8d8d94;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 var(--font-sans);padding-inline:var(--gutter);padding-block:36px 72px}
+.page{max-width:1540px;margin:0 auto;display:grid;gap:44px}
+.intro{display:grid;gap:12px;max-width:74ch}
+.eyebrow{font:600 12px/1 var(--font-sans);letter-spacing:.09em;text-transform:uppercase;color:var(--accent);margin:0}
+h1{font:700 clamp(30px,4.2vw,46px)/1.06 var(--font-display);letter-spacing:-.022em;margin:0;text-wrap:balance}
+h2{font:700 24px/1.2 var(--font-display);letter-spacing:-.01em;margin:0;text-wrap:balance}
+h3{font:600 16px/1.3 var(--font-display);margin:0}
+p{margin:0}
+.lede{color:var(--muted);font-size:17px}
+a{color:var(--link)}
+kbd,.kbd{font:12px/1 var(--font-mono);padding:2px 5px;border:1px solid var(--line);border-radius:4px;background:var(--soft);white-space:nowrap}
+
+/* stage */
+.stage{display:grid;gap:14px}
+.controls{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center}
+.switch{display:inline-flex;gap:8px;align-items:center;cursor:pointer;font-size:14px}
+.switch input{appearance:none;-webkit-appearance:none;margin:0;width:30px;height:18px;border-radius:9px;background:var(--line);position:relative;transition:background .15s;cursor:pointer;flex-shrink:0}
+.switch input::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgb(0 0 0 / .3)}
+.switch input:checked{background:var(--accent)}
+.switch input:checked::after{transform:translateX(12px)}
+.switch input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.segctl{display:inline-flex;align-items:center;gap:2px;font-size:14px}
+.segctl>span{margin-right:8px}
+.segctl label{position:relative;cursor:pointer}
+.segctl input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.segctl b{display:block;font-weight:500;font-size:13px;padding:3px 10px;border:1px solid var(--line);background:var(--surface)}
+.segctl label:first-of-type b{border-radius:7px 0 0 7px}
+.segctl label:last-of-type b{border-radius:0 7px 7px 0}
+.segctl input:checked+b{background:var(--accent);border-color:var(--accent);color:#fff}
+.segctl input:focus-visible+b{outline:2px solid var(--accent);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted);margin-left:auto}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--k);flex-shrink:0}
+.viewport{position:relative;overflow:hidden;border-radius:12px;box-shadow:0 24px 60px -28px var(--shadow),0 0 0 1px var(--line);background:#101012}
+.viewport.actual{overflow-x:auto}
+.toolnote{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;align-items:baseline;padding:14px 18px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:14px}
+.toolnote b{font-weight:600}
+.toolnote .tn-t{font:600 14px/1.3 var(--font-display);white-space:nowrap}
+.toolnote p{color:var(--muted);max-width:110ch}
+.hint{font-size:13px;color:var(--muted)}
+@media (max-width:640px){.toolnote{grid-template-columns:1fr}.legend{margin-left:0}}
+
+/* ledger */
+.ledger{display:grid;gap:36px}
+.sec{display:grid;gap:14px}
+.sec>p{color:var(--muted);max-width:72ch}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px 28px}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 12px/1.2 var(--font-sans);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--soft)}
+tr:last-child td{border-bottom:0}
+td.num{text-align:right;white-space:nowrap}
+.chlist{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:14px}
+.chlist li{display:grid;grid-template-columns:8px 1fr;gap:10px;align-items:baseline}
+.chlist li .dot{transform:translateY(-1px)}
+.chlist .was{color:var(--muted)}
+.menublock{display:grid;gap:8px;align-content:start}
+.menublock h3{font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.decisions{list-style:none;margin:0;padding:0;display:grid;gap:12px;counter-reset:d}
+.decisions li{display:grid;grid-template-columns:28px 1fr;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--surface);counter-increment:d}
+.decisions li::before{content:counter(d);font:700 15px/1.6 var(--font-display);color:var(--accent)}
+.decisions p+p{margin-top:4px}
+.decisions .rec{color:var(--muted)}
+.bullets{margin:0;padding-left:20px;display:grid;gap:6px;max-width:90ch}
+
+/* ───────── The mock: a macOS window in dark or light appearance ───────── */
+.screen{
+  --desk:#0e0e10;--bg:#1d1d1f;--chrome:#29292c;--panel:#2b2b2e;--head:#232326;--field:#18181a;--field-bd:#3d3d42;
+  --ctl:#3b3b40;--ctl2:#46464b;--hover:#38383c;--on:#55555b;--on2:#4c4c52;
+  --text:#e6e6e9;--strong:#ffffff;--muted:#a3a3aa;--dim:#75757c;--icon:#d6d6db;
+  --edge:#111113;--line:#232326;--sep:#46464b;--blue:#3e8bff;--sel:#2a5596;--sel-text:#ffffff;
+  --menu:rgb(42 42 45 / .98);--menu-bd:rgb(255 255 255 / .13);--menu-sep:rgb(255 255 255 / .1);--menu-text:#ececee;
+  --mbar:#232325;--mbar-text:#f2f2f4;--mbar-open:rgb(255 255 255 / .2);
+  --dlg:#2d2d30;--pasteboard:#202022;--ctb:#323236;--ctb-bd:#47474c;
+  --cb-bg:#222225;--cb-bd:#6a6a70;--ghost:#6a6a70;--slider:#545459;--knob:#e0e0e4;--shadow:rgb(0 0 0 / .55);
+  --m-m:#6aa8ff;--m-r:#f2b84e;--m-s:#c49cff;--m-n:#55d692;--m-k:#4fd6d0;--m-L:#ff9a6b;
+  width:1500px;height:884px;transform-origin:0 0;position:relative;overflow:hidden;background:var(--desk);
+  font:12px/1.3 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;color:var(--text);
+  -webkit-user-select:none;user-select:none;color-scheme:dark;cursor:default}
+.screen.light{
+  --desk:#cfd0d6;--bg:#f5f5f7;--chrome:#ececee;--panel:#f6f6f8;--head:#e3e3e6;--field:#ffffff;--field-bd:#c4c4c9;
+  --ctl:#e0e0e4;--ctl2:#d6d6db;--hover:#dcdce1;--on:#c9c9cf;--on2:#d2d2d8;
+  --text:#1d1d1f;--strong:#000000;--muted:#6e6e73;--dim:#a1a1a6;--icon:#3a3a3e;
+  --edge:#c3c3c8;--line:#e2e2e6;--sep:#c6c6cb;--blue:#0a6cff;--sel:#cfe0fb;--sel-text:#1d1d1f;
+  --menu:rgb(246 246 248 / .98);--menu-bd:rgb(0 0 0 / .12);--menu-sep:rgb(0 0 0 / .1);--menu-text:#1d1d1f;
+  --mbar:#e8e8eb;--mbar-text:#1d1d1f;--mbar-open:rgb(0 0 0 / .1);
+  --dlg:#f2f2f4;--pasteboard:#c6c6cb;--ctb:#fbfbfd;--ctb-bd:#d1d1d6;
+  --cb-bg:#ffffff;--cb-bd:#a9a9af;--ghost:#a3a3a9;--slider:#c7c7cc;--knob:#ffffff;--shadow:rgb(0 0 0 / .2);
+  --m-m:#2a64c9;--m-r:#a5650f;--m-s:#7d45c4;--m-n:#1f8a50;--m-k:#0f7f7a;--m-L:#c4521f;
+  color-scheme:light}
+.screen button{font:inherit;color:inherit}
+.ic{display:block;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* change markers and ghosts */
+.screen [data-chg]{position:relative}
+.chg-on .screen [data-chg]::after{content:"";position:absolute;top:1px;right:1px;width:6px;height:6px;border-radius:50%;background:var(--mc);box-shadow:0 0 0 1.5px var(--chrome);pointer-events:none;z-index:3}
+.screen [data-chg="m"]{--mc:var(--m-m)} .screen [data-chg="r"]{--mc:var(--m-r)} .screen [data-chg="s"]{--mc:var(--m-s)}
+.screen [data-chg="n"]{--mc:var(--m-n)} .screen [data-chg="k"]{--mc:var(--m-k)} .screen [data-chg="L"]{--mc:var(--m-L)}
+.screen .ghost{opacity:.38}
+.screen .ghost.oc,.screen .slot.ghost,.screen .ghost.pp-btn{outline:1px dashed var(--ghost);outline-offset:-1px;border-radius:5px}
+
+/* macOS menu bar */
+.mb{position:absolute;inset:0 0 auto 0;height:24px;display:flex;align-items:center;gap:1px;padding:0 10px;background:var(--mbar);font-size:13px;color:var(--mbar-text);z-index:30;border-bottom:1px solid var(--edge)}
+.mt{padding:2px 9px;border-radius:5px;white-space:nowrap}
+.mt.app{font-weight:700}
+.mt.open{background:var(--mbar-open)}
+.mt.ghost{opacity:.45}
+.mb .clock{margin-left:auto;opacity:.8;font-variant-numeric:tabular-nums}
+.mb .apple{padding:2px 10px 2px 4px;display:flex}
+.menu{position:absolute;min-width:210px;background:var(--menu);border:1px solid var(--menu-bd);border-radius:8px;padding:5px;box-shadow:0 14px 40px var(--shadow);font-size:13px;z-index:40;max-height:852px;overflow-y:auto}
+.mi{display:flex;align-items:center;gap:14px;height:22px;padding:0 14px 0 22px;border-radius:4px;color:var(--menu-text);white-space:nowrap;position:relative}
+.mi:hover,.mi.hot{background:#2f6fe0;color:#fff}
+.mi .k{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums;padding-left:18px}
+.mi .arr{margin-left:auto;color:var(--muted)}
+.mi .k+.arr{margin-left:0}
+.mi:hover .k,.mi:hover .arr,.mi.hot .k,.mi.hot .arr{color:#fff}
+.mi .was{font-size:11px;color:var(--mc,var(--muted))}
+.mi:hover .was,.mi.hot .was{color:#dce8ff}
+.mi.ghost{opacity:1;color:var(--dim)}
+.mi.ghost .k{color:var(--dim)}
+.mi.chk::before{content:"✓";position:absolute;left:7px;font-size:12px}
+.chg-on .screen .mi[data-chg]::after{top:50%;right:4px;transform:translateY(-50%);box-shadow:none}
+.msep{height:1px;background:var(--menu-sep);margin:5px 8px}
+.tag{font-size:9.5px;line-height:1;padding:2px 5px;border-radius:4px;background:color-mix(in srgb,var(--m-L) 18%,transparent);color:var(--m-L);letter-spacing:.02em}
+
+/* window */
+.win{position:absolute;top:24px;left:0;width:1500px;height:860px;background:var(--bg);display:grid;grid-template-rows:38px 36px minmax(0,1fr);border-radius:10px 10px 0 0;overflow:hidden}
+.titlebar{display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--chrome);border-bottom:1px solid var(--edge)}
+.lights{display:flex;gap:8px;margin-right:10px}
+.lights i{width:12px;height:12px;border-radius:50%;background:#ff5f57}
+.lights i:nth-child(2){background:#febc2e}.lights i:nth-child(3){background:#28c840}
+.tbtn{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;color:var(--muted)}
+.tab{height:26px;padding:0 12px 0 8px;border-radius:7px;display:flex;align-items:center;gap:8px;color:var(--muted);white-space:nowrap}
+.tab.on{background:var(--ctl);color:var(--strong)}
+.tab .x{opacity:.6}
+.optbar{display:flex;align-items:center;gap:7px;padding:0 10px 0 8px;background:var(--chrome);border-bottom:1px solid var(--edge);white-space:nowrap;overflow:hidden}
+.ob-preset{display:flex;align-items:center;gap:2px;height:28px;padding:0 4px;border-radius:6px;color:var(--text)}
+.oc{display:inline-flex;align-items:center;gap:5px;height:24px;flex-shrink:0;padding:0 1px}
+.lbl{color:var(--muted)}
+.pop{height:22px;padding:0 6px 0 8px;border-radius:5px;background:var(--ctl);display:inline-flex;align-items:center;gap:6px;justify-content:space-between;color:var(--text)}
+.pop .ic{color:var(--muted)}
+.fld{height:22px;padding:0 6px;border-radius:4px;background:var(--field);border:1px solid var(--field-bd);display:inline-flex;align-items:center;justify-content:space-between;gap:4px;font-variant-numeric:tabular-nums;color:var(--text)}
+.fld em{font-style:normal;color:var(--dim)}
+.fld.ph{color:var(--dim)}
+.btn{height:22px;padding:0 10px;border-radius:5px;background:var(--ctl2);display:inline-flex;align-items:center;gap:6px;color:var(--text)}
+.cb{width:13px;height:13px;border-radius:3px;border:1px solid var(--cb-bd);background:var(--cb-bg);display:inline-grid;place-items:center;flex-shrink:0}
+.cb.on{background:var(--blue);border-color:var(--blue)}
+.cb.on::before{content:"";width:7px;height:3.5px;border:solid #fff;border-width:0 0 1.6px 1.6px;transform:translate(0,-1px) rotate(-45deg)}
+.chk.dis{opacity:.45}
+.ib{gap:1px}
+.ibb{width:24px;height:22px;display:grid;place-items:center;border-radius:4px;color:var(--icon)}
+.ibb.on{background:var(--on2);color:var(--strong)}
+.ibb.dim{color:var(--dim)}
+.ob-div{width:1px;height:20px;background:var(--sep);margin:0 3px;flex-shrink:0}
+.flex{flex:1 1 auto}
+.seg{background:var(--field);border:1px solid var(--field-bd);border-radius:6px;padding:2px;gap:0;height:24px}
+.seg span{padding:2px 9px;border-radius:4px;color:var(--muted)}
+.seg span.on{background:var(--on2);color:var(--strong)}
+.bp{gap:4px}
+.bp .tip{width:22px;height:22px;border-radius:50%;background:radial-gradient(circle,var(--text) 0,var(--text) calc(var(--h) * 1%),transparent 70%);border:1px solid var(--sep)}
+.bp .num{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.swatch{width:22px;height:18px;border-radius:3px;border:1px solid var(--cb-bd);background:var(--c)}
+.swatch.none{background:linear-gradient(to top right,#fff 0 46%,#e33 46% 54%,#fff 54%)}
+.gradpick{width:72px;height:18px;border-radius:3px;border:1px solid var(--cb-bd);background:linear-gradient(90deg,#000,#fff)}
+.ref{display:grid;grid-template-columns:repeat(3,5px);gap:2px;padding:3px;border:1px solid var(--sep);border-radius:3px}
+.ref i{width:5px;height:5px;border:1px solid var(--muted)}
+.ref i:nth-child(5){background:var(--text);border-color:var(--text)}
+.ob-right{display:flex;gap:4px;margin-left:8px}
+
+.work{display:grid;grid-template-columns:44px minmax(0,1fr) 34px 292px;min-height:0}
+.toolbar{background:var(--chrome);border-right:1px solid var(--edge);display:flex;flex-direction:column;align-items:center;padding:3px 0 6px;gap:1px;overflow:hidden}
+.tb-grip{width:18px;height:5px;border-top:1px dotted var(--dim);border-bottom:1px dotted var(--dim);margin:2px 0 5px;flex-shrink:0}
+.slot{width:32px;height:30px;border:0;background:none;color:var(--icon);border-radius:6px;display:grid;place-items:center;position:relative;padding:0;flex-shrink:0;cursor:default}
+.ghost-on .slot{height:27px}
+.slot:hover{background:var(--hover)}
+.slot.on{background:var(--on);color:var(--strong)}
+.slot:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.tri{position:absolute;right:3px;bottom:3px;width:0;height:0;border-left:4px solid transparent;border-bottom:4px solid var(--muted)}
+.tb-sep{width:22px;height:1px;background:var(--sep);margin:4px 0;flex-shrink:0}
+.fgbg{position:relative;width:36px;height:38px;margin-top:6px;flex-shrink:0}
+.fgbg .bgc,.fgbg .fgc{position:absolute;width:19px;height:19px;border:1px solid var(--muted);border-radius:2px}
+.fgbg .fgc{left:4px;top:8px;z-index:1;box-shadow:0 0 0 1px var(--edge)}
+.fgbg .bgc{left:13px;top:17px}
+.fgbg .mini{position:absolute;left:2px;top:0;width:9px;height:7px}
+.fgbg .mini::before,.fgbg .mini::after{content:"";position:absolute;width:5px;height:5px;border:1px solid var(--muted)}
+.fgbg .mini::before{background:#000;left:0;top:0;z-index:1}.fgbg .mini::after{background:#fff;left:3px;top:2px}
+.fgbg .swp{position:absolute;right:1px;top:0;color:var(--icon)}
+
+.docarea{display:grid;grid-template-rows:minmax(0,1fr) 22px;min-width:0;min-height:0}
+.canvas{position:relative;background:var(--pasteboard);overflow:hidden}
+.doc{position:absolute;box-shadow:0 0 0 1px rgb(0 0 0 / .6),0 8px 24px var(--shadow)}
+.ov{position:absolute;inset:0;pointer-events:none}
+.ov>*{pointer-events:auto}
+.tbox{position:absolute;border:1px solid #3e8bff}
+.tbox.click{cursor:pointer}
+.tbox .h{position:absolute;width:7px;height:7px;background:#fff;border:1px solid #3e8bff;transform:translate(-50%,-50%)}
+.tbox .rot{position:absolute;left:50%;top:-22px;height:22px;border-left:1px solid #3e8bff}
+.tbox .rot::before{content:"";position:absolute;left:-4.5px;top:-4px;width:7px;height:7px;border-radius:50%;background:#fff;border:1px solid #3e8bff}
+.ants{position:absolute;border:1px dashed #fff;outline:1px dashed #000;outline-offset:-1px;animation:ants 1s linear infinite}
+.ants.ell{border-radius:50%}
+@keyframes ants{to{outline-offset:0}}
+.cropbox{position:absolute;border:1px solid #fff;box-shadow:0 0 0 9999px rgb(0 0 0 / .32)}
+.cropbox .th{position:absolute;background:rgb(255 255 255 / .45)}
+.cropbox .ch{position:absolute;width:16px;height:16px;border:3px solid #fff}
+.brushcur{position:absolute;border:1px solid #fff;border-radius:50%;box-shadow:0 0 0 1px rgb(0 0 0 / .6);transform:translate(-50%,-50%)}
+.ring{position:absolute;width:110px;height:110px;border-radius:50%;transform:translate(-50%,-50%);border:14px solid;border-color:#d98a6b #d98a6b #8b4a6e #8b4a6e;box-shadow:0 0 0 1px #000,inset 0 0 0 1px #000}
+.gline{position:absolute;height:2px;background:#fff;transform-origin:0 50%;box-shadow:0 0 0 1px rgb(0 0 0 / .5)}
+.gstop{position:absolute;width:12px;height:12px;border-radius:50%;border:2px solid #fff;transform:translate(-50%,-50%);box-shadow:0 0 0 1px #000}
+.ctb{position:absolute;display:flex;align-items:center;gap:4px;padding:4px;background:var(--ctb);border:1px solid var(--ctb-bd);border-radius:10px;box-shadow:0 8px 24px var(--shadow);white-space:nowrap;transform:translateX(-50%);color:var(--text)}
+.ctb .cb-b{height:26px;padding:0 10px;border-radius:7px;display:inline-flex;align-items:center;gap:6px;background:var(--ctl)}
+.ctb .cb-b.icon{padding:0 6px;background:none}
+.status{display:flex;align-items:center;gap:14px;padding:0 8px;background:var(--chrome);border-top:1px solid var(--edge);font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden}
+.status .zf{width:56px;height:16px;padding:0 4px;border:1px solid var(--field-bd);border-radius:3px;background:var(--field);color:var(--text);display:flex;align-items:center;font-variant-numeric:tabular-nums}
+.status .di{display:flex;align-items:center;gap:4px;color:var(--text)}
+.status .hint{margin-left:auto;color:var(--dim);overflow:hidden;text-overflow:ellipsis}
+
+.strip{background:var(--chrome);border-left:1px solid var(--edge);display:flex;flex-direction:column;align-items:center;padding-top:6px;gap:3px}
+.sbtn{width:28px;height:28px;border-radius:6px;display:grid;place-items:center;color:var(--icon)}
+.sbtn:hover{background:var(--hover)}
+.sbtn.on{background:var(--on2);color:var(--strong)}
+.dock{background:var(--panel);border-left:1px solid var(--edge);display:flex;flex-direction:column;min-height:0}
+.pg{display:flex;flex-direction:column;border-bottom:1px solid var(--edge);min-height:0}
+.pg.collapsed{flex:0 0 auto}
+.pg-tabs{height:26px;display:flex;align-items:stretch;background:var(--head);padding:0 4px;flex-shrink:0}
+.pg-tab{padding:0 9px;display:flex;align-items:center;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+.pg-tab.on{color:var(--strong);border-bottom-color:var(--text)}
+.pg-tab:not(.on):hover{color:var(--text)}
+.pg-menu{margin-left:auto;display:grid;place-items:center;color:var(--muted);width:22px}
+.pg-body{overflow:auto;min-height:0;flex:1}
+.pp{padding:8px 10px 9px;border-bottom:1px solid var(--line)}
+.pp h4{margin:0 0 7px;font:600 11.5px/1.2 inherit;color:var(--strong);display:flex;align-items:center;gap:5px}
+.pp h4 .ic{color:var(--muted)}
+.ptitle{display:flex;align-items:center;gap:7px;padding:8px 10px;font-weight:600;border-bottom:1px solid var(--line)}
+.ptitle .ic{color:var(--muted)}
+.pr{display:flex;gap:6px;align-items:center;margin:5px 0}
+.pr .fld{flex:1;min-width:0}
+.pr .pl{color:var(--muted);width:14px;text-align:center}
+.pr .pop{flex:1}
+.pp-btns{display:flex;flex-wrap:wrap;gap:6px}
+.pp-btn{height:24px;padding:0 10px;border-radius:5px;background:var(--ctl2);display:inline-flex;align-items:center}
+.alignrow{display:flex;gap:2px;align-items:center}
+.alignrow .ibb{width:26px}
+.pfoot{display:flex;gap:8px;justify-content:flex-end;padding:6px 10px;color:var(--muted);border-top:1px solid var(--line)}
+.curve{display:block;background:var(--field);border:1px solid var(--field-bd);border-radius:3px}
+.adjgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px}
+.adjcell{display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 2px 4px;border-radius:5px;color:var(--icon);font-size:9.5px;line-height:1.15;text-align:center}
+.adjcell:hover{background:var(--hover)}
+.adjcell.ghost{outline:1px dashed var(--ghost);outline-offset:-1px}
+.layers-top{padding:6px 8px;display:grid;gap:5px;border-bottom:1px solid var(--line)}
+.lt-row{display:flex;align-items:center;gap:6px}
+.lt-row .pop.blend{flex:1}
+.lrows{overflow:auto;min-height:0;flex:1}
+.lr{display:flex;align-items:center;height:32px;border-bottom:1px solid var(--line);padding-right:6px;gap:0;color:var(--text)}
+.lr:hover{background:var(--hover)}
+.lr.sel{background:var(--sel);color:var(--sel-text)}
+.lr .eye{width:26px;display:grid;place-items:center;color:var(--icon);align-self:stretch;border-right:1px solid var(--line)}
+.lr .lm{display:flex;align-items:center;gap:5px;padding-left:calc(6px + var(--ind,0) * 14px);min-width:0;flex:1}
+.lr .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lr .fxb{margin-left:auto;font:italic 600 11px Georgia,serif;color:var(--icon);display:flex;align-items:center;gap:1px}
+.thumb{width:28px;height:24px;border:1px solid var(--edge);flex-shrink:0;background-color:#fff;background-image:conic-gradient(#c8c8c8 25%,#fff 0 50%,#c8c8c8 0 75%,#fff 0);background-size:6px 6px}
+.thumb.sel{outline:2px solid var(--text);outline-offset:1px}
+.thumb.mask{background:#fff}
+.thumb.adj{background:var(--ctl);display:grid;place-items:center;color:var(--icon)}
+.thumb.txt{background:var(--ctl);display:grid;place-items:center;font:600 12px Georgia,serif;color:var(--text)}
+.chain{color:var(--muted)}
+.lr.sub{height:22px;color:var(--muted);font-size:11px}
+.lr.sub .lm{padding-left:calc(40px + var(--ind,0) * 14px)}
+.lfoot{display:flex;justify-content:flex-end;gap:2px;padding:4px 6px;border-top:1px solid var(--edge);background:var(--panel)}
+.lfoot .ibb{width:26px;height:24px}
+.hist{position:absolute;width:240px;background:var(--panel);border:1px solid var(--edge);border-radius:6px;box-shadow:0 12px 30px var(--shadow);z-index:12;overflow:hidden}
+.hist .hrow{display:flex;align-items:center;gap:8px;height:26px;padding:0 10px;color:var(--text)}
+.hist .hrow.cur{background:var(--sel);color:var(--sel-text)}
+.hist .hrow.snap{height:40px;border-bottom:1px solid var(--line)}
+.flyout{position:absolute;background:var(--menu);border:1px solid var(--menu-bd);border-radius:7px;padding:4px;box-shadow:0 10px 30px var(--shadow);z-index:14;min-width:230px}
+.fo{display:flex;align-items:center;gap:8px;height:26px;padding:0 10px 0 6px;border-radius:4px;color:var(--menu-text);position:relative}
+.fo:hover{background:#2f6fe0;color:#fff}
+.fo .cur{width:6px;height:6px;border-radius:1px;background:currentColor;opacity:0}
+.fo.is .cur{opacity:1}
+.fo .k{margin-left:auto;color:var(--muted);padding-left:16px}
+.fo:hover .k{color:#fff}
+.fo.ghost{opacity:1;color:var(--dim)}
+
+/* dialogs */
+.dlg{position:absolute;background:var(--dlg);border:1px solid var(--menu-bd);border-radius:11px;box-shadow:0 28px 70px var(--shadow);z-index:20;display:flex;flex-direction:column;color:var(--text)}
+.dlg-tb{height:30px;display:flex;align-items:center;justify-content:center;font-weight:600;position:relative;flex-shrink:0}
+.dlg-tb .lights{position:absolute;left:12px}
+.dlg-tb .lights i:nth-child(n+2){background:var(--ctl2)}
+.dlg-in{display:grid;grid-template-columns:minmax(0,1fr) 100px;gap:18px;padding:6px 16px 16px}
+.dlg-in.bottom{grid-template-columns:1fr}
+.dlg-btns{display:flex;flex-direction:column;gap:8px}
+.dlg-btns.row{flex-direction:row;justify-content:flex-end}
+.dbtn{height:24px;min-width:88px;padding:0 14px;border-radius:6px;background:var(--ctl2);display:grid;place-items:center;border:0;cursor:pointer}
+.dbtn.def{background:var(--blue);color:#fff}
+.dbtn.ghost{outline:1px dashed var(--ghost)}
+.dlg-btns .chk{margin-top:4px}
+.dr{display:flex;align-items:center;gap:8px;margin:7px 0}
+.dl{width:var(--lw,92px);text-align:right;color:var(--muted);flex-shrink:0}
+.u{color:var(--muted)}
+.fs{border:1px solid var(--sep);border-radius:6px;padding:12px 12px 8px;position:relative;margin-top:12px}
+.fs>.lg{position:absolute;top:-8px;left:8px;background:var(--dlg);padding:0 5px;color:var(--text);font-weight:600}
+.chk{display:inline-flex;align-items:center;gap:6px}
+.rad{display:inline-flex;align-items:center;gap:6px}
+.rb{width:13px;height:13px;border-radius:50%;border:1px solid var(--cb-bd);background:var(--cb-bg);display:inline-grid;place-items:center}
+.rb.on{border-color:var(--blue);background:var(--blue)}
+.rb.on::before{content:"";width:5px;height:5px;border-radius:50%;background:#fff}
+.sl{flex:1;height:4px;background:var(--slider);border-radius:2px;position:relative;min-width:80px}
+.sl i{position:absolute;top:-5px;width:13px;height:13px;border-radius:50%;background:var(--knob);box-shadow:0 1px 2px rgb(0 0 0 / .5)}
+.histo{display:block;background:var(--field);border:1px solid var(--field-bd)}
+.grad-bar{height:10px;border-radius:2px;border:1px solid var(--sep)}
+.anchor{display:grid;grid-template-columns:repeat(3,18px);gap:2px}
+.anchor i{height:18px;background:var(--ctl);border-radius:2px;display:grid;place-items:center;color:var(--text);font-style:normal;font-size:11px}
+.anchor i.on{background:var(--on)}
+.ls-list{display:flex;flex-direction:column;gap:1px;padding-right:10px;border-right:1px solid var(--sep)}
+.ls-list>div{display:flex;align-items:center;gap:7px;height:23px;padding:0 8px;border-radius:4px}
+.ls-list>div.on{background:var(--sel);color:var(--sel-text)}
+.ls-list>div.head{color:var(--strong);font-weight:600}
+.cpk{display:flex;gap:10px}
+.cpk .field{width:220px;height:220px;border:1px solid var(--edge);background:linear-gradient(to top,#000,transparent),linear-gradient(to right,#fff,hsl(32 100% 50%))}
+.cpk .hue{width:16px;height:220px;border:1px solid var(--edge);background:linear-gradient(to top,red,#ff0,lime,cyan,blue,#f0f,red)}
+.preview-img{background:linear-gradient(#2c2f6b,#9b4a7a 55%,#f0a565);border:1px solid var(--edge)}
+.presetcards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.presetcards div{height:96px;border-radius:6px;background:var(--ctl);display:flex;flex-direction:column;justify-content:flex-end;padding:8px;gap:2px;font-size:11px}
+.presetcards div.on{outline:2px solid var(--blue)}
+.presetcards b{font-weight:600;font-size:12px}
+.ptabs{display:flex;gap:16px;border-bottom:1px solid var(--sep);padding-bottom:6px;margin-bottom:12px;color:var(--muted)}
+.ptabs .on{color:var(--strong);border-bottom:2px solid var(--strong);padding-bottom:4px;margin-bottom:-7px}
+.prevbox{background:var(--pasteboard);border:1px solid var(--edge);display:grid;place-items:center}
+@media (prefers-reduced-motion: reduce){.ants{animation:none}}
+</style>
+
+<main class="page" id="page">
+  <header class="intro">
+    <p class="eyebrow">Lamina · interface proposal · October 2026</p>
+    <h1>Lamina Essentials workspace</h1>
+    <p class="lede">The editor rearranged around Photoshop 2026's layout (v27.11): its toolbar groups, options bars, menus, panels and dialogs, with Photoshop's names, showing only what Lamina can already do, in light and dark. The window below is exactly 1500 × 860 points, the usable area on a 14-inch MacBook Pro.</p>
+  </header>
+
+  <section class="stage" aria-label="Interactive mockup">
+    <div class="controls">
+      <label class="switch"><input type="checkbox" id="sw-chg" checked> Mark changes</label>
+      <label class="switch"><input type="checkbox" id="sw-ghost"> Show Photoshop items Lamina lacks</label>
+      <label class="switch"><input type="checkbox" id="sw-ctb" checked> Contextual Task Bar</label>
+      <label class="switch"><input type="checkbox" id="sw-actual"> Actual size</label>
+      <div class="segctl" role="radiogroup" aria-label="Mock appearance"><span>Appearance</span><label><input type="radio" name="appearance" value="auto" id="ap-auto" checked><b>Auto</b></label><label><input type="radio" name="appearance" value="light" id="ap-light"><b>Light</b></label><label><input type="radio" name="appearance" value="dark" id="ap-dark"><b>Dark</b></label></div>
+      <div class="legend" aria-label="Legend">
+        <span><i class="dot" style="--k:var(--k-m)"></i>Moved</span>
+        <span><i class="dot" style="--k:var(--k-r)"></i>Renamed or restyled</span>
+        <span><i class="dot" style="--k:var(--k-s)"></i>Split into its own tool or item</span>
+        <span><i class="dot" style="--k:var(--k-n)"></i>New wiring for an existing feature</span>
+        <span><i class="dot" style="--k:var(--k-k)"></i>Shortcut</span>
+        <span><i class="dot" style="--k:var(--k-L)"></i>Lamina only</span>
+      </div>
+    </div>
+    <div class="viewport" id="viewport">
+      <div class="screen" id="screen">
+        <div class="mb" id="menubar"></div>
+        <div class="win" id="win">
+          <div class="titlebar" id="titlebar"></div>
+          <div class="optbar" id="optbar"></div>
+          <div class="work">
+            <div class="toolbar" id="toolbar"></div>
+            <div class="docarea">
+              <div class="canvas" id="canvas">
+                <div class="doc" id="doc"></div>
+                <div class="ov" id="ov"></div>
+              </div>
+              <div class="status" id="status"></div>
+            </div>
+            <div class="strip" id="strip"></div>
+            <div class="dock" id="dock"></div>
+          </div>
+          <div id="floats"></div>
+        </div>
+        <div id="menus"></div>
+      </div>
+    </div>
+    <div class="toolnote" id="toolnote" aria-live="polite"></div>
+    <p class="hint">Click a tool; hold it or right-click for its group. Tool keys work too (V, M, L, W, C, I, J, B, S, E, G, O, T, U, H, Z; Shift cycles a group). Menus open from the bar above the window; items ending in “…” open their dialog. Click layers, the mask thumbnail, panel tabs, the History icon, and the transform box on the canvas. Hover a dot for what changed.</p>
+  </section>
+
+  <section class="ledger" id="ledger"></section>
+</main>
+
+<script>
+/* ───────────── icons ───────────── */
+const F='fill="currentColor" stroke="none"';
+const I={
+move:`<path d="M12 4.5v15M4.5 12h15"/><path d="M12 2.2 8.8 5.6h6.4zM12 21.8l-3.2-3.4h6.4zM2.2 12l3.4-3.2v6.4zM21.8 12l-3.4-3.2v6.4z" ${F}/>`,
+oldmove:`<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>`,
+artboard:`<rect x="6" y="6" width="12" height="12"/><path d="M6 2v3M18 2v3M6 19v3M18 19v3M2 6h3M2 18h3M19 6h3M19 18h3"/>`,
+marquee:`<rect x="4" y="5" width="16" height="14" stroke-dasharray="2.6 2"/>`,
+emarquee:`<ellipse cx="12" cy="12" rx="8.5" ry="6.8" stroke-dasharray="2.6 2"/>`,
+rowm:`<path d="M3 12h18" stroke-dasharray="2.5 2"/><path d="M3 9.5v5M21 9.5v5"/>`,
+colm:`<path d="M12 3v18" stroke-dasharray="2.5 2"/><path d="M9.5 3h5M9.5 21h5"/>`,
+selbrush:`<circle cx="10" cy="10" r="6.5" stroke-dasharray="2.2 2"/><path d="M21 3.5 12.6 12"/><path d="M12.3 12.2c-1.8.1-2.8 1.5-2.8 2.9 0 1-.6 1.8-1.8 2.2 3.2 1 6.2-.6 6.2-3.6z" ${F}/>`,
+lasso:`<path d="M8.4 14.4C5.8 13.6 4 11.8 4 9.7 4 6.8 7.6 4.5 12 4.5s8 2.3 8 5.2-3.6 5.2-8 5.2c-1.2 0-2.4-.2-3.6-.5z"/><path d="M8.4 14.4c-.8 1.2-.4 2.6 1 2.9 1.3.3 1.5 1.6.5 2.7"/>`,
+plasso:`<path d="M6.5 13.5 4.5 7.5 11 4l8.5 3-2 6.5z"/><path d="M8.4 13.9c-.7 1.3-.1 2.5 1.3 2.8 1.2.2 1.4 1.5.4 2.8"/>`,
+objsel:`<rect x="3.5" y="3.5" width="13" height="12" stroke-dasharray="2.2 1.8"/><rect x="7" y="7" width="6" height="5" ${F} opacity=".55"/><path d="M14 13v8.4l2.3-2.1 1.7 3.6 1.6-.7-1.7-3.5h3.2z" ${F}/>`,
+quicksel:`<path d="M4.5 15.5a8 8 0 0 1 8-8" stroke-dasharray="2 2"/><path d="M20.5 3.5 13 11"/><path d="M12.8 11.2c-1.8.1-2.8 1.5-2.8 2.9 0 1-.6 1.8-1.8 2.2 3.2 1 6.2-.6 6.2-3.6z" ${F}/>`,
+wand:`<path d="M3.5 20.5 13 11"/><path d="M17 2.5l1.1 3.1 3.1 1.1-3.1 1.1L17 10.9l-1.1-3.1-3.1-1.1 3.1-1.1z" ${F}/><path d="M8 3.5v3M6.5 5h3M20 14v3M18.5 15.5h3"/>`,
+crop:`<path d="M7 2.5V17h14.5M2.5 7H17v14.5"/>`,
+pcrop:`<path d="M7.5 3 6 17h14M3 7.5l14-1 1.5 14.5"/>`,
+slice:`<path d="M4 20 17 7l2.5 2.5L7 20z"/><path d="M17 7l2-2"/>`,
+frame:`<rect x="4" y="4" width="16" height="16"/><path d="M4 4l16 16M20 4 4 20"/>`,
+eyedropper:`<path d="M20.3 3.7a2.4 2.4 0 0 0-3.4 0l-2.7 2.7-1.1-1.1-1.4 1.4 6 6 1.4-1.4-1.1-1.1 2.7-2.7a2.4 2.4 0 0 0 0-3.4z" ${F}/><path d="M12.6 8.6 5 16.2V19h2.8l7.6-7.6"/>`,
+ruler:`<path d="M3 16 16 3l5 5L8 21z"/><path d="M7 12l2 2M10 9l2 2M13 6l2 2"/>`,
+note:`<path d="M5 4h14v11l-5 5H5z"/><path d="M14 20v-5h5"/>`,
+spot:`<g transform="rotate(-45 12.5 13)"><rect x="3.5" y="9.8" width="18" height="6.4" rx="3.2"/><rect x="10" y="9.8" width="5" height="6.4" ${F} opacity=".5"/></g><path d="M2.8 8A6.5 6.5 0 0 1 8 2.8" stroke-dasharray="1.6 1.8"/>`,
+heal:`<g transform="rotate(-45 12 12)"><rect x="3" y="8.8" width="18" height="6.4" rx="3.2"/><rect x="9.5" y="8.8" width="5" height="6.4" ${F} opacity=".5"/></g>`,
+remove:`<g transform="rotate(-45 12.5 13)"><rect x="3.5" y="9.8" width="18" height="6.4" rx="3.2"/></g><path d="M5 2.5l.8 2.2 2.2.8-2.2.8L5 8.5l-.8-2.2L2 5.5l2.2-.8z" ${F}/>`,
+patch:`<path d="M5 9.5c1.5-4.5 8-6 12-3s3.5 9.5-1.5 11-9.5 1-10.5-3S4.5 11 5 9.5z"/>`,
+brush:`<path d="M20.5 3.5c-1.8.5-7.6 6.4-9.6 9.3l1.8 1.8c2.9-2 8.8-7.8 9.3-9.6a1.2 1.2 0 0 0-1.5-1.5z"/><path d="M10.6 13.2c-2.4.1-3.7 1.8-3.7 3.6 0 1.1-.8 2-2.4 2.4 4.2 1.2 7.9-.7 7.9-4.3z" ${F}/>`,
+pencil:`<path d="M16.5 3.5l4 4L8 20H4v-4z"/><path d="M14 6l4 4"/>`,
+clone:`<circle cx="12" cy="5.5" r="2.6"/><path d="M10.6 8v3.6M13.4 8v3.6"/><path d="M5 16a2.5 2.5 0 0 1 2.5-2.5h9A2.5 2.5 0 0 1 19 16v1.5H5z" ${F}/><path d="M5 20.5h14"/>`,
+histbrush:`<path d="M4 10.5A8 8 0 0 1 17.5 5"/><path d="M3.5 5.5v5h5"/><path d="M20.5 8.5c-1.4.4-5.8 4.9-7.4 7.1l1.4 1.4c2.2-1.6 6.7-6 7.1-7.4a.9.9 0 0 0-1.1-1.1z"/><path d="M12.9 15.8c-1.8.1-2.8 1.4-2.8 2.7 0 .8-.6 1.5-1.8 1.8 3.2.9 6-.5 6-3.2z" ${F}/>`,
+eraser:`<path d="M9 20.5h11"/><path d="M4.5 14.8 13.8 5.5a1.6 1.6 0 0 1 2.3 0l3.4 3.4a1.6 1.6 0 0 1 0 2.3L11.2 19.5H8.6a1.6 1.6 0 0 1-1.1-.5l-3-3a.8.8 0 0 1 0-1.2z"/><path d="M9.2 10.1l5.7 5.7"/>`,
+gradient:`<rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/><rect x="4.3" y="4.3" width="4.2" height="15.4" ${F}/><rect x="8.5" y="4.3" width="4" height="15.4" ${F} opacity=".62"/><rect x="12.5" y="4.3" width="4" height="15.4" ${F} opacity=".32"/><rect x="16.5" y="4.3" width="3.2" height="15.4" ${F} opacity=".12"/>`,
+bucket:`<path d="M5.2 11.3 11.7 4.8l7 7-6.6 6.6a1.6 1.6 0 0 1-2.2 0l-4.7-4.7a1.6 1.6 0 0 1 0-2.4z"/><path d="M5 11.8h13.6M8.6 7.9 6.2 5.5"/><path d="M20.5 15.2s1.7 2 1.7 3.1a1.7 1.7 0 0 1-3.4 0c0-1.1 1.7-3.1 1.7-3.1z" ${F}/>`,
+blur:`<path d="M12 3.2S6 9.8 6 14a6 6 0 0 0 12 0c0-4.2-6-10.8-6-10.8z"/>`,
+sharpen:`<path d="M12 3.5 6 20h12z"/>`,
+smudge:`<path d="M9.5 21c-2.3-1.6-3.5-3.8-3.5-6.3V11a1.5 1.5 0 0 1 3 0v2.2"/><path d="M9 12.5V4.6a1.5 1.5 0 0 1 3 0V11"/><path d="M12 10.2a1.5 1.5 0 0 1 3 0v1.3"/><path d="M15 11a1.5 1.5 0 0 1 3 0v3.6c0 3.4-2.2 6.2-5 6.4"/>`,
+adjbrush:`<path d="M21 3 13 11"/><circle cx="8.5" cy="15.5" r="5"/><path d="M8.5 10.5a5 5 0 0 1 0 10z" ${F}/>`,
+dodge:`<circle cx="15" cy="9" r="4.8"/><path d="M11.6 12.4 4.5 19.5"/>`,
+burn:`<circle cx="8.8" cy="8.6" r="3.2"/><path d="M12 9.5c1-.4 2 .2 2 1.2v1M14 10.8a1.3 1.3 0 0 1 2.6 0V12M16.6 11.5a1.3 1.3 0 0 1 2.6 0V15c0 3.3-2.3 6-5.6 6H12c-2.6 0-4.6-1.8-5.4-4.3l-1-3.3a1.3 1.3 0 0 1 2.4-.9l1 1.7"/>`,
+sponge:`<rect x="5" y="6" width="14" height="12" rx="4"/><circle cx="9" cy="10" r=".9" ${F}/><circle cx="14" cy="13" r=".9" ${F}/><circle cx="11" cy="14.5" r=".7" ${F}/>`,
+pen:`<path d="M12 21v-5.5"/><path d="M12 15.5c-1.5 0-2.7-1.2-2.7-2.7C9.3 10.8 12 3 12 3s2.7 7.8 2.7 9.8c0 1.5-1.2 2.7-2.7 2.7z"/><circle cx="12" cy="11.5" r="1"/>`,
+type:`<path d="M5 7V4.5h14V7M12 4.5v15M9 19.5h6"/>`,
+vtype:`<path d="M4 6V4h10v2M9 4v12M7 16h4M18 8v12M16 18l2 2 2-2"/>`,
+pathsel:`<path d="M6 3v17l4.4-4.2 2.7 6 2.6-1.2-2.7-5.9H19z" ${F}/>`,
+rect:`<rect x="4" y="5.5" width="16" height="13" rx="1" ${F} opacity=".9"/>`,
+ellipse:`<ellipse cx="12" cy="12" rx="8.5" ry="6.5" ${F} opacity=".9"/>`,
+triangle:`<path d="M12 4.5 20.5 19h-17z" ${F} opacity=".9"/>`,
+polygon:`<path d="M12 3.5 20 9l-3 9.5H7L4 9z" ${F} opacity=".9"/>`,
+line:`<path d="M4.5 19.5 19.5 4.5" stroke-width="2"/>`,
+custom:`<path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z" ${F} opacity=".9"/>`,
+hand:`<path d="M8 13.5V6.8a1.4 1.4 0 0 1 2.8 0V11"/><path d="M10.8 11V5a1.4 1.4 0 0 1 2.8 0v6"/><path d="M13.6 11V6.2a1.4 1.4 0 0 1 2.8 0V12"/><path d="M16.4 12V9a1.4 1.4 0 0 1 2.8 0v5.2c0 4-2.8 6.8-6.4 6.8-2.4 0-3.9-1-5.3-3l-2.8-3.8a1.4 1.4 0 0 1 2.2-1.7L8 14"/>`,
+rotview:`<path d="M4.5 12a7.5 7.5 0 0 1 13.2-4.9M19.5 12a7.5 7.5 0 0 1-13.2 4.9"/><path d="M18.5 3v4.3h-4.3M5.5 21v-4.3h4.3"/>`,
+zoom:`<circle cx="10.5" cy="10.5" r="6.2"/><path d="M15.2 15.2 20.5 20.5" stroke-width="2"/>`,
+zoomin:`<circle cx="10.5" cy="10.5" r="6.2"/><path d="M15.2 15.2 20.5 20.5M8 10.5h5M10.5 8v5"/>`,
+zoomout:`<circle cx="10.5" cy="10.5" r="6.2"/><path d="M15.2 15.2 20.5 20.5M8 10.5h5"/>`,
+more:`<circle cx="6" cy="12" r="1.4" ${F}/><circle cx="12" cy="12" r="1.4" ${F}/><circle cx="18" cy="12" r="1.4" ${F}/>`,
+qmask:`<rect x="3.5" y="5" width="17" height="14" rx="1.5"/><circle cx="12" cy="12" r="4" stroke-dasharray="2 1.6"/>`,
+screenmode:`<rect x="3.5" y="5" width="12.5" height="10" rx="1"/><rect x="8" y="9" width="12.5" height="10" rx="1"/>`,
+addimg:`<rect x="3.5" y="5" width="14" height="12" rx="1.5"/><path d="M5 15l4-4 3 3 2-2 3 3M19.5 13v6M16.5 16h6"/>`,
+chev:`<path d="M7 9.5l5 5 5-5" stroke-width="1.8"/>`,
+chevr:`<path d="M9.5 7l5 5-5 5" stroke-width="1.8"/>`,
+link:`<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>`,
+eye:`<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/>`,
+fx:`<text x="12" y="16.8" text-anchor="middle" font-size="13" font-style="italic" font-weight="700" ${F} font-family="Georgia,serif">fx</text>`,
+mask:`<rect x="3.5" y="5" width="17" height="14" rx="1.5"/><circle cx="12" cy="12" r="4.2" ${F}/>`,
+adj:`<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" ${F}/>`,
+folder:`<path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>`,
+newlayer:`<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v8M8 12h8"/>`,
+trash:`<path d="M4.5 6.5h15M9.5 6.5V4.5h5v2M6.5 6.5l1 13h9l1-13"/>`,
+menu:`<path d="M5 8h14M5 12h14M5 16h14"/>`,
+gear:`<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>`,
+commit:`<path d="M5 12.5l4.5 4.5L19 7.5" stroke-width="2"/>`,
+cancel:`<circle cx="12" cy="12" r="7.5"/><path d="M6.7 17.3 17.3 6.7"/>`,
+reset:`<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4 4.5V8h3.5"/>`,
+history:`<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4 4.5V8h3.5M12 8v4.2l2.8 1.8"/>`,
+navigator:`<rect x="3.5" y="5" width="17" height="14" rx="1.5"/><rect x="8" y="9" width="7" height="5"/>`,
+character:`<path d="M4 18 9 5h1l5 13M6 13.5h7M18 6v12"/>`,
+paragraph:`<path d="M13 4v16M17 4v16M13 4H9.5a4 4 0 0 0 0 8H13"/>`,
+color:`<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" ${F} opacity=".55"/>`,
+swatches:`<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/>`,
+actions:`<path d="M8 5.5v13l10-6.5z"/>`,
+brushSettings:`<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M16.5 7c-1 .3-4.3 3.6-5.4 5.2l1 1c1.6-1.1 4.9-4.4 5.2-5.4a.7.7 0 0 0-.8-.8z"/><path d="M10.9 12.4c-1.3 0-2 1-2 2 0 .6-.4 1.1-1.3 1.3 2.3.7 4.4-.4 4.4-2.4z" ${F}/>`,
+cloneSource:`<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><circle cx="12" cy="9" r="2"/><path d="M8 16a4 4 0 0 1 8 0"/>`,
+alignL:`<path d="M4 3v18"/><rect x="7" y="6" width="11" height="4"/><rect x="7" y="14" width="7" height="4"/>`,
+alignHC:`<path d="M12 3v18"/><rect x="5" y="6" width="14" height="4"/><rect x="7.5" y="14" width="9" height="4"/>`,
+alignR:`<path d="M20 3v18"/><rect x="6" y="6" width="11" height="4"/><rect x="10" y="14" width="7" height="4"/>`,
+alignT:`<path d="M3 4h18"/><rect x="6" y="7" width="4" height="11"/><rect x="14" y="7" width="4" height="7"/>`,
+alignVC:`<path d="M3 12h18"/><rect x="6" y="5" width="4" height="14"/><rect x="14" y="7.5" width="4" height="9"/>`,
+alignB:`<path d="M3 20h18"/><rect x="6" y="6" width="4" height="11"/><rect x="14" y="10" width="4" height="7"/>`,
+distH:`<path d="M4 4v16M20 4v16"/><rect x="9.5" y="7" width="5" height="10"/>`,
+distV:`<path d="M4 4h16M4 20h16"/><rect x="7" y="9.5" width="10" height="5"/>`,
+selNew:`<rect x="5" y="5" width="14" height="14" ${F} opacity=".9"/>`,
+selAdd:`<rect x="3" y="3" width="11" height="11" ${F} opacity=".9"/><rect x="10" y="10" width="11" height="11" ${F} opacity=".9"/>`,
+selSub:`<rect x="3" y="3" width="11" height="11" ${F} opacity=".9"/><rect x="10" y="10" width="11" height="11" style="fill:var(--chrome)"/>`,
+selInt:`<rect x="3" y="3" width="11" height="11"/><rect x="10" y="10" width="11" height="11"/><rect x="10" y="10" width="4" height="4" ${F}/>`,
+warp:`<path d="M4 6.5c5-3 11 3 16 0M4 12c5-3 11 3 16 0M4 17.5c5-3 11 3 16 0M7 4v16M12 4v16M17 4v16" stroke-width="1.1"/>`,
+swap:`<path d="M7 8h11l-3-3M17 16H6l3 3"/>`,
+pressure:`<path d="M15 4l5 5-9 9H6v-5z"/><circle cx="6.5" cy="17.5" r="1.2" ${F}/>`,
+pressureSize:`<path d="M15 4l5 5-9 9H6v-5z"/><circle cx="6.5" cy="17.5" r="2.6"/>`,
+airbrush:`<path d="M3.5 15.5h7.5l3-3h3.5M14 12.5v-4"/><circle cx="19.5" cy="7.5" r="1" ${F}/><circle cx="21" cy="11" r="1" ${F}/><circle cx="19" cy="14.5" r="1" ${F}/>`,
+butterfly:`<path d="M12 6.5v13M12 10c-2-4-8-5-8-1s4 5 8 4M12 10c2-4 8-5 8-1s-4 5-8 4M12 13c-2 1-6 3-5 6 1 2 4 0 5-3M12 13c2 1 6 3 5 6-1 2-4 0-5-3"/>`,
+angle:`<path d="M4 19h16M4 19 15 6"/><path d="M10 19a6 6 0 0 0-1.5-4"/>`,
+delta:`<path d="M12 5 20 19H4z"/>`,
+straighten:`<path d="M3 15.5 21 8.5"/><circle cx="8.5" cy="13.4" r="1.6"/>`,
+overlay:`<rect x="4" y="4" width="16" height="16"/><path d="M9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/>`,
+gLinear:`<rect x="4" y="4" width="16" height="16"/><rect x="4.8" y="4.8" width="5" height="14.4" ${F}/><rect x="9.8" y="4.8" width="5" height="14.4" ${F} opacity=".45"/>`,
+gRadial:`<rect x="4" y="4" width="16" height="16"/><circle cx="12" cy="12" r="5.5" ${F} opacity=".45"/><circle cx="12" cy="12" r="2.6" ${F}/>`,
+gAngle:`<rect x="4" y="4" width="16" height="16"/><path d="M12 12 12 4.8A7.2 7.2 0 0 1 19.2 12z" ${F}/>`,
+gReflected:`<rect x="4" y="4" width="16" height="16"/><rect x="9.5" y="4.8" width="5" height="14.4" ${F}/>`,
+gDiamond:`<rect x="4" y="4" width="16" height="16"/><path d="M12 6.5 17.5 12 12 17.5 6.5 12z" ${F}/>`,
+taL:`<path d="M4 6h16M4 10h10M4 14h16M4 18h10"/>`,
+taC:`<path d="M4 6h16M7 10h10M4 14h16M7 18h10"/>`,
+taR:`<path d="M4 6h16M10 10h10M4 14h16M10 18h10"/>`,
+taJ:`<path d="M4 6h16M4 10h16M4 14h16M4 18h10"/>`,
+textorient:`<path d="M4 7V5h10v2M9 5v10M16 8v12M14 18l2 2 2-2"/>`,
+warptext:`<path d="M3.5 9c3-3 5-3 8.5 0s5.5 3 8.5 0M9 7v11M7 18h4"/>`,
+charpanel:`<rect x="3.5" y="4.5" width="17" height="15" rx="1.5"/><path d="M7 15.5l3-7.5 3 7.5M8.2 13h3.6M16 9v6.5"/>`,
+fontsize:`<path d="M3 9V7h8v2M7 7v10M13 12v-1.5h7V12M16.5 10.5V17"/>`,
+aa:`<text x="12" y="16" text-anchor="middle" font-size="11" font-weight="600" ${F}>aa</text>`,
+radius:`<path d="M5 19V11a6 6 0 0 1 6-6h8"/>`,
+pathops:`<rect x="3.5" y="3.5" width="10" height="10"/><rect x="10.5" y="10.5" width="10" height="10" ${F} opacity=".6"/>`,
+pathalign:`<path d="M4 4v16"/><rect x="7" y="6" width="10" height="4"/><rect x="7" y="14" width="6" height="4"/>`,
+patharrange:`<rect x="3.5" y="8.5" width="10" height="10"/><rect x="10.5" y="5.5" width="10" height="10" ${F} opacity=".6"/>`,
+ignoreAdj:`<circle cx="12" cy="12" r="7.5"/><path d="M12 4.5a7.5 7.5 0 0 1 0 15z" ${F}/><path d="M5 19 19 5"/>`,
+search:`<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/>`,
+workspace:`<rect x="3.5" y="4.5" width="17" height="15" rx="1.5"/><path d="M15 4.5v15M15 9h5.5M15 13.5h5.5"/>`,
+share:`<path d="M12 15V3.5M8 7.5l4-4 4 4M5.5 12v7.5h13V12"/>`,
+clip:`<path d="M8 5v9h9M14 11l3 3-3 3"/>`,
+lockPx:`<rect x="4" y="4" width="16" height="16"/><rect x="4" y="4" width="8" height="8" ${F}/><rect x="12" y="12" width="8" height="8" ${F}/>`,
+lockAll:`<rect x="5.5" y="10.5" width="13" height="10" rx="1.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>`,
+nest:`<rect x="4" y="4" width="16" height="16"/><path d="M8 12h8M13 9l3 3-3 3"/>`,
+kindPx:`<rect x="3.5" y="5" width="17" height="14" rx="1.5"/><path d="M5 17l5-5 3 3 2-2 4 4"/>`,
+kindT:`<path d="M6 7V5h12v2M12 5v14"/>`,
+kindShape:`<rect x="4" y="4" width="16" height="16"/><path d="M4 4h3v3H4zM17 4h3v3h-3zM4 17h3v3H4zM17 17h3v3h-3z" ${F}/>`,
+kindSO:`<path d="M6 3.5h8l4 4v13H6z"/><path d="M14 3.5v4h4"/>`,
+curves:`<rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/><path d="M5.5 18.5c5 0 4-7 7-9s4-4 6-4"/>`,
+levels:`<path d="M4 20v-5M7 20v-9M10 20V7M13 20V9.5M16 20v-6M19 20v-3"/>`,
+brightness:`<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/>`,
+exposure:`<rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/><path d="M3.5 20.5 20.5 3.5M6.5 8h4M8.5 6v4M13.5 16h4"/>`,
+vibrance:`<path d="M3.5 5.5h17L12 20z"/>`,
+huesat:`<path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="1.6" ${F}/><circle cx="15" cy="12" r="1.6" ${F}/><circle cx="7" cy="17" r="1.6" ${F}/>`,
+colorbal:`<path d="M12 4v16M6 20h12M4 8h16M4 8l-2 5h4zM20 8l-2 5h4z"/>`,
+bw:`<rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/><path d="M20.5 3.5v17h-17z" ${F}/>`,
+photofilter:`<rect x="3" y="7" width="18" height="12" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M8.5 7l1.5-2.5h4L15.5 7"/>`,
+chmixer:`<circle cx="9" cy="9.5" r="4.5"/><circle cx="15" cy="9.5" r="4.5"/><circle cx="12" cy="15" r="4.5"/>`,
+lookup:`<rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/><path d="M9.2 3.5v17M14.8 3.5v17M3.5 9.2h17M3.5 14.8h17"/>`,
+invert:`<rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/><rect x="12" y="3.5" width="8.5" height="17" ${F}/>`,
+posterize:`<path d="M4 20h4v-4h4v-4h4V8h4V4"/>`,
+threshold:`<rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/><path d="M3.5 12h17"/><rect x="3.5" y="12" width="17" height="8.5" ${F}/>`,
+gradmap:`<rect x="3.5" y="7" width="17" height="10" rx="1.5"/><rect x="3.5" y="7" width="6" height="10" ${F}/><rect x="9.5" y="7" width="5" height="10" ${F} opacity=".45"/>`,
+selcolor:`<circle cx="9" cy="10" r="5"/><circle cx="15" cy="10" r="5"/><circle cx="12" cy="15" r="5"/>`,
+grain:`<circle cx="6" cy="6" r="1.1" ${F}/><circle cx="12" cy="5" r="1.1" ${F}/><circle cx="18" cy="7" r="1.1" ${F}/><circle cx="8" cy="11" r="1.1" ${F}/><circle cx="15" cy="12" r="1.1" ${F}/><circle cx="5" cy="17" r="1.1" ${F}/><circle cx="11" cy="17" r="1.1" ${F}/><circle cx="18" cy="17" r="1.1" ${F}/>`,
+mblur:`<path d="M3 8h9M5 12h8M3 16h9"/><circle cx="17" cy="12" r="3.5"/>`,
+gblur:`<path d="M12 3.2S6 9.8 6 14a6 6 0 0 0 12 0c0-4.2-6-10.8-6-10.8z" stroke-dasharray="2 1.6"/>`,
+noise:`<rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/><circle cx="8" cy="8" r=".9" ${F}/><circle cx="14" cy="7" r=".9" ${F}/><circle cx="11" cy="12" r=".9" ${F}/><circle cx="16" cy="15" r=".9" ${F}/><circle cx="7" cy="16" r=".9" ${F}/>`,
+light:`<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>`,
+doc:`<path d="M6 3.5h8l4 4v13H6z"/><path d="M14 3.5v4h4"/>`,
+flipH:`<path d="M12 3v18" stroke-dasharray="2 2"/><path d="M9 6 3.5 18H9zM15 6l5.5 12H15z"/>`,
+flipV:`<path d="M3 12h18" stroke-dasharray="2 2"/><path d="M6 9 18 3.5V9zM6 15l12 5.5V15z"/>`,
+rotCW:`<path d="M19 12a7 7 0 1 1-2-4.9"/><path d="M19.5 3.5v4.5H15"/>`,
+rotCCW:`<path d="M5 12a7 7 0 1 0 2-4.9"/><path d="M4.5 3.5v4.5H9"/>`,
+picker:`<path d="M20.3 3.7a2.4 2.4 0 0 0-3.4 0l-2.7 2.7-1.1-1.1-1.4 1.4 6 6 1.4-1.4-1.1-1.1 2.7-2.7a2.4 2.4 0 0 0 0-3.4z"/><path d="M12.6 8.6 5 16.2V19h2.8l7.6-7.6"/>`,
+apple:`<path d="M16.4 12.6c0-2.4 2-3.5 2-3.6-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.8-3-.8C6.9 7.3 5.4 8.2 4.6 9.7c-1.7 2.9-.4 7.2 1.2 9.6.8 1.2 1.7 2.4 3 2.4 1.2 0 1.6-.8 3.1-.8s1.8.8 3.1.8 2.1-1.2 2.9-2.3c.9-1.3 1.3-2.6 1.3-2.7 0 0-2.6-1-2.8-4.1zM14.1 5.6c.6-.8 1.1-1.9 1-3-1 0-2.1.6-2.8 1.4-.6.7-1.2 1.8-1 2.9 1.1.1 2.1-.5 2.8-1.3z" ${F}/>`,
+plus:`<path d="M12 5v14M5 12h14"/>`,
+x:`<path d="M7 7l10 10M17 7 7 17"/>`,
+clarity:`<path d="M3 19.5 9 9.5l4 6 3-4 5 8z"/><path d="M4 5.5h6M14 4.5h6" stroke-dasharray="2 2"/>`,
+comments:`<path d="M4.5 5.5h15v10h-8l-4 3.5v-3.5h-3z"/>`,
+cleanup:`<path d="M15 3.5 10 12.5M6 12.5h8l1.5 8h-11z"/><path d="M8.5 16.5v4M11.5 16.5v4"/>`
+};
+const ico=(n,s=16,st='')=>`<svg class="ic" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"${st?` style="${st}"`:''}>${I[n]||''}</svg>`;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $=s=>document.querySelector(s);
+
+/* ───────────── state ───────────── */
+const S={appearance:'auto',tool:'move',gsel:{},transforming:false,layer:'golden',mask:false,props:'properties',ghost:false,chg:true,ctb:true,menu:null,hist:false,dialog:null,actual:false};
+const CHG={m:'Moved',r:'Renamed or restyled',s:'Split out',n:'New wiring',k:'Shortcut change',L:'Lamina only'};
+function tip(o,base){
+  let t=base||'';
+  if(o&&o.g) t+=(t?' · ':'')+'In Photoshop; not in Lamina yet';
+  if(o&&(o.c||o.was)){const head=o.c?CHG[o.c]:'';t+=(t?'\n':'')+head+(o.was?(head?': ':'')+o.was:'');}
+  return t?` title="${esc(t)}"`:'';
+}
+const mk=(o,base)=>(o&&o.c?` data-chg="${o.c}"`:'')+tip(o,base);
+const vis=o=>!o.g||S.ghost;
+
+/* ───────────── tools ───────────── */
+const T=(id,name,key,icon,o={})=>({id,name,key,icon,...o});
+const GROUPS=[
+ {m:[T('move','Move Tool','V','move',{c:'r',was:'“Move / Transform (V)” with a resize-arrow icon. Now the four-headed move arrow.'}),T('artboard','Artboard Tool','V','artboard',{g:1})]},
+ {m:[T('rmarquee','Rectangular Marquee Tool','M','marquee',{c:'s',was:'Marquee (M) with Shape: Rectangle'}),T('emarquee','Elliptical Marquee Tool','M','emarquee',{c:'s',was:'Marquee (M) with Shape: Ellipse'}),T('rowm','Single Row Marquee Tool','','rowm',{g:1}),T('colm','Single Column Marquee Tool','','colm',{g:1})]},
+ {m:[T('selbrush','Selection Brush Tool','L','selbrush',{g:1}),T('lasso','Lasso Tool','L','lasso',{c:'s',was:'Lasso (L), Freehand'}),T('plasso','Polygonal Lasso Tool','L','plasso',{c:'s',was:'Lasso (L), Polygonal'}),T('maglasso','Magnetic Lasso Tool','L','lasso',{g:1})]},
+ {m:[T('objsel','Object Selection Tool','W','objsel',{c:'s',was:'Magic (W), Object mode'}),T('quicksel','Quick Selection Tool','W','quicksel',{g:1}),T('wand','Magic Wand Tool','W','wand',{c:'s',was:'Magic (W), Wand mode'})]},
+ {sep:1,m:[T('crop','Crop Tool','C','crop'),T('pcrop','Perspective Crop Tool','C','pcrop',{g:1}),T('slice','Slice Tool','C','slice',{g:1})]},
+ {m:[T('frame','Frame Tool','K','frame',{g:1})]},
+ {sep:1,m:[T('eyedropper','Eyedropper Tool','I','eyedropper',{c:'m',was:'Second to last in the tool rail'}),T('sampler','Color Sampler Tool','I','eyedropper',{g:1}),T('ruler','Ruler Tool','I','ruler',{g:1}),T('note','Note Tool','I','note',{g:1})]},
+ {sep:1,m:[T('spot','Spot Healing Brush Tool','J','spot'),T('remove','Remove Tool','J','remove',{g:1}),T('heal','Healing Brush Tool','J','heal',{g:1}),T('patch','Patch Tool','J','patch',{g:1})]},
+ {m:[T('brush','Brush Tool','B','brush',{c:'s',was:'Brush (B) with Paint, Erase, Dodge and Burn modes'}),T('pencil','Pencil Tool','B','pencil',{g:1})]},
+ {m:[T('clone','Clone Stamp Tool','S','clone'),T('pstamp','Pattern Stamp Tool','S','clone',{g:1})]},
+ {m:[T('histbrush','History Brush Tool','Y','histbrush',{g:1})]},
+ {m:[T('eraser','Eraser Tool','E','eraser',{c:'s',was:'The Brush tool’s Erase mode (E)'}),T('bgeraser','Background Eraser Tool','E','eraser',{g:1})]},
+ {m:[T('gradient','Gradient Tool','G','gradient',{c:'m',was:'Its own rail button'}),T('bucket','Paint Bucket Tool','G','bucket',{c:'m',was:'Its own rail button'})]},
+ {m:[T('blur','Blur Tool','','blur',{c:'s',was:'Smear (R), Blur mode'}),T('sharpen','Sharpen Tool','','sharpen',{g:1}),T('smudge','Smudge Tool','','smudge',{c:'s',was:'Smear (R), Smudge mode'})]},
+ {m:[T('adjbrush','Adjustment Brush Tool','','adjbrush',{g:1})]},
+ {m:[T('dodge','Dodge Tool','O','dodge',{c:'s',was:'The Brush tool’s Dodge mode'}),T('burn','Burn Tool','O','burn',{c:'s',was:'The Brush tool’s Burn mode'}),T('sponge','Sponge Tool','O','sponge',{g:1})]},
+ {sep:1,m:[T('pen','Pen Tool','P','pen',{g:1})]},
+ {m:[T('type','Horizontal Type Tool','T','type',{c:'r',was:'Type (T)'}),T('vtype','Vertical Type Tool','T','vtype',{g:1})]},
+ {m:[T('pathsel','Path Selection Tool','A','pathsel',{g:1})]},
+ {m:[T('rect','Rectangle Tool','U','rect',{c:'s',was:'Shape (U), Rectangle'}),T('ellipse','Ellipse Tool','U','ellipse',{c:'s',was:'Shape (U), Ellipse'}),T('triangle','Triangle Tool','U','triangle',{g:1}),T('polygon','Polygon Tool','U','polygon',{g:1}),T('line','Line Tool','U','line',{c:'s',was:'Shape (U), Line'}),T('custom','Custom Shape Tool','U','custom',{g:1})]},
+ {sep:1,m:[T('hand','Hand Tool','H','hand'),T('rotview','Rotate View Tool','R','rotview',{g:1})]},
+ {m:[T('zoom','Zoom Tool','Z','zoom')]}
+];
+const TOOLS={};GROUPS.forEach((g,gi)=>g.m.forEach(t=>{t.gi=gi;TOOLS[t.id]=t;}));
+
+/* ───────────── options bars ───────────── */
+const D={t:'div'},FX={t:'flex'},g={g:1};
+const chk=(l,on,o={})=>({t:'chk',l,on,...o}),sel=(l,v,o={})=>({t:'sel',l,v,...o}),fld=(l,v,u,o={})=>({t:'fld',l,v,u,...o}),
+ pct=(l,v,o={})=>({t:'pct',l,v,...o}),btn=(l,o={})=>({t:'btn',l,...o}),ib=(icons,on,o={})=>({t:'ib',icons,on,...o}),
+ sw=(l,color,o={})=>({t:'sw',l,color,...o}),seg=(items,on,o={})=>({t:'seg',items,on,...o}),ibtn=(i,o={})=>({t:'ibtn',i,...o});
+const SELOPS=ib(['selNew','selAdd','selSub','selInt'],0,{gi:[3],c:'r',was:'The New / Add / Subtract mode picker becomes Photoshop’s selection icons'});
+const FEATHER=fld('Feather','0','px',{wd:50,c:'r',was:'A Feather button that blurs the current selection. Here it sets the feather for the next selection, as in Photoshop; Select ▸ Modify ▸ Feather… (⇧F6) still feathers an existing one.'});
+const SAM=btn('Select and Mask…',g);
+const TIP=(n,h)=>({t:'bp',size:n,hard:h,c:'r',was:'The Size and Hardness fields move into the brush picker pop-up'});
+const BSET=ibtn('brushSettings',{g:1,title:'Toggle the Brush Settings panel'});
+const PO=ibtn('pressure',{title:'Always use pressure for opacity'}),PS=ibtn('pressureSize',{title:'Always use pressure for size'});
+const ANG=fld('','0°','',{g:1,pre:'angle',wd:46});
+const SAMPLE_ALL=chk('Sample All Layers',false,{c:'r',was:'Sample: This Layer / All Layers picker'});
+const SUBJECT=btn('Select Subject',{c:'m',was:'Only in the Select menu (it stays there too)'});
+const SHAPE_COMMON=[sel('','Shape',g),D,sw('Fill','#f2a65a',{c:'r',was:'A Fill swatch that always used the foreground color'}),sw('Stroke','',{g:1,none:1}),fld('','1 px','',{g:1,wd:44}),sel('','───',g),D,fld('W','0 px','',{g:1,wd:56}),ibtn('link',g),fld('H','0 px','',{g:1,wd:56}),D,ibtn('pathops',g),ibtn('pathalign',g),ibtn('patharrange',g),ibtn('gear',g)];
+const ZOOMBTNS=[btn('100%',{c:'m',was:'The window toolbar’s 100% button'}),btn('Fit Screen',{c:'m',was:'The window toolbar’s Fit button'}),btn('Fill Screen',{c:'n',was:'New: zoom so the canvas fills the window'})];
+const OPTS={
+ move:[chk('Auto-Select',false),sel('','Layer',g),D,chk('Show Transform Controls',true,{c:'r',was:'Show Controls'}),D,
+  ib(['alignL','alignHC','alignR'],-1,{dim:1,c:'m',was:'The Align and Distribute pop-up button'}),ib(['distV'],-1,{dim:1}),ib(['alignT','alignVC','alignB'],-1,{dim:1}),ib(['distH'],-1,{dim:1}),ibtn('more',{title:'Align & Distribute'}),D,ibtn('gear',g)],
+ transform:[{t:'ref'},D,fld('X','180 px','',{wd:72}),ibtn('delta',g),fld('Y','170 px','',{wd:72}),D,fld('W','100.00%','',{wd:76}),ibtn('link',{on:1,title:'Maintain aspect ratio'}),fld('H','100.00%','',{wd:76}),D,
+  fld('','0.00°','',{pre:'angle',wd:62}),D,fld('H','0.00°','',{g:1,wd:58}),fld('V','0.00°','',{g:1,wd:58}),D,
+  sel('Interpolation','Bicubic',{c:'r',was:'Sampling: High quality. Nearest → Nearest Neighbor, Smooth → Bilinear, High quality → Bicubic'}),D,ibtn('warp',g),FX,{t:'commit',c:'r',was:'Apply and Cancel buttons'}],
+ rmarquee:[SELOPS,D,FEATHER,chk('Anti-alias',false,{dis:1}),D,sel('Style','Normal',g),fld('W','','',{g:1,wd:44}),ibtn('swap',g),fld('H','','',{g:1,wd:44}),D,SAM],
+ emarquee:[SELOPS,D,FEATHER,chk('Anti-alias',true),D,sel('Style','Normal',g),fld('W','','',{g:1,wd:44}),ibtn('swap',g),fld('H','','',{g:1,wd:44}),D,SAM],
+ lasso:[SELOPS,D,FEATHER,chk('Anti-alias',true),D,SAM],
+ plasso:[SELOPS,D,FEATHER,chk('Anti-alias',true),D,SAM],
+ objsel:[SELOPS,D,chk('Object Finder',true,g),D,sel('Mode','Rectangle',g),SAMPLE_ALL,chk('Hard Edge',false,g),fld('Edge','0 px','',{wd:50,c:'L',was:'Lamina’s edge offset: positive tightens, negative expands'}),D,SUBJECT,SAM],
+ wand:[SELOPS,D,sel('Sample Size','Point Sample'),fld('Tolerance','32','',{wd:40}),chk('Anti-alias',true),chk('Contiguous',true),SAMPLE_ALL,D,SUBJECT,SAM],
+ crop:[sel('','Ratio',{wd:110,c:'r',was:'Ratio picker with Photoshop’s names: Free → Ratio, Original → Original Ratio, 1:1 → 1:1 (Square)'}),fld('','','',{ph:'W',wd:56}),ibtn('swap',{title:'Swap height and width'}),fld('','','',{ph:'H',wd:56}),btn('Clear'),D,ibtn('straighten',g),ibtn('overlay',g),ibtn('gear',g),D,chk('Delete Cropped Pixels',true,g),sel('Fill','Background (Default)',g),FX,{t:'commit',reset:1,c:'r',was:'Apply Crop and Cancel buttons'}],
+ eyedropper:[sel('Sample Size','Point Sample',g),sel('Sample','All Layers',g),D,chk('Show Sampling Ring',true,{c:'r',was:'Sample Ring'})],
+ spot:[TIP(40,90),D,sel('Mode','Normal',g),{t:'seg',lbl:'Type:',items:['Content-Aware','Create Texture','Proximity Match'],on:0},chk('Sample All Layers',false,g),D,ANG,PS],
+ brush:[TIP(40,0),BSET,D,sel('Mode','Normal',g),pct('Opacity','100%'),PO,pct('Flow','100%'),ibtn('airbrush',g),D,pct('Smoothing','10%'),ibtn('gear',g),D,ANG,PS,ibtn('butterfly',g)],
+ clone:[TIP(40,0),BSET,ibtn('cloneSource',g),D,sel('Mode','Normal',g),pct('Opacity','100%'),PO,pct('Flow','100%',g),ibtn('airbrush',g),D,chk('Aligned',true),sel('Sample','Current Layer',{c:'r',was:'This Layer / All Layers picker'}),ibtn('ignoreAdj',g),PS],
+ eraser:[TIP(40,0),BSET,D,sel('Mode','Brush',g),pct('Opacity','100%'),PO,pct('Flow','100%'),ibtn('airbrush',g),pct('Smoothing','10%'),D,chk('Erase to History',false,g),PS,ibtn('butterfly',g)],
+ gradient:[sel('','Gradient',g),{t:'grad',c:'r',was:'The Colors picker (Foreground to Background, Foreground to Transparent) becomes the gradient preset picker'},ib(['gLinear','gRadial','gAngle','gReflected','gDiamond'],0,{gi:[2,3,4],c:'r',was:'The Shape picker (Linear, Radial)'}),D,sel('Mode','Normal',g),pct('Opacity','100%'),chk('Reverse',false),chk('Dither',true,g),sel('Method','Perceptual',g)],
+ bucket:[sel('','Foreground',{c:'n',was:'Fill source; Pattern needs patterns first'}),D,sel('Mode','Normal',g),pct('Opacity','100%'),fld('Tolerance','32','',{wd:40}),chk('Anti-alias',true),chk('Contiguous',true),chk('All Layers',false,{c:'r',was:'Sample: This Layer / All Layers picker'})],
+ blur:[TIP(40,0),BSET,D,sel('Mode','Normal',g),pct('Strength','50%'),fld('Radius','8 px','',{wd:50,c:'L',was:'Lamina’s blur radius per dab'}),D,ANG,chk('Sample All Layers',false,g),PS],
+ smudge:[TIP(40,0),BSET,D,sel('Mode','Normal',g),pct('Strength','50%'),D,ANG,chk('Sample All Layers',false,g),chk('Finger Painting',false,g),PS],
+ dodge:[TIP(60,0),BSET,D,sel('Range','Midtones'),pct('Exposure','50%'),ibtn('airbrush',g),D,ANG,chk('Protect Tones',true,g),PS],
+ burn:[TIP(60,0),BSET,D,sel('Range','Midtones'),pct('Exposure','50%'),ibtn('airbrush',g),D,ANG,chk('Protect Tones',true,g),PS],
+ type:[ibtn('textorient',g),sel('','SF Pro Display',{wd:132,c:'s',was:'One Font menu with every face; family and style are now separate menus'}),sel('','Semibold',{wd:88}),fld('','210 px','',{pre:'fontsize',wd:70}),sel('','Sharp',{g:1,pre:'aa'}),D,ib(['taL','taC','taR'],0),sw('','#fff6e0',{title:'Set the text color'}),ibtn('warptext',g),ibtn('charpanel',{c:'n',was:'Opens Properties ▸ Character, where Leading and Tracking moved'}),FX,{t:'commit',c:'r',was:'Cancel and Done buttons'}],
+ rect:[...SHAPE_COMMON,D,fld('','0 px','',{pre:'radius',wd:58,c:'r',was:'Radius'}),chk('Align Edges',true,g)],
+ ellipse:[...SHAPE_COMMON,D,chk('Align Edges',true,g)],
+ line:[...SHAPE_COMMON,D,fld('Weight','4 px','',{wd:58,c:'r',was:'Width'}),chk('Align Edges',true,g)],
+ hand:[chk('Scroll All Windows',false,g),D,...ZOOMBTNS],
+ zoom:[ib(['zoomin','zoomout'],0),D,chk('Resize Windows to Fit',false,g),chk('Zoom All Windows',false,g),chk('Scrubby Zoom',true,{c:'n',was:'Always on today (drag left or right); a checkbox lets it be turned off'}),D,...ZOOMBTNS],
+ _ghost:[{t:'txt',l:'Photoshop tool. Lamina doesn’t have it yet.'}]
+};
+
+/* ───────────── per-tool notes ───────────── */
+const NOTES={
+ move:['Move Tool (V)','Today the Move tool is “Move / Transform” with a resize-arrow icon, and its bar holds X, Y, W, H, Scale, angle, Sampling and Flip. Proposed: Photoshop’s Move bar (Auto-Select, Show Transform Controls, align and distribute). The numbers live in Properties ▸ Transform, and the bar turns into the Free Transform bar while you transform. Click the box on the canvas, or choose Edit ▸ Free Transform (⌘T), to see it.'],
+ transform:['Free Transform (⌘T)','Shown while a layer or selection is being transformed: reference point, X and Y, W and H as percentages, angle, Interpolation, then ⊘ and ✓ at the far right. Flip moves to Edit ▸ Transform and to the task bar under the box. Press ✓ or ⊘ to go back to the Move bar.'],
+ rmarquee:['Rectangular Marquee Tool (M)','Today one Marquee tool has a Rectangle/Ellipse picker. Proposed: Rectangular and Elliptical Marquee share the M slot, and Shift-M switches between them. The New/Add/Subtract picker becomes Photoshop’s selection icons, and Feather is set before you draw.'],
+ emarquee:['Elliptical Marquee Tool (M)','Shares the slot with the Rectangular Marquee. Anti-alias is available here and dimmed for rectangles, as in Photoshop.'],
+ lasso:['Lasso Tool (L)','Today one Lasso has a Freehand/Polygonal picker. Proposed: Lasso and Polygonal Lasso share the L slot; Shift-L switches.'],
+ plasso:['Polygonal Lasso Tool (L)','Same bar as the Lasso. Click corners and double-click or press Return to close, as today.'],
+ objsel:['Object Selection Tool (W)','Today “Magic (W)” has Wand and Object modes (Tab). Proposed: Object Selection and Magic Wand share the W slot. Select Subject joins the bar, where Photoshop users look for it. Lamina’s Edge offset stays as an extra.'],
+ wand:['Magic Wand Tool (W)','Same settings in Photoshop’s order: Sample Size, Tolerance, Anti-alias, Contiguous, Sample All Layers, then Select Subject.'],
+ crop:['Crop Tool (C)','Ratio names follow Photoshop (Ratio, Original Ratio, 1:1 (Square), 16:9 …), the custom ratio uses the W ⇄ H fields, and Apply/Cancel become the ↺ ⊘ ✓ icons at the right end.'],
+ eyedropper:['Eyedropper Tool (I)','Moves up under Crop, as in Photoshop. “Sample Ring” becomes “Show Sampling Ring”.'],
+ spot:['Spot Healing Brush Tool (J)','Same controls in Photoshop’s order. Size and Hardness live in the brush picker pop-up.'],
+ brush:['Brush Tool (B)','Today the Brush has Paint, Erase, Dodge and Burn modes and its own color swatch. Proposed: Brush only paints; Eraser (E) and Dodge/Burn (O) become tools of their own. Size and Hardness move into the brush picker, and the color comes from the toolbar’s foreground swatch. When a mask is targeted, black and white come from the swatches too (D, X), so the “Black · Hide / White · Reveal” picker goes.'],
+ clone:['Clone Stamp Tool (S)','Same tool. Option-click still sets the source; This Layer/All Layers becomes Photoshop’s Sample menu.'],
+ eraser:['Eraser Tool (E)','Was the Brush tool’s Erase mode. Now its own tool with the same tip, opacity, flow and smoothing; E selects it, as today.'],
+ gradient:['Gradient Tool (G)','Gradient and Paint Bucket share the G slot instead of taking two rail buttons; Shift-G switches, as today. The Colors picker becomes the preset picker, and Linear/Radial become type icons.'],
+ bucket:['Paint Bucket Tool (G)','Same settings. “This Layer / All Layers” becomes the All Layers checkbox.'],
+ blur:['Blur Tool','Was “Smear (R)” with Liquify, Blur and Smudge modes. Blur and Smudge share a slot (Photoshop gives it no key; R can stay as a Lamina extra). Liquify moves to Filter ▸ Liquify… (⇧⌘X).'],
+ smudge:['Smudge Tool','Was Smear’s Smudge mode. Shares the slot with Blur.'],
+ dodge:['Dodge Tool (O)','Was the Brush tool’s Dodge mode. Range and Exposure stay in the bar.'],
+ burn:['Burn Tool (O)','Was the Brush tool’s Burn mode. Shares the O slot with Dodge.'],
+ type:['Horizontal Type Tool (T)','The Font menu splits into family and style. Leading and Tracking move to Properties ▸ Character (the panel button opens it). Cancel and Done become ⊘ and ✓.'],
+ rect:['Rectangle Tool (U)','Was one Shape tool with a picker. Rectangle, Ellipse and Line share the U slot (Shift-U cycles, as today). Radius keeps its field.'],
+ ellipse:['Ellipse Tool (U)','Shares the U slot.'],
+ line:['Line Tool (U)','Shares the U slot; “Width” becomes Photoshop’s “Weight”.'],
+ hand:['Hand Tool (H)','The window toolbar’s Fit and 100% buttons move here (and to the View menu); the zoom field moves to the status bar.'],
+ zoom:['Zoom Tool (Z)','Zoom in/out icons, then the same 100%, Fit Screen and Fill Screen buttons as the Hand tool.'],
+ _ghost:['Photoshop tool','Shown for orientation only. Lamina doesn’t have this tool yet.']
+};
+const HINTS={move:'Drag to move · Handles to resize · ⌘T Free Transform · Space to pan',rmarquee:'Drag a rectangle · Shift add · Option subtract · ⌘D deselect',emarquee:'Drag an ellipse · Shift add · Option subtract · ⌘D deselect',lasso:'Drag to select · Shift add · Option subtract',plasso:'Click corners · Return closes · Escape cancels',objsel:'Click an object to select it · Shift add · Option subtract',wand:'Click to select similar colors · Shift add · Option subtract',crop:'Drag to crop · Return applies · Escape cancels',eyedropper:'Click to pick the foreground color',spot:'Drag over blemishes · [ ] size',brush:'Drag to paint · [ ] size · Shift-[ ] hardness · 1–0 opacity',clone:'Option-click sets the source · Drag to clone',eraser:'Drag to erase · [ ] size',gradient:'Drag to draw · Drag ends to adjust · Return applies',bucket:'Click to fill similar colors',blur:'Drag to soften · [ ] size',smudge:'Drag to smudge · [ ] size',dodge:'Drag to lighten · [ ] size',burn:'Drag to darken · [ ] size',type:'Drag a text box · Click text to edit · ⌘Return commits',rect:'Drag to draw · Shift square · Option from center',ellipse:'Drag to draw · Shift circle · Option from center',line:'Drag to draw · Shift 45°',hand:'Drag to pan · Pinch to zoom',zoom:'Click to zoom in · Option-click to zoom out · Drag to zoom smoothly'};
+
+/* ───────────── menus ───────────── */
+const G=(l,k)=>({l,k,g:1});
+const MENUS=[
+ {n:'Lamina',app:1,items:[{l:'About Lamina'},{l:'Check for Updates…'},'-',{l:'Settings…',k:'⌘K',c:'n',was:'new window; holds Appearance (System, Light, Dark). ⌘K as in Photoshop, since ⌘, is Hide Layers there'},'-',{l:'Services',sub:[{l:'No Services Apply'}]},'-',{l:'Hide Lamina',k:'⌃⌘H',c:'k',was:'had no shortcut; ⌘H becomes View ▸ Extras, as in Photoshop'},{l:'Hide Others',k:'⌥⌘H'},{l:'Show All'},'-',{l:'Quit Lamina',k:'⌘Q'}]},
+ {n:'File',items:[
+  {l:'New…',k:'⌘N',d:'newdoc',c:'r',was:'New Canvas…'},{l:'New from Clipboard',k:'⌥⌘N',L:1,was:'Photoshop offers the clipboard as a preset in New…'},
+  {l:'Open…',k:'⌘O',c:'r',was:'Open Project…'},{l:'Open Recent',sub:[{l:'Golden Hour.lam'},{l:'Portrait retouch.lam'},'-',{l:'Clear Recent File List',c:'r',was:'Clear Menu'}]},
+  '-',{l:'Close',k:'⌘W',c:'r',was:'Close Project'},G('Close All','⌥⌘W'),
+  '-',{l:'Save',k:'⌘S'},{l:'Save As…',k:'⇧⌘S'},G('Save a Copy…','⌥⌘S'),G('Revert','F12'),
+  '-',{l:'Export',c:'n',was:'new submenu',sub:[{l:'Quick Export as PNG',c:'m',was:'File ▸ Export PNG… (⇧⌘E). Photoshop gives it no shortcut here; ⇧⌘E becomes Merge Visible'},'-',{l:'Export As…',k:'⌥⇧⌘W',d:'export',c:'m',was:'File ▸ Export As…; Export JPEG… (⌥⇧⌘S) folds in as its JPEG format'},G('Save for Web (Legacy)…','⌥⇧⌘S')]},
+  '-',{l:'Place Embedded…',c:'r',was:'Import Images…'},G('Place Linked…'),G('Import'),
+  '-',G('Automate'),G('Scripts'),'-',G('File Info…','⌥⇧⌘I'),'-',G('Print…','⌘P')]},
+ {n:'Edit',items:[
+  {l:'Undo Move',k:'⌘Z'},{l:'Redo',k:'⇧⌘Z'},G('Toggle Last State','⌥⌘Z'),'-',G('Fade…','⇧⌘F'),
+  '-',{l:'Cut',k:'⌘X'},{l:'Copy',k:'⌘C'},{l:'Copy Merged',k:'⇧⌘C'},{l:'Paste',k:'⌘V'},{l:'Paste Special',g:1,sub:[G('Paste in Place','⇧⌘V'),G('Paste Into','⌥⇧⌘V'),G('Paste Outside')]},{l:'Clear',c:'r',was:'Clear Selection Pixels'},
+  '-',G('Search','⌘F'),
+  '-',{l:'Fill…',k:'⇧F5',d:'fill',c:'n',was:'replaces Fill with Foreground Color and Fill with Background Color; ⇧⌫ opens it too, and ⌥⌫ / ⌘⌫ still fill directly'},{l:'Stroke…',d:'stroke'},{l:'Content-Aware Fill…',c:'k',was:'had ⇧⌫, which Photoshop gives to Fill…'},G('Generative Fill…'),
+  '-',G('Content-Aware Scale','⌥⇧⌘C'),G('Puppet Warp'),G('Perspective Warp'),
+  {l:'Free Transform',k:'⌘T',act:'transform',c:'m',was:'Layer ▸ Transform Layer / Transform Selection'},
+  {l:'Transform',c:'n',was:'new submenu',sub:[G('Again','⇧⌘T'),'-',G('Scale'),G('Rotate'),G('Skew'),{l:'Distort',c:'n',was:'only by ⌘-dragging a handle today'},G('Perspective'),G('Warp'),'-',G('Rotate 180°'),G('Rotate 90° Clockwise'),G('Rotate 90° Counter Clockwise'),'-',{l:'Flip Horizontal',c:'m',was:'Layer ▸ Flip Layer Horizontal'},{l:'Flip Vertical',c:'m',was:'Layer ▸ Flip Layer Vertical'}]},
+  G('Auto-Align Layers…'),G('Auto-Blend Layers…'),
+  '-',G('Define Brush Preset…'),G('Define Pattern…'),'-',G('Purge'),'-',G('Color Settings…','⇧⌘K'),G('Assign Profile…'),G('Convert to Profile…'),
+  '-',{l:'Keyboard Shortcuts…',k:'⌥⇧⌘K',c:'k',was:'had no shortcut'},G('Menus…','⌥⇧⌘M'),G('Toolbar…')]},
+ {n:'Image',items:[
+  {l:'Mode',g:1,sub:[G('Grayscale'),G('RGB Color'),G('CMYK Color'),'-',G('8 Bits/Channel'),G('16 Bits/Channel')]},
+  '-',{l:'Adjustments',c:'n',was:'new submenu; these items sat directly in Image',sub:[
+   G('Brightness/Contrast…'),{l:'Levels…',k:'⌘L',d:'levels',c:'m',was:'Image ▸ Levels…'},{l:'Curves…',k:'⌘M',d:'curves',c:'m',was:'Image ▸ Curves…'},{l:'Exposure…',d:'exposure',c:'m',was:'Image ▸ Exposure…'},
+   '-',G('Vibrance…'),{l:'Hue/Saturation…',k:'⌘U',d:'huesat',c:'m',was:'Image ▸ Hue/Saturation…'},{l:'Color Balance…',k:'⌘B',c:'m',was:'Image ▸ Color Balance… (no shortcut)'},{l:'Black & White…',k:'⌥⇧⌘B',c:'m',was:'Image ▸ Black & White… (no shortcut)'},G('Photo Filter…'),G('Channel Mixer…'),G('Color Lookup…'),
+   '-',{l:'Invert',k:'⌘I',c:'m',was:'Image ▸ Invert'},G('Posterize…'),G('Threshold…'),{l:'Gradient Map…',c:'m',was:'Image ▸ Gradient Map…'},G('Selective Color…'),
+   '-',G('Shadows/Highlights…'),G('HDR Toning…'),'-',{l:'Grain…',c:'m',was:'Image ▸ Grain… (Photoshop 27.3 added Grain as an adjustment)'},
+   '-',G('Desaturate','⇧⌘U'),G('Match Color…'),G('Replace Color…'),G('Equalize')]},
+  '-',G('Auto Tone','⇧⌘L'),G('Auto Contrast','⌥⇧⌘L'),G('Auto Color','⇧⌘B'),
+  '-',{l:'Image Size…',k:'⌥⌘I',d:'imagesize'},G('Generative Upscale…'),{l:'Canvas Size…',k:'⌥⌘C',d:'canvassize'},
+  {l:'Image Rotation',sub:[{l:'180°'},{l:'90° Clockwise'},{l:'90° Counter Clockwise'},G('Arbitrary…'),'-',{l:'Flip Canvas Horizontal',c:'m',was:'Image ▸ Flip Canvas Horizontal'},{l:'Flip Canvas Vertical',c:'m',was:'Image ▸ Flip Canvas Vertical'}]},
+  G('Crop'),{l:'Trim…',d:'trim'},G('Reveal All'),
+  '-',G('Duplicate…'),G('Apply Image…'),G('Calculations…')]},
+ {n:'Layer',items:[
+  {l:'New',c:'n',was:'new submenu',sub:[{l:'Layer…',k:'⇧⌘N',c:'r',was:'New Blank Layer'},G('Background from Layer'),'-',{l:'Group…',c:'n',was:'only the Layers panel’s New folder button today'},{l:'Group from Layers…',c:'m',was:'Layer ▸ Group Selected Layers'},'-',{l:'Layer Via Copy',k:'⌘J',c:'m',was:'Layer ▸ Layer via Copy'},G('Layer Via Cut','⇧⌘J')]},
+  G('Copy CSS'),G('Copy SVG'),{l:'Duplicate Layer…',c:'s',was:'what ⌘J did with no selection; ⌘J keeps doing it'},{l:'Delete',sub:[{l:'Layer',c:'m',was:'Layer ▸ Delete Layer'},G('Hidden Layers')]},
+  '-',G('Quick Export as PNG','⇧⌘\''),G('Export As…','⌥⇧⌘\''),
+  '-',{l:'Rename Layer…'},
+  {l:'Layer Style',sub:[{l:'Blending Options…',d:'layerstyle',c:'n',was:'opens the Layer Style dialog'},'-',G('Bevel & Emboss…'),{l:'Stroke…',d:'layerstyle',c:'m',was:'Layers panel fx menu'},{l:'Inner Shadow…',d:'layerstyle',c:'m',was:'fx menu'},{l:'Inner Glow…',d:'layerstyle',c:'m',was:'fx menu'},G('Satin…'),{l:'Color Overlay…',d:'layerstyle',c:'m',was:'fx menu'},G('Gradient Overlay…'),G('Pattern Overlay…'),{l:'Outer Glow…',d:'layerstyle',c:'m',was:'fx menu'},{l:'Drop Shadow…',d:'layerstyle',c:'m',was:'fx menu'},'-',{l:'Copy Layer Style'},{l:'Paste Layer Style'},{l:'Clear Layer Style'},'-',G('Global Light…'),G('Create Layer'),G('Hide All Effects'),G('Scale Effects…')]},
+  G('Smart Filter'),
+  '-',{l:'New Fill Layer',g:1,sub:[G('Solid Color…'),G('Gradient…'),G('Pattern…')]},
+  {l:'New Adjustment Layer',sub:[G('Light…'),G('Color and vibrance…'),G('Clarity and dehaze…'),{l:'Grain…',c:'m',was:'moves up to Photoshop 27.10’s first group'},'-',{l:'Levels…'},{l:'Curves…'},{l:'Exposure…'},'-',{l:'Hue/Saturation…'},{l:'Color Balance…'},{l:'Black & White…'},G('Photo Filter…'),G('Channel Mixer…'),G('Color Lookup…'),'-',{l:'Invert'},G('Posterize…'),G('Threshold…'),{l:'Gradient Map…'},G('Selective Color…'),'-',{l:'Gaussian Blur…',L:1,was:'live filter layers; Photoshop does these as Smart Filters'},{l:'Motion Blur…',L:1},{l:'Add Noise…',L:1}]},
+  {l:'Layer Content Options…',c:'r',was:'Edit Adjustment…'},
+  '-',{l:'Layer Mask',c:'n',was:'new submenu',sub:[{l:'Reveal All',c:'m',was:'Add layer mask button menu'},{l:'Hide All',c:'m',was:'Add layer mask button menu'},{l:'Reveal Selection'},{l:'Hide Selection'},G('From Transparency'),'-',{l:'Delete',c:'m',was:'Layer ▸ Delete Layer Mask'},{l:'Apply',c:'m',was:'Layer ▸ Apply Layer Mask'},'-',G('Disable'),G('Unlink')]},
+  G('Vector Mask'),{l:'Create Clipping Mask',k:'⌥⌘G'},
+  {l:'Remove Background',L:1,c:'m',was:'Filter ▸ Remove Background…; also in Properties ▸ Quick Actions and the task bar, where Photoshop has it'},
+  '-',G('Smart Objects'),G('Rasterize'),
+  '-',{l:'Group Layers',k:'⌘G',c:'r',was:'Group Selected Layers'},{l:'Ungroup Layers',k:'⇧⌘G'},{l:'Hide Layers',k:'⌘,',c:'r',was:'Hide Layer / Show Layer, no shortcut'},{l:'Hide All Other Layers',L:1,was:'Option-click an eye in Photoshop'},
+  '-',{l:'Arrange',c:'n',was:'new submenu',sub:[G('Bring to Front','⇧⌘]'),{l:'Bring Forward',k:'⌘]',c:'r',was:'Move Layer Up'},{l:'Send Backward',k:'⌘[',c:'r',was:'Move Layer Down'},G('Send to Back','⇧⌘['),'-',G('Reverse'),'-',{l:'Move Out of Group',L:1,c:'r',was:'Move Out of Folder'}]},
+  G('Combine Shapes'),
+  {l:'Align',c:'r',was:'reordered to Photoshop’s order',sub:[{l:'Top Edges'},{l:'Vertical Centers'},{l:'Bottom Edges'},'-',{l:'Left Edges'},{l:'Horizontal Centers'},{l:'Right Edges'}]},
+  {l:'Distribute',sub:[G('Top Edges'),{l:'Vertical Centers'},G('Bottom Edges'),G('Left Edges'),{l:'Horizontal Centers'},G('Right Edges'),'-',{l:'Horizontally',c:'r',was:'Horizontal Spacing'},{l:'Vertically',c:'r',was:'Vertical Spacing'}]},
+  G('Lock Layers…','⌘/'),'-',G('Link Layers'),G('Select Linked Layers'),
+  '-',{l:'Merge Down',k:'⌘E'},{l:'Merge Visible',k:'⇧⌘E',c:'k',was:'had no shortcut; ⇧⌘E was Export PNG'},{l:'Flatten Image'},'-',G('Matting')]},
+ {n:'Type',items:[G('More from Adobe Fonts…'),{l:'Panels',c:'n',was:'new menu for existing type settings',sub:[{l:'Character',c:'n',was:'opens Properties ▸ Character'},{l:'Paragraph',c:'n',was:'opens Properties ▸ Paragraph'},G('Glyphs'),G('Character Styles'),G('Paragraph Styles')]},G('Anti-Alias'),G('Orientation'),'-',G('Create Work Path'),G('Convert to Shape'),G('Rasterize Type Layer'),'-',G('Warp Text…'),'-',G('Match Font…'),G('Font Preview Size'),'-',G('Paste Lorem Ipsum')]},
+ {n:'Select',items:[
+  {l:'All',k:'⌘A'},{l:'Deselect',k:'⌘D'},G('Reselect','⇧⌘D'),{l:'Inverse',k:'⇧⌘I'},
+  '-',G('All Layers','⌥⌘A'),G('Deselect Layers'),G('Find Layers','⌥⇧⌘F'),G('Isolate Layers'),
+  '-',{l:'Color Range…',d:'colorrange'},G('Focus Area…'),{l:'Subject',c:'k',was:'had ⌥⌘A, which is Select ▸ All Layers in Photoshop'},G('Sky'),
+  '-',G('Select and Mask…','⌥⌘R'),
+  {l:'Modify',c:'n',was:'new submenu',sub:[G('Border…'),G('Smooth…'),{l:'Expand…',d:'expand',c:'m',was:'Select ▸ Expand…'},{l:'Contract…',d:'contract',c:'m',was:'Select ▸ Contract…'},{l:'Feather…',k:'⇧F6',d:'feather',c:'m',was:'Select ▸ Feather… (no shortcut)'}]},
+  '-',G('Grow'),G('Similar'),'-',G('Transform Selection'),'-',G('Edit in Quick Mask Mode'),
+  '-',{l:'Load Selection…',d:'loadsel',c:'n',was:'one dialog for Layer’s Pixels and Mask’s Black Areas'},G('Save Selection…')]},
+ {n:'Filter',items:[
+  {l:'Last Filter',k:'⌃⌘F',c:'k',was:'had ⌘F, which Photoshop gives to Search'},
+  '-',G('Convert for Smart Filters'),
+  '-',G('Neural Filters…'),G('Filter Gallery…'),G('Adaptive Wide Angle…','⌥⇧⌘A'),{l:'Camera Raw Filter…',k:'⇧⌘A',c:'k',was:'had no shortcut'},{l:'Lens Correction…',k:'⇧⌘R',c:'k',was:'had no shortcut'},{l:'Liquify…',k:'⇧⌘X',c:'n',was:'a mode of the Smear (R) tool; this picks the Liquify brush with its own bar'},G('Vanishing Point…','⌥⌘V'),
+  '-',{l:'Blur',c:'n',was:'new category submenu',sub:[G('Average'),G('Blur'),G('Blur More'),G('Box Blur…'),{l:'Gaussian Blur…',d:'gblur',c:'m',was:'Filter ▸ Gaussian Blur…'},G('Lens Blur…'),{l:'Motion Blur…',c:'m',was:'Filter ▸ Motion Blur…'},G('Radial Blur…'),G('Shape Blur…'),G('Smart Blur…'),G('Surface Blur…')]},
+  G('Blur Gallery'),G('Distort'),
+  {l:'Noise',sub:[{l:'Add Noise…',c:'m',was:'Filter ▸ Add Noise…'},G('Despeckle'),G('Dust & Scratches…'),G('Median…'),G('Reduce Noise…')]},
+  {l:'Pixelate',sub:[G('Color Halftone…'),G('Crystallize…'),G('Facet'),G('Fragment'),G('Mezzotint…'),G('Mosaic…'),G('Pointillize…'),'-',{l:'Dither…',L:1,c:'m',was:'Filter ▸ Dither…'}]},
+  {l:'Render',sub:[G('Flame…'),G('Picture Frame…'),G('Tree…'),'-',G('Clouds'),G('Difference Clouds'),G('Fibers…'),G('Lens Flare…'),'-',{l:'Vignette…',L:1,c:'m',was:'Filter ▸ Vignette…'}]},
+  {l:'Sharpen',sub:[G('Shake Reduction…'),G('Sharpen'),G('Sharpen Edges'),G('Sharpen More'),G('Smart Sharpen…'),{l:'Unsharp Mask…',c:'m',was:'Filter ▸ Unsharp Mask…'},'-',{l:'Tonal Contrast…',L:1,c:'m',was:'Filter ▸ Tonal Contrast…'}]},
+  {l:'Stylize',sub:[G('Diffuse…'),G('Emboss…'),G('Extrude…'),G('Find Edges'),G('Oil Paint…'),G('Solarize'),G('Tiles…'),G('Trace Contour…'),G('Wind…'),'-',{l:'Bloom / Glow…',L:1,c:'m',was:'Filter ▸ Bloom / Glow…'}]},
+  G('Video'),{l:'Other',sub:[G('Custom…'),{l:'High Pass…',c:'m',was:'Filter ▸ High Pass…'},G('HSB/HSL'),G('Maximum…'),G('Minimum…'),G('Offset…')]}]},
+ {n:'View',items:[
+  G('Proof Setup'),G('Proof Colors','⌘Y'),G('Gamut Warning','⇧⌘Y'),
+  '-',{l:'Zoom In',k:'⌘+'},{l:'Zoom Out',k:'⌘−'},{l:'Fit on Screen',k:'⌘0',c:'r',was:'Fit Canvas'},G('Fit Layer(s) on Screen'),G('Fit Artboard on Screen'),{l:'100%',k:'⌘1',c:'r',was:'Actual Pixels'},G('200%'),G('Print Size'),G('Actual Size'),
+  '-',G('Flip Horizontal'),G('Pattern Preview'),'-',G('Screen Mode'),
+  '-',{l:'Extras',k:'⌘H',chk:1,c:'n',was:'new master switch for grid, guides and selection edges; ⌘H toggled Show Transform Controls, which stays a Move tool option'},
+  {l:'Show',sub:[G('Layer Edges'),G('Selection Edges'),G('Target Path'),{l:'Grid',k:'⌘\'',chk:1},{l:'Guides',k:'⌘;',chk:1},G('Canvas Guides'),G('Smart Guides'),G('Notes'),{l:'Pixel Grid',chk:1,c:'m',was:'View ▸ Pixel Grid (800% and above)'},'-',G('All'),G('None'),G('Show Extras Options…')]},
+  '-',{l:'Rulers',k:'⌘R'},
+  '-',{l:'Snap',k:'⇧⌘;',chk:1,c:'r',was:'View had two Snap toggles; they become one'},
+  {l:'Snap To',sub:[{l:'Guides',chk:1},{l:'Grid'},{l:'Layers',chk:1},G('Slices'),{l:'Document Bounds',chk:1},'-',G('All'),G('None')]},
+  '-',{l:'Guides',c:'n',was:'new submenu',sub:[{l:'Lock Guides',k:'⌥⌘;',c:'m',was:'View ▸ Lock Guides'},{l:'Clear Guides',c:'m',was:'View ▸ Clear Guides'},'-',G('New Guide…'),G('New Guide Layout…'),G('New Guides From Shape')]},
+  '-',{l:'Grid Settings…',L:1,was:'Photoshop keeps this in Settings ▸ Guides, Grid & Slices'},'-',G('Lock Slices'),G('Clear Slices')]},
+ {n:'Window',items:[
+  G('Arrange'),{l:'Workspace',c:'n',was:'new submenu',sub:[{l:'Essentials (Default)',chk:1},G('Graphic and Web'),G('Motion'),G('Painting'),G('Photography'),'-',{l:'Reset Essentials',c:'n',was:'puts the panels back where this page shows them'},G('New Workspace…'),G('Delete Workspace…'),'-',G('Keyboard Shortcuts & Menus…'),G('Lock Workspace')]},
+  '-',G('Find Extensions on Exchange (legacy)…'),
+  '-',G('Actions','⌥F9'),{l:'Adjustments',c:'n',was:'new panel'},G('Brush Settings','F5'),G('Brushes'),G('Channels'),G('Character'),G('Clone Source'),G('Color','F6'),G('Comments'),G('Gradients'),G('Histogram'),{l:'History',c:'m',was:'a tab sharing space with Layers'},G('Info','F8'),G('Layer Comps'),{l:'Layers',k:'F7',chk:1},G('Libraries'),G('Navigator'),G('Paragraph'),G('Paths'),G('Patterns'),{l:'Properties',chk:1,c:'n',was:'new panel'},G('Shapes'),G('Styles'),G('Swatches'),G('Timeline'),G('Tool Presets'),
+  '-',G('Application Frame'),{l:'Options',chk:1},{l:'Tools',chk:1},{l:'Contextual Task Bar',chk:1,c:'n',was:'new'},
+  '-',{l:'Golden Hour',chk:1},{l:'Portrait retouch'}]},
+ {n:'Help',items:[{l:'Search'},G('Lamina Help'),G('What’s New')]}
+];
+MENUS.splice(MENUS.findIndex(m=>m.n==='Window'),0,{n:'Plugins',items:[G('Plugins Panel'),G('Browse Plugins…'),G('Manage Plugins…')]});
+
+/* ───────────── layers ───────────── */
+const LAYERS=[
+ {id:'warm',name:'Warm grade',kind:'adj',mask:1,b:[0,0,2400,1500]},
+ {id:'title',name:'Title',kind:'group',b:[180,170,1154,252]},
+ {id:'golden',name:'Golden hour',kind:'text',ind:1,fx:['Drop Shadow'],b:[180,170,1154,252]},
+ {id:'lake',name:'Lake',kind:'pixel',mask:1,b:[0,1080,2400,420],th:'linear-gradient(transparent 55%,#c45a70 60%,#3b1d3c)'},
+ {id:'near',name:'Near hills',kind:'pixel',b:[0,760,2400,560],th:'linear-gradient(transparent 50%,#5a2448 58%)'},
+ {id:'far',name:'Far hills',kind:'pixel',b:[0,700,2400,620],th:'linear-gradient(transparent 45%,#9a4a6e 55%)'},
+ {id:'sun',name:'Sun',kind:'pixel',fx:['Outer Glow'],b:[1100,690,420,420],th:'radial-gradient(circle at 55% 60%,#ffe9a8 0 18%,transparent 22%)'},
+ {id:'sky',name:'Sky',kind:'pixel',b:[0,0,2400,1500],th:'linear-gradient(#2c2f6b,#9b4a7a 55%,#f0a565)'}
+];
+const LBY=Object.fromEntries(LAYERS.map(l=>[l.id,l]));
+
+/* ───────────── document ───────────── */
+const DOC_SVG=`<svg viewBox="0 0 2400 1500" width="100%" height="100%" preserveAspectRatio="none" aria-label="Sample document: Golden Hour">
+<defs>
+<linearGradient id="dSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2d6a"/><stop offset=".38" stop-color="#6c3b7b"/><stop offset=".62" stop-color="#c4547b"/><stop offset=".82" stop-color="#ef8d5e"/><stop offset="1" stop-color="#f6b46c"/></linearGradient>
+<radialGradient id="dSun"><stop offset="0" stop-color="#fff6d2"/><stop offset=".65" stop-color="#ffd673"/><stop offset="1" stop-color="#f7a64b"/></radialGradient>
+<radialGradient id="dGlow"><stop offset="0" stop-color="#ffc878" stop-opacity=".6"/><stop offset="1" stop-color="#ffc878" stop-opacity="0"/></radialGradient>
+<linearGradient id="dLake" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c45a70" stop-opacity="0"/><stop offset=".18" stop-color="#c45a70"/><stop offset="1" stop-color="#3b1d3c"/></linearGradient>
+<filter id="dShadow" x="-10%" y="-20%" width="120%" height="160%"><feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#2a0f22" flood-opacity=".55"/></filter>
+</defs>
+<rect width="2400" height="1500" fill="url(#dSky)"/>
+<circle cx="1310" cy="900" r="430" fill="url(#dGlow)"/>
+<circle cx="1310" cy="900" r="210" fill="url(#dSun)"/>
+<path d="M0 1000C300 820 520 820 760 960S1200 1040 1480 880S2000 760 2400 900V1320H0Z" fill="#9a4a6e"/>
+<path d="M0 1120C260 1060 500 1060 700 1150S1050 1000 1250 980S1700 1180 1900 1150S2250 1050 2400 1100V1320H0Z" fill="#5a2448"/>
+<rect y="1080" width="2400" height="420" fill="url(#dLake)"/>
+<g stroke="#ffd9a0" stroke-width="7" stroke-linecap="round" opacity=".7">${[0,1,2,3,4,5,6,7,8,9,10].map(i=>`<path d="M${1310-(150-i*11)} ${1190+i*26}h${(150-i*11)*2}"/>`).join('')}</g>
+<text x="200" y="372" font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif" font-size="210" font-weight="650" fill="#fff6e0" textLength="1114" lengthAdjust="spacingAndGlyphs" filter="url(#dShadow)">Golden hour</text>
+</svg>`;
+
+/* ───────────── rendering: menus ───────────── */
+function cleanItems(items){
+  const out=[];
+  for(const it of items){
+    if(it==='-'){ if(out.length&&out[out.length-1]!=='-') out.push('-'); continue; }
+    if(!vis(it)) continue;
+    out.push(it);
+  }
+  while(out[out.length-1]==='-') out.pop();
+  return out;
+}
+function renderMenubar(){
+  let h=`<span class="apple">${ico('apple',15)}</span>`;
+  MENUS.forEach((m,i)=>{
+    const any=cleanItems(m.items).length;
+    if(!any) return;
+    const ghostMenu=m.items.every(it=>it==='-'||it.g||(it.sub&&it.sub.every(s=>s==='-'||s.g)));
+    h+=`<span class="mt ${m.app?'app':''} ${S.menu===i?'open':''} ${ghostMenu?'ghost':''}" data-m="${i}">${m.n}</span>`;
+  });
+  h+=`<span class="clock">Fri Oct 9  10:41</span>`;
+  $('#menubar').innerHTML=h;
+}
+function itemHTML(it,idx){
+  if(it==='-') return '<div class="msep"></div>';
+  const was=S.chg&&it.was&&(it.c||it.L)?`<span class="was">${esc(it.was.length>64?it.was.slice(0,62)+'…':it.was)}</span>`:'';
+  const tag=it.L?'<span class="tag">Lamina</span>':'';
+  return `<div class="mi ${it.g?'ghost':''} ${it.chk?'chk':''}" data-i="${idx}"${mk(it)}><span>${esc(it.l)}</span>${tag}${was}${it.k?`<span class="k">${esc(it.k)}</span>`:''}${it.sub?`<span class="arr">${ico('chevr',10)}</span>`:''}</div>`;
+}
+let OPEN_ITEMS=null,SUB_ITEMS=null;
+function openMenu(i){
+  S.menu=i; renderMenubar();
+  const m=MENUS[i]; OPEN_ITEMS=cleanItems(m.items);
+  const title=document.querySelector(`.mt[data-m="${i}"]`);
+  const el=document.createElement('div'); el.className='menu'; el.id='menu-main';
+  el.innerHTML=OPEN_ITEMS.map(itemHTML).join('');
+  el.style.left=(title.offsetLeft-4)+'px'; el.style.top='24px';
+  $('#menus').innerHTML=''; $('#menus').appendChild(el);
+  const over=el.offsetLeft+el.offsetWidth-1496; if(over>0) el.style.left=(el.offsetLeft-over)+'px';
+}
+function closeMenus(){S.menu=null;$('#menus').innerHTML='';renderMenubar();}
+function openSub(itemEl,items,parent){
+  document.querySelectorAll('.menu.sub').forEach(e=>e.remove());
+  parent.querySelectorAll('.mi.hot').forEach(e=>e.classList.remove('hot'));
+  itemEl.classList.add('hot');
+  SUB_ITEMS=cleanItems(items);
+  if(!SUB_ITEMS.length) return;
+  const el=document.createElement('div'); el.className='menu sub';
+  el.innerHTML=SUB_ITEMS.map(itemHTML).join('');
+  $('#menus').appendChild(el);
+  let left=parent.offsetLeft+parent.offsetWidth-6;
+  if(left+el.offsetWidth>1496) left=parent.offsetLeft-el.offsetWidth+6;
+  let top=parent.offsetTop+itemEl.offsetTop-parent.scrollTop-6;
+  top=Math.max(26,Math.min(top,884-el.offsetHeight-4));
+  el.style.left=left+'px'; el.style.top=top+'px';
+}
+function activate(it){
+  if(!it||it.sub||it.g) return;
+  closeMenus();
+  if(it.d) openDialog(it.d);
+  else if(it.act==='transform'){S.tool='move';S.transforming=true;render();}
+  else if(it.l==='Contextual Task Bar'){S.ctb=!S.ctb;$('#sw-ctb').checked=S.ctb;render();}
+}
+
+/* ───────────── rendering: titlebar, toolbar, options ───────────── */
+function renderTitlebar(){
+  const z=(S.zoom*100).toFixed(2).replace(/\.?0+$/,'');
+  const ln=S.layer?LBY[S.layer].name:'';
+  $('#titlebar').innerHTML=`<div class="lights"><i></i><i></i><i></i></div>
+  <span class="tbtn" title="New (⌘N)">${ico('plus',14)}</span>
+  <span class="tab on" data-chg="r" title="${esc('Renamed or restyled: tabs show Photoshop’s name @ zoom (active layer, mode/depth)')}">Golden Hour @ ${z}% (${esc(ln||'RGB/8')}${ln?', RGB/8':''})<span class="x">${ico('x',11)}</span></span>
+  <span class="tab">Portrait retouch @ 25% (Layer 1, RGB/8)</span>`;
+}
+function renderToolbar(){
+  let h='<div class="tb-grip" title="Toolbar"></div>',any=false;
+  GROUPS.forEach((gr,gi)=>{
+    const members=gr.m.filter(vis); if(!members.length) return;
+    if(gr.sep&&any) h+='<div class="tb-sep"></div>';
+    any=true;
+    const active=gr.m.find(t=>t.id===S.tool);
+    const shown=active||members.find(t=>t.id===S.gsel[gi])||members.find(t=>!t.g)||members[0];
+    h+=`<button class="slot ${active?'on':''} ${shown.g?'ghost':''}" data-g="${gi}" data-t="${shown.id}"${mk(shown,shown.name+(shown.key?` (${shown.key})`:''))} aria-label="${esc(shown.name)}" aria-pressed="${!!active}">${ico(shown.icon,18)}${members.length>1?'<i class="tri"></i>':''}</button>`;
+  });
+  h+=`<button class="slot ${S.ghost?'':'ghost'}" title="Edit Toolbar…" style="${S.ghost?'':'display:none'}">${ico('more',18)}</button>`;
+  h+=`<div class="fgbg" title="Set foreground / background color · D default · X swap"><span class="mini"></span><span class="swp">${ico('swap',10)}</span><span class="fgc" style="background:#f2a65a" data-dlg="colorpicker"></span><span class="bgc" style="background:#fff"></span></div>`;
+  if(S.ghost) h+=`<button class="slot ghost" title="Edit in Quick Mask Mode (Q)">${ico('qmask',18)}</button><button class="slot ghost" title="Change Screen Mode (F)">${ico('screenmode',18)}</button><button class="slot ghost" title="Add image">${ico('addimg',18)}</button>`;
+  $('#toolbar').innerHTML=h;
+}
+function wrap(s,inner,cls=''){
+  return `<span class="oc ${cls} ${s.g?'ghost':''}"${mk(s,s.title||'')}>${inner}</span>`;
+}
+function ctl(s){
+  const L=s.l?`<span class="lbl">${esc(s.l)}:</span>`:'';
+  switch(s.t){
+   case 'div':return '<span class="ob-div"></span>';
+   case 'flex':return '<span class="flex"></span>';
+   case 'chk':return wrap(s,`<span class="cb ${s.on?'on':''}"></span>${esc(s.l)}`,'chk'+(s.dis?' dis':''));
+   case 'sel':return wrap(s,`${L}<span class="pop" style="min-width:${s.wd||0}px">${s.pre?ico(s.pre,14):''}${esc(s.v)}${ico('chev',10)}</span>`);
+   case 'fld':return wrap(s,`${s.pre?ico(s.pre,14,'color:var(--muted)'):''}${L}<span class="fld ${s.ph?'ph':''}" style="width:${s.wd||54}px">${esc(s.v||s.ph||'')}</span>`);
+   case 'pct':return wrap(s,`${L}<span class="fld" style="width:50px">${esc(s.v)}${ico('chev',9)}</span>`);
+   case 'btn':return wrap(s,`<span class="btn">${esc(s.l)}${s.l==='Select Subject'?ico('chev',9):''}</span>`);
+   case 'ibtn':return wrap(s,`<span class="ibb ${s.on?'on':''}">${ico(s.i,16)}</span>`);
+   case 'ib':{const icons=s.icons.map((n,i)=>({n,i})).filter(x=>S.ghost||!(s.gi||[]).includes(x.i));
+     return wrap(s,icons.map(x=>`<span class="ibb ${x.i===s.on?'on':''} ${s.dim?'dim':''} ${(s.gi||[]).includes(x.i)?'ghost':''}">${ico(x.n,16)}</span>`).join(''),'ib');}
+   case 'sw':return wrap(s,`${L}<span class="swatch ${s.none?'none':''}" style="--c:${s.color}"></span>`);
+   case 'seg':return wrap(s,`${s.lbl?`<span class="lbl">${s.lbl}</span>`:''}<span class="oc seg">${s.items.map((x,i)=>`<span class="${i===s.on?'on':''}">${esc(x)}</span>`).join('')}</span>`);
+   case 'bp':return wrap(s,`<span class="tip" style="--h:${s.hard}"></span><span class="num">${s.size}</span>${ico('chev',9)}`,'bp');
+   case 'grad':return wrap(s,`<span class="gradpick"></span>${ico('chev',9)}`);
+   case 'ref':return wrap(s,`<span class="ref">${'<i></i>'.repeat(9)}</span>`);
+   case 'commit':return wrap(s,`${s.reset?`<span class="ibb ghost">${ico('reset',16)}</span>`:''}<span class="ibb" data-commit="0" title="Cancel">${ico('cancel',17)}</span><span class="ibb" data-commit="1" title="Commit">${ico('commit',17)}</span>`);
+   case 'txt':return `<span class="oc lbl">${esc(s.l)}</span>`;
+  }
+  return '';
+}
+function renderOptions(){
+  const t=TOOLS[S.tool];
+  const key=S.tool==='move'&&S.transforming?'transform':(OPTS[S.tool]?S.tool:'_ghost');
+  const parts=[];
+  for(const s of OPTS[key]){ if(!vis(s)) continue; if(s.t==='div'&&(!parts.length||parts[parts.length-1].t==='div')) continue; parts.push(s); }
+  while(parts.length&&parts[parts.length-1].t==='div') parts.pop();
+  let h=`<span class="ob-preset" title="Tool Preset picker">${ico(t.icon,18)}${S.ghost?ico('chev',9):''}</span><span class="ob-div"></span>`;
+  h+=parts.map(ctl).join('');
+  if(!parts.some(p=>p.t==='flex')) h+='<span class="flex"></span>';
+  if(S.ghost) h+=`<span class="ob-right"><span class="ibb ghost">${ico('search',16)}</span><span class="ibb ghost">${ico('workspace',16)}</span><span class="btn ghost">${ico('share',13)}Share</span></span>`;
+  $('#optbar').innerHTML=h;
+}
+
+/* ───────────── canvas ───────────── */
+function layout(){
+  const c=$('#canvas'),cw=c.clientWidth,ch=c.clientHeight;
+  const z=Math.min((cw-72)/2400,(ch-72)/1500);
+  S.zoom=z;S.ox=Math.round((cw-2400*z)/2);S.oy=Math.round((ch-1500*z)/2);
+  const d=$('#doc');d.style.left=S.ox+'px';d.style.top=S.oy+'px';d.style.width=Math.round(2400*z)+'px';d.style.height=Math.round(1500*z)+'px';
+}
+const P=(x,y)=>[S.ox+x*S.zoom,S.oy+y*S.zoom];
+function box(b,cls,extra=''){const[x,y]=P(b[0],b[1]);return `<div class="${cls}" style="left:${x}px;top:${y}px;width:${b[2]*S.zoom}px;height:${b[3]*S.zoom}px">${extra}</div>`;}
+function ctbHTML(items,x,y){
+  return `<div class="ctb" style="left:${x}px;top:${y}px" title="Contextual Task Bar">${items.filter(vis).map(it=>`<span class="cb-b ${it.i&&!it.l?'icon':''} ${it.pri?'pri':''} ${it.g?'ghost':''}"${mk(it,it.title||'')}>${it.i?ico(it.i,15):''}${it.l?esc(it.l):''}${it.caret?ico('chev',9):''}</span>`).join('')}</div>`;
+}
+function renderCanvas(){
+  layout();
+  const t=S.tool,L=S.layer?LBY[S.layer]:null;let h='',ctb=null,anchor=null;
+  const isSel=['rmarquee','emarquee','lasso','plasso','objsel','wand'].includes(t);
+  if(t==='move'&&L){
+    const hs=[[0,0],[50,0],[100,0],[0,50],[100,50],[0,100],[50,100],[100,100]].map(([a,b])=>`<i class="h" style="left:${a}%;top:${b}%"></i>`).join('');
+    h+=box(L.b,'tbox'+(S.transforming?'':' click'),hs+'<span class="rot"></span>').replace('class="tbox','data-transform="1" title="Click to start a Free Transform" class="tbox');
+    anchor=L.b;
+    if(S.transforming) ctb=[{i:'rotCCW',g:1,title:'Rotate 90° counter clockwise'},{i:'rotCW',g:1,title:'Rotate 90° clockwise'},{i:'flipH',c:'m',was:'Flip H button in the Move bar',title:'Flip horizontal'},{i:'flipV',c:'m',was:'Flip V button in the Move bar',title:'Flip vertical'},{i:'more'}];
+    else if(L.kind==='pixel') ctb=[{l:'Select subject',i:'objsel',c:'m',was:'Select ▸ Subject'},{l:'Remove background',i:'remove',c:'m',was:'Filter ▸ Remove Background…'},{l:'Prompt to edit',g:1},{i:'more'}];
+    else if(L.kind==='text') ctb=[{l:'SF Pro Display',caret:1,c:'n',was:'type settings without switching to the Type tool'},{l:'Semibold',caret:1},{l:'210 px'},{i:'taC'},{i:'more'}];
+  }
+  if(isSel){
+    const sb=[1060,650,500,500];
+    if(t==='emarquee'||t==='objsel'||t==='wand') h+=box(sb,'ants ell'); else h+=box(sb,'ants');
+    anchor=sb;
+    ctb=[{l:'Generative Fill',g:1},{l:'Modify selection',caret:1,c:'n',was:'Select ▸ Modify items in reach'},{l:'Invert selection'},{l:'Create mask',c:'n',was:'Layer ▸ Layer Mask ▸ Reveal Selection'},{l:'Fill selection',c:'n',was:'Edit ▸ Fill…'},{i:'more'},{l:'Deselect'}];
+  }
+  if(t==='crop'){
+    const[x,y]=P(0,0),w=2400*S.zoom,hh=1500*S.zoom;
+    const th=[1,2].map(k=>`<i class="th" style="left:${k*w/3}px;top:0;width:1px;height:100%"></i><i class="th" style="top:${k*hh/3}px;left:0;height:1px;width:100%"></i>`).join('');
+    const cs=[['-2px','-2px','border-right:0;border-bottom:0'],['calc(100% - 14px)','-2px','border-left:0;border-bottom:0'],['-2px','calc(100% - 14px)','border-right:0;border-top:0'],['calc(100% - 14px)','calc(100% - 14px)','border-left:0;border-top:0']].map(([l,tp,st])=>`<i class="ch" style="left:${l};top:${tp};${st}"></i>`).join('');
+    h+=`<div class="cropbox" style="left:${x}px;top:${y}px;width:${w}px;height:${hh}px">${th}${cs}</div>`;
+  }
+  if(t==='type'){h+=box([170,160,1174,272],'ants');}
+  if(['brush','eraser','spot','clone','blur','smudge','dodge','burn'].includes(t)){const[x,y]=P(1650,1180),d=(t==='dodge'||t==='burn'?60:40)*S.zoom*2.4;h+=`<div class="brushcur" style="left:${x}px;top:${y}px;width:${d}px;height:${d}px"></div>`;}
+  if(t==='eyedropper'){const[x,y]=P(1650,1000);h+=`<div class="ring" style="left:${x}px;top:${y}px"></div>`;}
+  if(t==='gradient'){const[a,b]=P(400,1350),[c2,d2]=P(2000,250),len=Math.hypot(c2-a,d2-b),ang=Math.atan2(d2-b,c2-a)*180/Math.PI;
+    h+=`<div class="gline" style="left:${a}px;top:${b}px;width:${len}px;transform:rotate(${ang}deg)"></div><div class="gstop" style="left:${a}px;top:${b}px;background:#000"></div><div class="gstop" style="left:${(a+c2)/2}px;top:${(b+d2)/2}px;width:8px;height:8px;background:#888"></div><div class="gstop" style="left:${c2}px;top:${d2}px;background:#fff"></div>`;}
+  if(S.ctb&&ctb&&anchor){
+    const[x0,y0]=P(anchor[0]+anchor[2]/2,anchor[1]+anchor[3]);
+    const c=$('#canvas');let y=Math.min(y0+18,c.clientHeight-44);let x=Math.max(220,Math.min(x0,c.clientWidth-220));
+    h+=ctbHTML(ctb,x,y);
+  }
+  $('#ov').innerHTML=h;
+}
+function renderStatus(){
+  const z=(S.zoom*100).toFixed(2);
+  $('#status').innerHTML=`<span class="zf" data-chg="m" title="${esc('Moved: the zoom field (was in the Zoom and Hand tool bars and the toolbar buttons)')}">${z}%</span><span class="di" title="Document info">2400 px × 1500 px (72 ppi)${ico('chevr',9)}</span><span class="hint" data-chg="L" title="Lamina only: the tool hints stay, right-aligned">${esc(HINTS[S.tool]||NOTES._ghost[1])}</span>`;
+}
+
+/* ───────────── dock ───────────── */
+const fld2=(lbl,v,o={})=>`<span class="pl">${lbl}</span><span class="fld">${esc(v)}</span>`;
+function sect(title,body,o={}){
+  if(o.g&&!S.ghost) return '';
+  return `<div class="pp ${o.g?'ghost':''}"${mk(o)}><h4>${ico('chev',10)}${title}</h4>${body}</div>`;
+}
+const ALIGN6=`<div class="alignrow">${['alignL','alignHC','alignR','alignT','alignVC','alignB'].map(n=>`<span class="ibb">${ico(n,15)}</span>`).join('')}<span class="ibb">${ico('more',15)}</span></div>`;
+function transformSect(b){
+  return sect('Transform',`<div class="pr">${fld2('W',b[2]+' px')}<span class="ibb on">${ico('link',13)}</span>${fld2('H',b[3]+' px')}</div><div class="pr">${fld2('X',b[0]+' px')}<span style="width:24px"></span>${fld2('Y',b[1]+' px')}</div><div class="pr"><span class="pl">${ico('angle',13)}</span><span class="fld">0.00°</span><span style="width:24px"></span><span class="ibb">${ico('flipH',15)}</span><span class="ibb">${ico('flipV',15)}</span><span style="flex:1"></span></div>`,{c:'m',was:'X, Y, W, H, angle and Flip from the Move tool bar'});
+}
+function propsBody(){
+  const L=S.layer?LBY[S.layer]:null;
+  if(!L) return `<div class="ptitle">${ico('doc',15)}Document</div>`+
+    sect('Canvas',`<div class="pr">${fld2('W','2400 px')}<span class="ibb">${ico('link',13)}</span>${fld2('H','1500 px')}</div><div class="pr"><span class="lbl" style="width:76px">Resolution</span><span class="fld">72 Pixels/Inch</span></div>${S.ghost?`<div class="pr ghost"><span class="lbl" style="width:76px">Mode</span><span class="pop">RGB Color${ico('chev',9)}</span></div>`:''}`,{c:'n',was:'Image ▸ Canvas Size… and Image Size… values, editable in place'})+
+    sect('Rulers & Grids',`<div class="pr"><span class="lbl" style="width:76px">Units</span><span class="pop">Pixels${ico('chev',9)}</span></div><div class="pr"><label class="chk"><span class="cb on"></span>Grid</label><label class="chk"><span class="cb on"></span>Guides</label><label class="chk"><span class="cb"></span>Rulers</label></div>`,{c:'n',was:'the View menu toggles, shown here too'})+
+    sect('Quick Actions',`<div class="pp-btns"><span class="pp-btn">Image Size</span><span class="pp-btn">Crop</span><span class="pp-btn">Trim</span><span class="pp-btn">Rotate</span></div>`);
+  if(L.kind==='adj') return `<div class="ptitle">${ico('curves',15)}${ico('mask',15)}Curves</div>`+
+    `<div class="pp" data-chg="m" title="${esc('Moved: adjustment layers are edited here instead of in a floating panel')}">`+
+    (S.ghost?`<div class="pr ghost"><span class="lbl">Preset:</span><span class="pop">Default${ico('chev',9)}</span></div>`:'')+
+    `<div class="pr"><span class="ibb ${S.ghost?'':'ghost'}" style="${S.ghost?'':'display:none'}">${ico('picker',14)}</span><span class="pop" style="flex:0 0 90px">RGB${ico('chev',9)}</span><span style="flex:1"></span><span class="pp-btn ${S.ghost?'ghost':''}" style="${S.ghost?'':'display:none'}">Auto</span></div>`+
+    `<svg class="curve" viewBox="0 0 256 256" width="262" height="200" preserveAspectRatio="none"><g style="stroke:var(--sep)" stroke-width="1">${[64,128,192].map(v=>`<path d="M${v} 0V256M0 ${v}H256"/>`).join('')}</g><path d="M0 256 256 0" style="stroke:var(--dim)" fill="none"/><path d="M0 256C60 200 90 120 128 104S210 30 256 0" style="stroke:var(--text)" stroke-width="1.6" fill="none"/><circle cx="128" cy="104" r="4" style="fill:var(--text)"/><circle cx="64" cy="176" r="3.2" style="fill:none;stroke:var(--text)"/></svg>`+
+    `<div class="pr" style="margin-top:8px"><span class="lbl">Input:</span><span class="fld" style="flex:0 0 52px">128</span><span class="lbl">Output:</span><span class="fld" style="flex:0 0 52px">152</span></div></div>`+
+    `<div class="pfoot"><span title="Clip to layer">${ico('clip',15)}</span><span class="${S.ghost?'ghost':''}" style="${S.ghost?'':'display:none'}">${ico('eye',15)}</span><span title="Reset">${ico('reset',15)}</span><span title="Toggle visibility">${ico('eye',15)}</span><span title="Delete">${ico('trash',15)}</span></div>`;
+  if(S.mask&&L.mask) return `<div class="ptitle">${ico('mask',15)}Layer Mask</div>`+
+    sect('Masks',`${S.ghost?`<div class="pr ghost"><span class="lbl" style="width:56px">Density</span><span class="sl" style="flex:1"><i style="left:calc(100% - 6px)"></i></span><span class="fld" style="flex:0 0 46px">100%</span></div><div class="pr ghost"><span class="lbl" style="width:56px">Feather</span><span class="sl" style="flex:1"><i style="left:-6px"></i></span><span class="fld" style="flex:0 0 46px">0 px</span></div>`:''}<div class="pr"><span class="lbl" style="width:56px">Refine</span>${S.ghost?'<span class="pp-btn ghost">Select and Mask…</span>':''}<span class="pp-btn" data-chg="m" title="Moved: Select ▸ Color Range…, aimed at the mask">Color Range…</span><span class="pp-btn">Invert</span></div>`,{c:'n',was:'mask actions from the Layer menu and the mask thumbnail’s menu'})+
+    `<div class="pfoot"><span title="Load selection from mask (was Select ▸ Mask’s Black Areas)" data-chg="m">${ico('marquee',15)}</span><span title="Apply mask">${ico('commit',15)}</span><span class="${S.ghost?'ghost':''}" style="${S.ghost?'':'display:none'}">${ico('eye',15)}</span><span title="Delete mask">${ico('trash',15)}</span></div>`;
+  if(L.kind==='text') return `<div class="ptitle">${ico('kindT',15)}Type Layer</div>`+transformSect(L.b)+
+    sect('Character',`<div class="pr"><span class="pop">SF Pro Display${ico('chev',9)}</span></div><div class="pr"><span class="pop">Semibold${ico('chev',9)}</span></div><div class="pr"><span class="pl">${ico('fontsize',13)}</span><span class="fld">210 px</span><span class="pl">${ico('paragraph',13)}</span><span class="fld" data-chg="m" title="Moved: Leading, from the Type tool bar">Auto</span></div><div class="pr"><span class="pl" title="Tracking">VA</span><span class="fld" data-chg="m" title="Moved: Tracking, from the Type tool bar">0</span><span class="lbl">Color</span><span class="swatch" style="--c:#fff6e0;flex:0 0 40px"></span></div>`,{c:'n',was:'Photoshop’s Character section'})+
+    sect('Paragraph',`<div class="alignrow">${['taL','taC','taR'].map((n,i)=>`<span class="ibb ${i===0?'on':''}">${ico(n,15)}</span>`).join('')}${S.ghost?`<span class="ibb ghost">${ico('taJ',15)}</span>`:''}</div>`);
+  if(L.kind==='group') return `<div class="ptitle">${ico('folder',15)}Layer Group</div>`+transformSect(L.b)+sect('Align and Distribute',ALIGN6,{c:'m',was:'the Move tool bar’s Align and Distribute pop-up'});
+  return `<div class="ptitle">${ico('kindPx',15)}Pixel Layer</div>`+transformSect(L.b)+
+    sect('Align and Distribute',ALIGN6,{c:'m',was:'the Move tool bar’s Align and Distribute pop-up'})+
+    sect('Layer',`<div class="pr"><span class="lbl" style="width:76px">Interpolation</span><span class="pop">Bicubic${ico('chev',9)}</span></div>`,{c:'L',was:'Lamina’s per-layer Sampling (from the Move bar), with Photoshop’s names'})+
+    sect('Quick Actions',`<div class="pp-btns"><span class="pp-btn" data-chg="m" title="Moved: Filter ▸ Remove Background…">Remove Background</span><span class="pp-btn" data-chg="m" title="Moved: Select ▸ Subject">Select Subject</span></div>`);
+}
+const ADJ=[['light','Light',1],['vibrance','Color and vibrance',1],['clarity','Clarity and dehaze',1],['grain','Grain'],['levels','Levels'],['curves','Curves'],['exposure','Exposure'],['huesat','Hue/Saturation'],['colorbal','Color Balance'],['bw','Black & White'],['photofilter','Photo Filter',1],['chmixer','Channel Mixer',1],['lookup','Color Lookup',1],['selcolor','Selective Color',1],['invert','Invert'],['posterize','Posterize',1],['threshold','Threshold',1],['gradmap','Gradient Map']];
+function adjBody(){
+  const items=ADJ.filter(a=>S.ghost||!a[2]);
+  const cell=a=>`<span class="adjcell ${a[2]?'ghost':''}" title="${a[1]}">${ico(a[0],18)}<span>${a[1]}</span></span>`;
+  return `<div class="pp"><span class="oc seg" style="width:100%">${S.ghost?'<span class="ghost" style="flex:1;text-align:center">Presets</span>':''}<span class="on" style="flex:1;text-align:center">Single adjustments</span></span></div>`+
+  `<div class="pp" data-chg="n" title="${esc('New wiring: one click adds the adjustment layer (was only the Layers panel’s adjustment menu). Order follows Photoshop 27.10.')}"><div class="adjgrid">${items.map(cell).join('')}</div></div>`+
+  `<div class="pp" data-chg="L" title="Lamina only: live filter layers (Photoshop uses Smart Filters for these)"><h4>${ico('chev',10)}Filter layers <span class="tag">Lamina</span></h4><div class="adjgrid">${[['gblur','Gaussian Blur'],['mblur','Motion Blur'],['noise','Add Noise']].map(cell).join('')}</div></div>`;
+}
+function layerRows(){
+  let h='';
+  for(const L of LAYERS){
+    const sel=S.layer===L.id;
+    let th;
+    if(L.kind==='group') th=`${ico('chev',10)}${ico('folder',16)}`;
+    else if(L.kind==='adj') th=`<span class="thumb adj">${ico('curves',15)}</span>`;
+    else if(L.kind==='text') th=`<span class="thumb txt">T</span>`;
+    else th=`<span class="thumb ${sel&&!S.mask?'sel':''}" style="background-image:${L.th},conic-gradient(#c8c8c8 25%,#fff 0 50%,#c8c8c8 0 75%,#fff 0);background-size:100% 100%,6px 6px"></span>`;
+    const mask=L.mask?`<span class="chain">${ico('link',11)}</span><span class="thumb mask ${sel&&S.mask?'sel':''}" data-mask="${L.id}" title="Layer mask" style="${L.id==='lake'?'background:linear-gradient(90deg,#fff 70%,#000)':''}"></span>`:'';
+    const fx=L.fx?`<span class="fxb" title="Layer effects">fx${ico('chev',9)}</span>`:'';
+    h+=`<div class="lr ${sel?'sel':''}" data-l="${L.id}" style="--ind:${L.ind||0}"><span class="eye">${ico('eye',14)}</span><span class="lm">${th}${mask}<span class="nm">${esc(L.name)}</span>${fx}</span></div>`;
+    if(L.fx){
+      h+=`<div class="lr sub" style="--ind:${L.ind||0}" data-chg="r" title="${esc('Restyled: effects sit under an “Effects” row, each with its own eye, as in Photoshop')}"><span class="eye">${ico('eye',12)}</span><span class="lm">Effects</span></div>`;
+      for(const e of L.fx) h+=`<div class="lr sub" style="--ind:${(L.ind||0)+1}"><span class="eye">${ico('eye',12)}</span><span class="lm">${e}</span></div>`;
+    }
+  }
+  return h;
+}
+function renderDock(){
+  const tabs=(list,cur,key)=>list.filter(vis).map(t=>`<span class="pg-tab ${t.id===cur?'on':''} ${t.g?'ghost':''}" data-tab="${key}:${t.id}"${mk(t)}>${t.l}</span>`).join('');
+  let h='';
+  if(S.ghost) h+=`<div class="pg collapsed ghost"><div class="pg-tabs">${tabs([{id:'color',l:'Color'},{id:'sw',l:'Swatches'},{id:'gr',l:'Gradients'},{id:'pa',l:'Patterns'}],'color','x')}<span class="pg-menu">${ico('menu',13)}</span></div></div>`;
+  h+=`<div class="pg" style="flex:0 0 ${S.ghost?318:340}px"><div class="pg-tabs">${tabs([{id:'properties',l:'Properties',c:'n',was:'new panel'},{id:'adjustments',l:'Adjustments',c:'n',was:'new panel'},{id:'libraries',l:'Libraries',g:1}],S.props,'props')}<span class="pg-menu">${ico('menu',13)}</span></div><div class="pg-body">${S.props==='properties'?propsBody():adjBody()}</div></div>`;
+  h+=`<div class="pg" style="flex:1"><div class="pg-tabs">${tabs([{id:'layers',l:'Layers'},{id:'channels',l:'Channels',g:1},{id:'paths',l:'Paths',g:1}],'layers','lay')}<span class="pg-menu">${ico('menu',13)}</span></div>
+   <div class="layers-top">
+    ${S.ghost?`<div class="lt-row ghost"><span class="pop" style="width:70px">${ico('search',11)}Kind${ico('chev',9)}</span>${['kindPx','adj','kindT','kindShape','kindSO'].map(n=>`<span class="ibb">${ico(n,14)}</span>`).join('')}</div>`:''}
+    <div class="lt-row" data-chg="r" title="${esc('Restyled: Photoshop’s blend menu and Opacity field (was a Blend label and an opacity slider)')}"><span class="pop blend">Normal${ico('chev',9)}</span><span class="lbl">Opacity:</span><span class="fld" style="width:54px">100%${ico('chev',9)}</span></div>
+    ${S.ghost?`<div class="lt-row ghost"><span class="lbl">Lock:</span>${['lockPx','brush','move','nest','lockAll'].map(n=>`<span class="ibb" style="width:20px">${ico(n,13)}</span>`).join('')}<span style="flex:1"></span><span class="lbl">Fill:</span><span class="fld" style="width:54px">100%${ico('chev',9)}</span></div>`:''}
+   </div>
+   <div class="lrows" id="lrows">${layerRows()}<div data-l="" style="height:40px"></div></div>
+   <div class="lfoot">
+    <span class="ibb ${S.ghost?'ghost':''}" style="${S.ghost?'':'display:none'}" title="Layer Cleanup">${ico('cleanup',15)}</span>
+    <span class="ibb ${S.ghost?'ghost':''}" style="${S.ghost?'':'display:none'}" title="Link layers">${ico('link',15)}</span>
+    <span class="ibb" data-chg="r" title="${esc('Add a layer style. Restyled: lists every effect in Photoshop’s order and opens one Layer Style dialog')}" data-dlg="layerstyle">${ico('fx',17)}</span>
+    <span class="ibb" title="Add layer mask">${ico('mask',15)}</span>
+    <span class="ibb" title="Create new fill or adjustment layer">${ico('adj',15)}</span>
+    <span class="ibb" data-chg="r" title="${esc('Create a new group. Renamed: “New folder”')}">${ico('folder',15)}</span>
+    <span class="ibb" title="Create a new layer (⇧⌘N)">${ico('newlayer',15)}</span>
+    <span class="ibb" title="Delete layer">${ico('trash',15)}</span>
+   </div></div>`;
+  $('#dock').innerHTML=h;
+}
+function renderStrip(){
+  const b=(i,t,o={})=>vis(o)?`<span class="sbtn ${o.on?'on':''} ${o.g?'ghost':''}" ${o.id?`data-strip="${o.id}"`:''}${mk(o,t)}>${ico(i,17)}</span>`:'';
+  $('#strip').innerHTML=b('history','History',{id:'history',on:S.hist,c:'m',was:'a tab next to Layers; Photoshop’s Essentials keeps History as a collapsed panel icon'})+b('comments','Comments',g);
+}
+function renderFloats(){
+  let h='';
+  if(S.hist){
+    const states=['Open','New Layer','Place Embedded','Free Transform','Drop Shadow','Curves Layer','Move'];
+    h+=`<div class="hist" style="right:${292+34+6}px;top:84px"><div class="pg-tabs"><span class="pg-tab on">History</span><span class="pg-menu">${ico('menu',13)}</span></div><div class="hrow snap"><span class="thumb" style="width:32px;height:22px;background:linear-gradient(#2c2f6b,#9b4a7a 55%,#f0a565)"></span>Golden Hour</div>${states.map((s,i)=>`<div class="hrow ${i===states.length-1?'cur':''}">${ico(i===0?'doc':'history',13)}${s}</div>`).join('')}<div class="lfoot">${S.ghost?`<span class="ibb ghost">${ico('newlayer',15)}</span>`:''}<span class="ibb" title="Undo (⌘Z)">${ico('rotCCW',15)}</span><span class="ibb" title="Redo (⇧⌘Z)">${ico('rotCW',15)}</span><span class="ibb">${ico('trash',15)}</span></div></div>`;
+  }
+  if(S.flyout!=null){
+    const gr=GROUPS[S.flyout],slot=document.querySelector(`.slot[data-g="${S.flyout}"]`);
+    if(slot){
+      const top=74+slot.offsetTop;
+      h+=`<div class="flyout" style="left:46px;top:${Math.min(top,860-30*gr.m.length-20)}px">${gr.m.filter(vis).map(t=>`<div class="fo ${t.g?'ghost':''} ${t.id===S.tool?'is':''}" data-fo="${t.id}"${mk(t)}><span class="cur"></span>${ico(t.icon,16)}<span>${esc(t.name)}</span><span class="k">${t.key}</span></div>`).join('')}</div>`;
+    }
+  }
+  if(S.dialog) h+=dialogHTML(S.dialog);
+  $('#floats').innerHTML=h;
+  const d=document.querySelector('.dlg');
+  if(d){d.style.left=Math.round((1500-d.offsetWidth)/2)+'px';d.style.top=Math.max(80,Math.round((860-d.offsetHeight)/2-10))+'px';}
+}
+
+/* ───────────── dialogs ───────────── */
+const dr=(l,ctlh,o={})=>(o.g&&!S.ghost)?'':`<div class="dr ${o.g?'ghost':''}"${mk(o)} style="${o.lw?`--lw:${o.lw}px`:''}"><span class="dl">${l}</span>${ctlh}</div>`;
+const df=(v,wd=64)=>`<span class="fld" style="width:${wd}px">${esc(v)}</span>`;
+const dp=(v,wd=120)=>`<span class="pop" style="width:${wd}px">${esc(v)}${ico('chev',9)}</span>`;
+const dc=(l,on,o={})=>(o.g&&!S.ghost)?'':`<label class="chk ${o.g?'ghost':''}"${mk(o)}><span class="cb ${on?'on':''}"></span>${esc(l)}</label>`;
+const rd=(l,on,o={})=>(o.g&&!S.ghost)?'':`<label class="rad ${o.g?'ghost':''}"><span class="rb ${on?'on':''}"></span>${esc(l)}</label>`;
+const ds=p=>`<span class="sl"><i style="left:calc(${p}% - 6px)"></i></span>`;
+const fsx=(lg,inner,o={})=>(o.g&&!S.ghost)?'':`<div class="fs ${o.g?'ghost':''}"${mk(o)}><span class="lg">${lg}</span>${inner}</div>`;
+const db=(l,o={})=>(o.g&&!S.ghost)?'':`<button class="dbtn ${o.def?'def':''} ${o.g?'ghost':''}" data-close="1"${mk(o)}>${esc(l)}</button>`;
+const STD=(extra='',prev=true)=>db('OK',{def:1})+db('Cancel')+extra+(prev?dc('Preview',true):'');
+const HISTO=`<svg class="histo" viewBox="0 0 256 80" width="256" height="80" preserveAspectRatio="none"><path d="M0 80 L0 70 C20 60 30 40 50 46 S80 20 100 30 S130 10 150 24 S190 40 210 18 S240 50 256 66 L256 80Z" style="fill:var(--icon)"/></svg>`;
+const DLG={
+ levels:()=>({title:'Levels',c:'r',was:'Same controls; buttons move to the right like Photoshop',body:
+  dr('Preset:',dp('Default',150)+ico('gear',14),{g:1,lw:56})+dr('Channel:',dp('RGB',90),{lw:56})+
+  `<div style="margin:10px 0 4px">Input Levels:</div>${HISTO}<div class="dr" style="justify-content:space-between;width:256px">${df('0',44)}${df('1.00',44)}${df('255',44)}</div><div style="margin:10px 0 4px">Output Levels:</div><div class="grad-bar" style="width:256px;background:linear-gradient(90deg,#000,#fff)"></div><div class="dr" style="justify-content:space-between;width:256px">${df('0',44)}${df('255',44)}</div>`,
+  btns:db('OK',{def:1})+db('Cancel')+db('Auto')+db('Options…',{g:1})+`<div style="display:flex;gap:6px;justify-content:center;margin:4px 0" title="Black, gray and white point eyedroppers (Lamina has one Sample picker today)">${ico('picker',16)}${ico('picker',16)}${ico('picker',16)}</div>`+dc('Preview',true)}),
+ curves:()=>({title:'Curves',body:dr('Preset:',dp('Default',150)+ico('gear',14),{g:1,lw:56})+dr('Channel:',dp('RGB',90),{lw:56})+
+  `<svg class="curve" viewBox="0 0 256 256" width="256" height="256"><g style="stroke:var(--sep)">${[64,128,192].map(v=>`<path d="M${v} 0V256M0 ${v}H256"/>`).join('')}</g><path d="M0 256 256 0" style="stroke:var(--dim)" fill="none"/><path d="M0 256C60 200 90 120 128 104S210 30 256 0" style="stroke:var(--text)" stroke-width="1.6" fill="none"/><circle cx="128" cy="104" r="4" fill="#fff"/></svg><div class="dr">${'<span class="lbl">Output:</span>'+df('152',48)+'<span class="lbl">Input:</span>'+df('128',48)}</div>`,
+  btns:db('OK',{def:1})+db('Cancel')+db('Smooth',{g:1})+db('Auto',{g:1})+db('Options…',{g:1})+dc('Preview',true)}),
+ huesat:()=>({title:'Hue/Saturation',body:dr('Preset:',dp('Default',150)+ico('gear',14),{g:1,lw:56})+
+  `<div class="dr">${dp('Master',110)}<span class="lbl" style="font-size:11px">Range</span></div>`+
+  ['Hue','Saturation','Lightness'].map(n=>`<div style="margin-top:8px">${n}:</div><div class="dr">${ds(50)}${df('0',48)}</div>`).join('')+
+  `<div class="grad-bar" style="margin-top:12px;background:linear-gradient(90deg,red,#ff0,lime,cyan,blue,#f0f,red)"></div><div class="grad-bar" style="margin-top:3px;background:linear-gradient(90deg,red,#ff0,lime,cyan,blue,#f0f,red)"></div><div class="dr" style="justify-content:space-between">${dc('Colorize',false)}<span style="display:flex;gap:6px;color:var(--muted)" title="Targeted adjustment">${ico('picker',15)}${ico('hand',15)}</span></div>`,btns:STD()}),
+ exposure:()=>({title:'Exposure',body:dr('Preset:',dp('Default',150),{g:1,lw:110})+['Exposure:|0.00|50','Offset:|0.0000|50','Gamma Correction:|1.00|50'].map(s=>{const[a,b,c]=s.split('|');return dr(a,df(b,70),{lw:110})+`<div class="dr" style="padding-left:118px">${ds(+c)}</div>`;}).join(''),btns:STD()}),
+ imagesize:()=>({title:'Image Size',wd:620,body:`<div style="display:grid;grid-template-columns:220px 1fr;gap:18px"><div class="preview-img" style="height:220px"></div><div>
+  <div class="dr"><span class="dl">Image Size:</span>10.3M</div>${dr('Dimensions:','2400 px × 1500 px')}${dr('Fit To:',dp('Original Size',160),{g:1})}
+  ${dr('Width:',df('2400',80)+dp('Pixels',90))}<div class="dr"><span class="dl"></span><span title="Constrain aspect ratio (was a Lock aspect ratio checkbox)" data-chg="r">${ico('link',14)}</span></div>${dr('Height:',df('1500',80)+dp('Pixels',90))}
+  ${dr('Resolution:',df('72',80)+dp('Pixels/Inch',90))}<div class="dr"><span class="dl"></span>${dc('Resample:',true)}${dp('Automatic',120)}</div></div></div>`,
+  bottom:1,btns:db('Cancel')+db('OK',{def:1})}),
+ canvassize:()=>({title:'Canvas Size',body:fsx('Current Size: 10.3M',dr('Width:','2400 Pixels')+dr('Height:','1500 Pixels'))+
+  fsx('New Size: 10.3M',dr('Width:',df('2400',80)+dp('Pixels',90))+dr('Height:',df('1500',80)+dp('Pixels',90))+`<div class="dr"><span class="dl"></span>${dc('Relative to current dimensions',false)}</div><div class="dr"><span class="dl">Anchor:</span><span class="anchor">${['↖','↑','↗','←','','→','↙','↓','↘'].map((a,i)=>`<i class="${i===4?'on':''}">${a}</i>`).join('')}</span></div>`)+
+  dr('Canvas extension color:',dp('Transparent',120)+'<span class="swatch" style="--c:transparent"></span>',{lw:150,c:'r',was:'Extension color'}),btns:db('OK',{def:1})+db('Cancel')}),
+ layerstyle:()=>({title:'Layer Style',wd:720,c:'s',was:'One dialog for every effect (Lamina opens one floating panel per effect today)',body:`<div style="display:grid;grid-template-columns:176px 1fr;gap:14px"><div class="ls-list">
+  ${S.ghost?'<div class="head ghost">Styles</div><div class="head ghost">Blending Options</div>':''}
+  ${[['Bevel & Emboss',0,1],['Stroke',0],['Inner Shadow',0],['Inner Glow',0],['Satin',0,1],['Color Overlay',0],['Gradient Overlay',0,1],['Pattern Overlay',0,1],['Outer Glow',0],['Drop Shadow',1]].filter(x=>S.ghost||!x[2]).map(([n,on,gg])=>`<div class="${on?'on':''} ${gg?'ghost':''}"><span class="cb ${on?'on':''}"></span>${n}<span style="margin-left:auto;opacity:.6">${['Stroke','Inner Shadow','Drop Shadow','Color Overlay'].includes(n)?'+':''}</span></div>`).join('')}
+  ${S.ghost?`<div class="ghost" style="margin-top:6px">fx ⬆︎ ⬇︎ 🗑</div>`:''}</div><div>
+  <div style="font-weight:600;font-size:13px">Drop Shadow</div>
+  ${fsx('Structure',dr('Blend Mode:',dp('Multiply',110)+'<span class="swatch" style="--c:#2a0f22"></span>',{g:1})+dr('Opacity:',ds(35)+df('35',44)+'<span class="u">%</span>')+dr('Angle:',`<span style="width:30px;height:30px;border-radius:50%;border:1px solid var(--muted);display:inline-block;position:relative"><i style="position:absolute;left:14px;top:3px;width:1px;height:12px;background:var(--text);transform:rotate(-30deg);transform-origin:bottom"></i></span>`+df('120',44)+'<span class="u">°</span>'+dc('Use Global Light',true,{g:1}))+dr('Distance:',ds(20)+df('14',44)+'<span class="u">px</span>')+dr('Spread:',ds(0)+df('0',44)+'<span class="u">%</span>',{g:1})+dr('Size:',ds(30)+df('16',44)+'<span class="u">px</span>',{c:'r',was:'Blur'})+dr('Color:','<span class="swatch" style="--c:#2a0f22"></span>',{c:'L',was:'a color well, where Photoshop puts the swatch beside Blend Mode'}))}
+  ${fsx('Quality',dr('Contour:',dp('Linear',90))+dr('Noise:',ds(0)+df('0',44)+'<span class="u">%</span>')+`<div class="dr"><span class="dl"></span>${dc('Layer Knocks Out Drop Shadow',true)}</div>`,{g:1})}
+  </div></div>`,btns:db('OK',{def:1})+db('Cancel')+db('New Style…',{g:1})+dc('Preview',true)+'<div style="height:56px;margin-top:6px;border:1px solid var(--sep);border-radius:4px;background:#fff;display:grid;place-items:center"><span style="width:36px;height:36px;background:#bbb;box-shadow:3px 5px 8px #444"></span></div>'}),
+ stroke:()=>({title:'Stroke',body:fsx('Stroke',dr('Width:',df('4 px',60))+dr('Color:','<span class="swatch" style="--c:#f2a65a;width:60px"></span>',{c:'r',was:'Foreground / Background picker; Photoshop opens a color well'}))+
+  fsx('Location',`<div class="dr" style="gap:16px;padding-left:8px">${rd('Inside',false)}${rd('Center',true)}${rd('Outside',false)}</div>`,{c:'n',was:'Lamina strokes centered today'})+
+  fsx('Blending',dr('Mode:',dp('Normal',120),{g:1})+dr('Opacity:',df('100',50)+'<span class="u">%</span>')+`<div class="dr"><span class="dl"></span>${dc('Preserve Transparency',false,{g:1})}</div>`),btns:STD('',false)}),
+ fill:()=>({title:'Fill',c:'n',was:'New dialog over existing fills: foreground, background, color, content-aware',body:dr('Contents:',dp('Foreground Color',170))+`<div class="dr" style="padding-left:100px;color:var(--muted);font-size:11px">Foreground Color · Background Color · Color… · Content-Aware · Black · 50% Gray · White</div>`+
+  fsx('Options',`<div class="dr"><span class="dl"></span>${dc('Color Adaptation',true)}</div>`,{g:1})+
+  fsx('Blending',dr('Mode:',dp('Normal',120),{g:1})+dr('Opacity:',df('100',50)+'<span class="u">%</span>')+`<div class="dr"><span class="dl"></span>${dc('Preserve Transparency',false,{g:1})}</div>`),btns:db('OK',{def:1})+db('Cancel')}),
+ colorrange:()=>({title:'Color Range',body:dr('Select:',dp('Sampled Colors',150),{g:1,lw:56})+`<div class="dr">${dc('Detect Faces',false,{g:1})}${dc('Localized Color Clusters',false,{g:1})}</div>`+
+  dr('Fuzziness:',df('40',50),{lw:66})+`<div class="dr">${ds(20)}</div>`+dr('Range:',df('100',50)+'<span class="u">%</span>',{g:1,lw:66})+
+  `<div style="width:240px;height:150px;margin:8px auto;background:radial-gradient(circle at 55% 60%,#fff 0 12%,#777 18%,#000 34%);border:1px solid var(--edge)"></div><div class="dr" style="justify-content:center;gap:16px">${rd('Selection',true,{g:1})}${rd('Image',false,{g:1})}</div>`+dr('Selection Preview:',dp('None',100),{g:1,lw:110}),
+  btns:db('OK',{def:1})+db('Cancel')+db('Load…',{g:1})+db('Save…',{g:1})+`<div style="display:flex;gap:6px;justify-content:center;margin:4px 0">${ico('picker',16)}${S.ghost?`<span class="ghost">${ico('picker',16)}</span><span class="ghost">${ico('picker',16)}</span>`:''}</div>`+dc('Invert',false)}),
+ feather:()=>({title:'Feather Selection',body:dr('Feather Radius:',df('10',56)+'<span class="u">pixels</span>',{lw:100})+`<div class="dr"><span class="dl" style="--lw:100px"></span>${dc('Apply effect at canvas bounds',false,{g:1})}</div>`,btns:db('OK',{def:1})+db('Cancel')}),
+ expand:()=>({title:'Expand Selection',body:dr('Expand By:',df('8',56)+'<span class="u">pixels</span>',{lw:80})+`<div class="dr"><span class="dl" style="--lw:80px"></span>${dc('Apply effect at canvas bounds',false,{g:1})}</div>`,btns:db('OK',{def:1})+db('Cancel')}),
+ contract:()=>({title:'Contract Selection',body:dr('Contract By:',df('8',56)+'<span class="u">pixels</span>',{lw:84})+`<div class="dr"><span class="dl" style="--lw:84px"></span>${dc('Apply effect at canvas bounds',false,{g:1})}</div>`,btns:db('OK',{def:1})+db('Cancel')}),
+ gblur:()=>({title:'Gaussian Blur',c:'r',was:'Floating filter panel restyled as Photoshop’s filter dialog: preview, zoom, then the settings',body:`<div style="width:250px;height:190px;background:linear-gradient(#5a3a78,#c4547b 60%,#ef8d5e);filter:blur(2px);border:1px solid var(--edge)"></div><div class="dr" style="justify-content:center;gap:14px">${ico('zoomout',15)}<span>100%</span>${ico('zoomin',15)}</div>`+dr('Radius:',df('4.0',56)+'<span class="u">Pixels</span>',{lw:56})+`<div class="dr">${ds(15)}</div>`,btns:STD()}),
+ trim:()=>({title:'Trim',body:fsx('Based On',`<div style="display:grid;gap:7px;padding:2px 8px">${rd('Transparent Pixels',true)}${rd('Top Left Pixel Color',false)}${rd('Bottom Right Pixel Color',false)}</div>`)+fsx('Trim Away',`<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:2px 8px">${dc('Top',true)}${dc('Left',true)}${dc('Bottom',true)}${dc('Right',true)}</div>`),btns:db('OK',{def:1})+db('Cancel')}),
+ loadsel:()=>({title:'Load Selection',c:'n',was:'Replaces Select ▸ Layer’s Pixels and Select ▸ Mask’s Black Areas',body:fsx('Source',dr('Document:',dp('Golden Hour',170))+dr('Channel:',dp('Lake Transparency',170))+`<div class="dr" style="padding-left:100px;color:var(--muted);font-size:11px">Lake Transparency · Lake Mask · Warm grade Mask</div><div class="dr"><span class="dl"></span>${dc('Invert',false,{c:'n',was:'Invert of Lake Mask gives what Mask’s Black Areas gave'})}</div>`)+
+  fsx('Operation',`<div style="display:grid;gap:7px;padding:2px 8px">${rd('New Selection',true)}${rd('Add to Selection',false)}${rd('Subtract from Selection',false)}${rd('Intersect with Selection',false,{g:1})}</div>`),btns:db('OK',{def:1})+db('Cancel')}),
+ export:()=>({title:'Export As',wd:860,body:`<div style="display:grid;grid-template-columns:1fr 250px;gap:16px"><div><div class="prevbox" style="height:300px"><div class="preview-img" style="width:380px;height:238px"></div></div><div class="dr" style="justify-content:center;color:var(--muted)">2400 × 1500 px · 1.4 MB</div></div><div>
+  ${fsx('File Settings',dr('Format:',dp('PNG',110),{lw:66,c:'r',was:'Export PNG…, Export JPEG… and Export As… become one dialog with a Format menu'})+dr('Quality:',ds(80)+df('80%',44),{lw:66})+`<div class="dr"><span class="dl" style="--lw:66px"></span>${dc('Transparency',true)}</div>`+dr('Matte:',dp('White',90),{lw:66,c:'r',was:'Background for transparency'}))}
+  ${fsx('Image Size',dr('Width:',df('2400',60)+'<span class="u">px</span>',{lw:66})+dr('Height:',df('1500',60)+'<span class="u">px</span>',{lw:66})+dr('Scale:',dp('100%',80),{lw:66}),{g:1})}
+  ${fsx('Metadata',`<div style="display:grid;gap:6px;padding:2px 6px">${rd('None',true)}${rd('Copyright and Contact Info',false)}</div>`,{g:1})}
+  ${fsx('Color Space',`<div class="dr">${dc('Convert to sRGB',true)}</div>`,{g:1})}</div></div>`,bottom:1,btns:db('Cancel')+db('Export',{def:1})}),
+ newdoc:()=>({title:'New Document',wd:900,c:'r',was:'New canvas sheet laid out as Photoshop’s New Document',body:`<div style="display:grid;grid-template-columns:1fr 250px;gap:20px"><div>
+  <div class="ptabs"><span class="on">Recent</span>${S.ghost?'<span class="ghost">Saved</span>':''}<span>Photo</span><span>Print</span><span>Web</span><span>Mobile</span><span>Film &amp; Video</span></div>
+  <div class="presetcards"><div class="on"><b>Clipboard</b>1280 × 720 px</div><div><b>Default Lamina Size</b>2400 × 1500 px</div><div><b>HDTV 1080p</b>1920 × 1080 px</div><div><b>Instagram Portrait</b>1080 × 1350 px</div><div><b>Square</b>2048 × 2048 px</div><div><b>Letter</b>2550 × 3300 px</div><div><b>iPhone 17 Pro</b>1206 × 2622 px</div><div><b>4K UHD</b>3840 × 2160 px</div></div>
+  <div class="dr" style="margin-top:14px;color:var(--muted)">${S.ghost?'<span class="ghost">Find more templates on Adobe Stock</span>':''}</div></div><div>
+  <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">Preset Details</div><div style="font-size:16px;font-weight:600;margin:8px 0 12px">Untitled-1</div>
+  <div>Width</div><div class="dr">${df('1280',110)}${dp('Pixels',100)}</div><div>Height</div><div class="dr">${df('720',110)}<span class="u">Orientation</span></div>
+  ${S.ghost?`<div class="dr ghost">${dc('Artboards',false)}</div>`:''}<div>Resolution</div><div class="dr">${df('72',110)}${dp('Pixels/Inch',100)}</div>
+  ${S.ghost?`<div class="ghost">Color Mode</div><div class="dr ghost">${dp('RGB Color',110)}${dp('8 bit',100)}</div>`:''}
+  <div data-chg="L" title="Lamina only: documents start transparent; Photoshop’s Background Contents menu">Background Contents</div><div class="dr">${dp('Transparent',214)}</div></div></div>`,bottom:1,btns:db('Close')+db('Create',{def:1})}),
+ colorpicker:()=>({title:'Color Picker (Foreground Color)',wd:560,c:'r',was:'Lamina’s picker laid out as Photoshop’s: field, hue strip, then values',body:`<div class="cpk"><div class="field"></div><div class="hue"></div><div style="display:grid;gap:6px;align-content:start;margin-left:6px">
+  <div style="font-size:11px;color:var(--muted)">new</div><div style="width:64px;height:32px;background:#f2a65a;border:1px solid var(--edge)"></div><div style="width:64px;height:32px;background:#e0884a;border:1px solid var(--edge);margin-top:-6px"></div><div style="font-size:11px;color:var(--muted)">current</div>
+  <div style="display:grid;grid-template-columns:auto 52px auto;gap:5px 6px;align-items:center;margin-top:8px"><span>H:</span>${df('28',52)}<span class="u">°</span><span>S:</span>${df('63',52)}<span class="u">%</span><span>B:</span>${df('95',52)}<span class="u">%</span>${S.ghost?`<span class="ghost">R:</span><span class="fld ghost">242</span><span></span><span class="ghost">G:</span><span class="fld ghost">166</span><span></span><span class="ghost">B:</span><span class="fld ghost">90</span><span></span>`:''}<span>#</span>${df('f2a65a',64)}<span></span></div></div></div>`,btns:db('OK',{def:1})+db('Cancel')+db('Add to Swatches',{g:1})+db('Color Libraries',{g:1})})
+};
+function dialogHTML(id){
+  const d=DLG[id]();
+  return `<div class="dlg" style="${d.wd?`width:${d.wd}px`:'min-width:420px'}" role="dialog" aria-label="${esc(d.title)}"><div class="dlg-tb"${mk(d)}><span class="lights"><i data-close="1"></i><i></i><i></i></span>${esc(d.title)}</div><div class="dlg-in ${d.bottom?'bottom':''}"><div>${d.body}</div><div class="dlg-btns ${d.bottom?'row':''}">${d.btns}</div></div></div>`;
+}
+function openDialog(id){if(!DLG[id])return;S.dialog=id;S.flyout=null;renderFloats();}
+
+/* ───────────── note + render ───────────── */
+function renderNote(){
+  const key=S.tool==='move'&&S.transforming?'transform':(NOTES[S.tool]?S.tool:'_ghost');
+  const n=NOTES[key];
+  $('#toolnote').innerHTML=`<span class="tn-t">${esc(n[0])}</span><p>${esc(n[1])}</p>`;
+}
+function isLight(){
+  if(S.appearance!=='auto') return S.appearance==='light';
+  const t=document.documentElement.getAttribute('data-theme');
+  if(t) return t==='light';
+  return !matchMedia('(prefers-color-scheme: dark)').matches;
+}
+function render(){
+  document.body.classList.toggle('chg-on',S.chg);
+  $('#screen').classList.toggle('light',isLight());
+  $('#screen').classList.toggle('ghost-on',S.ghost);
+  renderMenubar();renderToolbar();renderOptions();renderCanvas();renderTitlebar();renderStatus();renderStrip();renderDock();renderFloats();renderNote();
+}
+
+/* ───────────── scaling ───────────── */
+function fit(){
+  const vp=$('#viewport'),sc=$('#screen');
+  const s=S.actual?1:Math.min(1,vp.clientWidth/1500);
+  sc.style.transform=`scale(${s})`;vp.style.height=Math.ceil(884*s)+'px';
+  vp.classList.toggle('actual',S.actual);
+}
+new ResizeObserver(fit).observe($('#viewport'));
+
+/* ───────────── events ───────────── */
+function selectTool(id){S.tool=id;S.transforming=false;S.flyout=null;const t=TOOLS[id];if(t)S.gsel[t.gi]=id;render();}
+let pressTimer=null,pressed=false;
+const scr=$('#screen');
+scr.addEventListener('pointerdown',e=>{
+  const slot=e.target.closest('.slot[data-g]');
+  if(slot&&e.button===0){pressed=false;pressTimer=setTimeout(()=>{pressed=true;S.flyout=+slot.dataset.g;renderFloats();},380);}
+});
+scr.addEventListener('pointerup',()=>clearTimeout(pressTimer));
+scr.addEventListener('contextmenu',e=>{const slot=e.target.closest('.slot[data-g]');if(slot){e.preventDefault();S.flyout=+slot.dataset.g;renderFloats();}});
+scr.addEventListener('click',e=>{
+  const mt=e.target.closest('.mt');
+  if(mt){const i=+mt.dataset.m;S.menu===i?closeMenus():openMenu(i);return;}
+  const mi=e.target.closest('.mi');
+  if(mi){const inSub=mi.closest('.menu.sub');const list=inSub?SUB_ITEMS:OPEN_ITEMS;activate(list[+mi.dataset.i]);return;}
+  if(S.menu!=null&&!e.target.closest('.menu')){closeMenus();return;}
+  const fo=e.target.closest('[data-fo]');if(fo){selectTool(fo.dataset.fo);return;}
+  if(S.flyout!=null&&!e.target.closest('.flyout')){S.flyout=null;renderFloats();if(!e.target.closest('.slot'))return;}
+  const slot=e.target.closest('.slot[data-g]');if(slot){if(!pressed)selectTool(slot.dataset.t);pressed=false;return;}
+  if(e.target.closest('[data-close]')){S.dialog=null;renderFloats();return;}
+  const dl=e.target.closest('[data-dlg]');if(dl){openDialog(dl.dataset.dlg);return;}
+  const cm=e.target.closest('[data-commit]');if(cm){S.transforming=false;render();return;}
+  if(e.target.closest('[data-transform]')&&!S.transforming){S.transforming=true;render();return;}
+  const tab=e.target.closest('[data-tab]');if(tab){const[k,v]=tab.dataset.tab.split(':');if(k==='props'&&!tab.classList.contains('ghost')){S.props=v;renderDock();}return;}
+  const st=e.target.closest('[data-strip]');if(st){S.hist=!S.hist;renderStrip();renderFloats();return;}
+  const mask=e.target.closest('[data-mask]');if(mask){S.layer=mask.dataset.mask;S.mask=true;S.props='properties';render();return;}
+  const lr=e.target.closest('[data-l]');if(lr){S.layer=lr.dataset.l||null;S.mask=false;S.props='properties';if(S.tool==='move')S.transforming=false;render();return;}
+});
+scr.addEventListener('mouseover',e=>{
+  const mt=e.target.closest('.mt');
+  if(mt&&S.menu!=null&&+mt.dataset.m!==S.menu){openMenu(+mt.dataset.m);return;}
+  const mi=e.target.closest('.mi');
+  if(mi){
+    const menu=mi.closest('.menu');
+    if(menu.id==='menu-main'){
+      const it=OPEN_ITEMS[+mi.dataset.i];
+      if(it&&it.sub) openSub(mi,it.sub,menu);
+      else{document.querySelectorAll('.menu.sub').forEach(x=>x.remove());menu.querySelectorAll('.mi.hot').forEach(x=>x.classList.remove('hot'));}
+    }
+  }
+});
+const KEYS={v:'move',m:'rmarquee',l:'lasso',w:'objsel',c:'crop',i:'eyedropper',j:'spot',b:'brush',s:'clone',e:'eraser',g:'gradient',o:'dodge',t:'type',u:'rect',h:'hand',z:'zoom'};
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){if(S.dialog){S.dialog=null;renderFloats();}else if(S.menu!=null)closeMenus();else if(S.flyout!=null){S.flyout=null;renderFloats();}else if(S.transforming){S.transforming=false;render();}return;}
+  if(e.metaKey||e.ctrlKey||e.altKey||e.target.closest('input,textarea,select'))return;
+  const id=KEYS[e.key.toLowerCase()];if(!id)return;
+  const gi=TOOLS[id].gi,members=GROUPS[gi].m.filter(t=>!t.g&&t.key);
+  if(e.shiftKey&&GROUPS[gi].m.some(t=>t.id===S.tool)){const k=members.findIndex(t=>t.id===S.tool);selectTool(members[(k+1)%members.length].id);}
+  else selectTool(S.gsel[gi]&&!TOOLS[S.gsel[gi]].g?S.gsel[gi]:id);
+});
+$('#sw-chg').addEventListener('change',e=>{S.chg=e.target.checked;render();});
+$('#sw-ghost').addEventListener('change',e=>{S.ghost=e.target.checked;render();});
+$('#sw-ctb').addEventListener('change',e=>{S.ctb=e.target.checked;render();});
+document.querySelectorAll('input[name="appearance"]').forEach(r=>r.addEventListener('change',e=>{S.appearance=e.target.value;render();}));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(S.appearance==='auto')render();});
+new MutationObserver(()=>{if(S.appearance==='auto')render();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+$('#sw-actual').addEventListener('change',e=>{S.actual=e.target.checked;fit();});
+
+/* ───────────── ledger ───────────── */
+function menuChanges(){
+  const out={};
+  const walk=(items,path,top)=>{for(const it of items){if(it==='-'||it.g)continue;const p=path.concat(it.l);if((it.c&&it.c!=='n')||it.L||(it.c==='n'&&!it.sub)||(it.c==='n'&&it.sub)){(out[top]=out[top]||[]).push({p:p.join(' ▸ '),c:it.c||'L',was:it.was||''});}if(it.sub)walk(it.sub,p,top);}};
+  MENUS.forEach(m=>walk(m.items,[m.n],m.n));
+  return out;
+}
+function renderLedger(){
+  const mc=menuChanges();
+  const K={m:'--k-m',r:'--k-r',s:'--k-s',n:'--k-n',k:'--k-k',L:'--k-L'};
+  const blocks=Object.entries(mc).map(([menu,list])=>`<div class="menublock"><h3>${menu}</h3><ul class="chlist">${list.map(x=>`<li><i class="dot" style="--k:var(${K[x.c]})"></i><span><b>${esc(x.p.replace(menu+' ▸ ',''))}</b>${x.was?` <span class="was">· ${esc(x.was)}</span>`:''}</span></li>`).join('')}</ul></div>`).join('');
+  $('#ledger').innerHTML=`
+  <div class="sec"><h2>How it fits in 1500 × 860</h2>
+   <p>Photoshop stacks a title bar, an options bar and document tabs (about 90 points) above the canvas. This keeps Lamina’s tabs in the title bar and trades the 42-point tool header for a 36-point options bar, so the chrome stays shorter than Photoshop’s. The canvas loses about 3% of its area and gains the Properties and Adjustments panels.</p>
+   <div class="tbl-wrap"><table><thead><tr><th>Area</th><th>Lamina today</th><th>Proposed</th></tr></thead><tbody>
+    <tr><td>Title bar with document tabs</td><td>38 pt, plus Fit, 100% and zoom buttons</td><td>38 pt, tabs only (zoom moves to View, the status bar and the Hand/Zoom bars)</td></tr>
+    <tr><td>Tool options</td><td>42 pt header</td><td>36 pt options bar, starting with the tool icon</td></tr>
+    <tr><td>Tools</td><td>56 pt rail, 16 tools, colors below</td><td>44 pt single column in Photoshop’s groups with flyouts</td></tr>
+    <tr><td>Right side</td><td>252 pt Layers / History panel</td><td>34 pt panel icons (History) + 292 pt dock: Properties | Adjustments over Layers</td></tr>
+    <tr><td>Status</td><td>30 pt, full width</td><td>22 pt, under the canvas only, as Photoshop’s document window</td></tr>
+    <tr><td>Canvas</td><td class="num">≈ 1190 × 748 pt</td><td class="num">≈ 1129 × 764 pt</td></tr>
+   </tbody></table></div></div>
+
+  <div class="sec"><h2>Toolbar</h2>
+   <p>Same tools, regrouped in Photoshop’s order with its names and flyouts. Modes hidden inside one tool become the separate tools Photoshop users look for; Shift plus the tool key cycles a slot, as Lamina’s M, L and G keys already do.</p>
+   <div class="tbl-wrap"><table><thead><tr><th>Lamina today</th><th>Proposed (Photoshop)</th><th>Key</th></tr></thead><tbody>
+    <tr><td>Move / Transform, resize-arrow icon</td><td>Move Tool, four-headed move arrow; numeric transform in Properties and the ⌘T bar</td><td>V</td></tr>
+    <tr><td>Marquee with a Shape picker</td><td>Rectangular Marquee · Elliptical Marquee</td><td>M</td></tr>
+    <tr><td>Lasso with Freehand / Polygonal</td><td>Lasso · Polygonal Lasso</td><td>L</td></tr>
+    <tr><td>Magic with Wand / Object (Tab)</td><td>Object Selection · Magic Wand</td><td>W</td></tr>
+    <tr><td>Crop</td><td>Crop Tool</td><td>C</td></tr>
+    <tr><td>Eyedropper, near the bottom</td><td>Eyedropper Tool, after Crop</td><td>I</td></tr>
+    <tr><td>Spot Healing Brush · Clone Stamp</td><td>Unchanged, in Photoshop’s order</td><td>J · S</td></tr>
+    <tr><td>Brush with Paint / Erase / Dodge / Burn</td><td>Brush Tool · Eraser Tool · Dodge and Burn tools</td><td>B · E · O</td></tr>
+    <tr><td>Gradient and Paint Bucket buttons</td><td>One slot: Gradient Tool · Paint Bucket Tool</td><td>G</td></tr>
+    <tr><td>Smear with Liquify / Blur / Smudge</td><td>Blur Tool · Smudge Tool; Liquify moves to Filter ▸ Liquify…</td><td>none (R today)</td></tr>
+    <tr><td>Shape with Rectangle / Ellipse / Line</td><td>Rectangle Tool · Ellipse Tool · Line Tool</td><td>U</td></tr>
+    <tr><td>Type</td><td>Horizontal Type Tool</td><td>T</td></tr>
+    <tr><td>Hand · Zoom</td><td>Unchanged</td><td>H · Z</td></tr>
+   </tbody></table></div></div>
+
+  <div class="sec"><h2>Menus</h2>
+   <p>Every Lamina command keeps working; the list below is what moves, gets a Photoshop name, or gains a Photoshop shortcut. Turn on “Show Photoshop items Lamina lacks” above to see where future features would slot in.</p>
+   <div class="cols">${blocks}</div></div>
+
+  <div class="sec"><h2>Panels and dialogs</h2>
+   <ul class="bullets">
+    <li><b>Properties</b> (new) shows what is selected: the document (canvas, units, quick actions), a pixel layer (Transform, Align and Distribute, Remove Background, Select Subject), a type layer (Transform, Character, Paragraph), a group, an adjustment layer (its controls, replacing the floating adjustment panel), or a layer mask.</li>
+    <li><b>Adjustments</b> (new) adds an adjustment layer in one click. Lamina’s blur and noise filter layers get their own row.</li>
+    <li><b>Layers</b> follows Photoshop’s anatomy: blend menu and Opacity on top (Lock and Fill join when Lamina has them), one-line rows, an “Effects” row under styled layers, and the footer in Photoshop’s order. “Folder” becomes “Group” everywhere.</li>
+    <li><b>History</b> becomes a collapsed panel icon beside the dock, so Layers no longer shares its space.</li>
+    <li><b>Layer Style</b> is one dialog with the effect list on the left, replacing one floating panel per effect.</li>
+    <li><b>Dialogs</b> use Photoshop’s layout: settings on the left, OK, Cancel and Preview stacked on the right. New Document, Image Size and Export As keep their buttons at the bottom, as Photoshop does.</li>
+    <li><b>Contextual Task Bar</b> floats under the selection or layer with Select Subject, Remove Background, selection actions, and flips while transforming. It can be turned off from Window.</li>
+    <li><b>Appearance</b> follows macOS, light or dark, instead of forcing dark. Every color comes from a semantic role (window, panel, field, control, separator, selection) defined once for each appearance; the document and its overlays look the same in both.</li>
+    <li><b>Status bar</b> shows an editable zoom field and the document size, like Photoshop’s; Lamina’s tool hints stay on the right.</li>
+   </ul></div>
+
+  <div class="sec"><h2>Decisions</h2>
+   <p>All accepted on October 9, 2026, as recommended.</p>
+   <ol class="decisions">
+    <li><div><p><b>Split tool modes into separate tools?</b> Eraser, Dodge, Burn, Blur, Smudge, both marquees, both lassos and the three shapes.</p><p class="rec">Decided: yes. That is what Photoshop users scan the toolbar for; the code underneath can stay shared.</p></div></li>
+    <li><div><p><b>Where does Liquify go?</b> Photoshop’s Liquify is a full-screen filter (⇧⌘X); Lamina’s is a live brush.</p><p class="rec">Decided: Filter ▸ Liquify… picks the Liquify brush with its own options bar and Done/Cancel, and it leaves the toolbar.</p></div></li>
+    <li><div><p><b>Edit adjustment layers in Properties?</b> Photoshop has done this since CS6.</p><p class="rec">Decided: yes for adjustment layers. Image ▸ Adjustments (destructive) keeps opening dialogs.</p></div></li>
+    <li><div><p><b>Dialog buttons on the right or at the bottom?</b> Photoshop stacks OK, Cancel and Preview on the right; macOS puts them at the bottom right.</p><p class="rec">Decided: Photoshop’s layout for adjustment and filter dialogs, bottom buttons for New Document and Export As.</p></div></li>
+    <li><div><p><b>Feather before or after?</b> Photoshop’s Feather field applies to the next selection; Lamina’s button feathers the current one.</p><p class="rec">Decided: Photoshop’s meaning in the bar, plus Select ▸ Modify ▸ Feather… (⇧F6) and the task bar for after.</p></div></li>
+    <li><div><p><b>Shortcut changes.</b> ⌘F Last Filter → ⌃⌘F; ⇧⌘E Export PNG → Merge Visible (Quick Export as PNG has no default shortcut in Photoshop); ⌥⌘A Subject → free for Select All Layers; ⌘H Show Transform Controls → View ▸ Extras; ⇧⌫ Content-Aware Fill → Fill… (⇧F5); Hide Lamina → ⌃⌘H.</p><p class="rec">Decided: take all of them; people moving from Photoshop press these without looking.</p></div></li>
+    <li><div><p><b>Build the Contextual Task Bar now or later?</b></p><p class="rec">Decided: later. Panels and menus give most of the familiarity; the bar is a discoverability layer on top.</p></div></li>
+   <li><div><p><b>Light and dark appearance.</b> The app forces dark mode today.</p><p class="rec">Decided: follow the macOS appearance, with an Appearance override (System, Light, Dark) in Lamina ▸ Settings… (⌘K). The pasteboard around the canvas follows it too. Use the Appearance switch above the mock to compare.</p></div></li>
+   </ol></div>`;
+}
+
+$('#doc').innerHTML=DOC_SVG;
+render();renderLedger();fit();
+</script>
+
+</body></html>

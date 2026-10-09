@@ -22,64 +22,54 @@ struct StrokeSheet: View {
 
     var body: some View { sheet.roundedControls() }
 
-    @ViewBuilder private var sheet: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Stroke").font(.title2.bold())
-            HStack(spacing: 10) {
-                Text("Width").frame(minWidth: 60, alignment: .leading)
-                    .scrubbable(sensitivity: 1, value: Binding<Int>(get: { width ?? 1 }, set: { input = String($0) }),
-                                range: 1...maximum)
-                // No `step`: on macOS it draws a tick for every pixel, and the binding already rounds.
-                Slider(value: Binding(get: { Double(width ?? 1) }, set: { input = String(Int($0.rounded())) }),
-                       in: 1...Double(maximum))
-                TextField("Width", text: $input)
-                    .frame(width: 56).textFieldStyle(.roundedBorder)
-                    .multilineTextAlignment(.trailing).focused($focused)
-                    .unitSuffix("px")
-            }
-            HStack(spacing: 10) {
-                Text("Color").frame(minWidth: 60, alignment: .leading)
-                Picker("", selection: $options.source) {
-                    Text("Foreground").tag(EditorSession.FillSource.foreground)
-                    Text("Background").tag(EditorSession.FillSource.background)
+    private var opacity: Binding<Int> {
+        Binding(get: { Int((options.opacity * 100).rounded()) }, set: { options.opacity = Double(min(100, max(1, $0))) / 100 })
+    }
+
+    private var sheet: some View {
+        DialogLayout(title: "Stroke", defaultDisabled: width == nil, confirm: {
+            guard let width else { return }
+            var result = options
+            result.width = Double(width)
+            finish(result)
+        }, cancel: { finish(nil) }) {
+            VStack(alignment: .leading, spacing: 12) {
+                DialogGroup("Stroke") {
+                    DialogRow("Width:", labelWidth: 60) {
+                        TextField("Width", text: $input)
+                            .frame(width: 56).textFieldStyle(.roundedBorder)
+                            .multilineTextAlignment(.trailing).focused($focused)
+                        Text("px")
+                            .scrubbable(sensitivity: 1, value: Binding<Int>(get: { width ?? 1 }, set: { input = String($0) }),
+                                        range: 1...maximum)
+                    }
+                    DialogRow("Color:", labelWidth: 60) {
+                        Picker("Color", selection: $options.source) {
+                            Text("Foreground Color").tag(EditorSession.FillSource.foreground)
+                            Text("Background Color").tag(EditorSession.FillSource.background)
+                        }
+                        .labelsHidden().fixedSize()
+                    }
                 }
-                .labelsHidden().pickerStyle(.segmented)
-            }
-            HStack(spacing: 10) {
-                Text("Location").frame(minWidth: 60, alignment: .leading)
-                Picker("", selection: $options.location) {
-                    ForEach(StrokeLocation.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                DialogGroup("Location") {
+                    Picker("Location", selection: $options.location) {
+                        ForEach(StrokeLocation.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                    }
+                    .pickerStyle(.radioGroup).horizontalRadioGroupLayout().labelsHidden()
                 }
-                .labelsHidden().pickerStyle(.segmented)
-            }
-            HStack(spacing: 10) {
-                Text("Opacity").frame(minWidth: 60, alignment: .leading)
-                    .scrubbable(sensitivity: 1, value: Binding<Int>(get: { Int((options.opacity * 100).rounded()) },
-                                                                    set: { options.opacity = Double($0) / 100 }),
-                                range: 1...100)
-                Slider(value: $options.opacity, in: 0.01...1)
-                Text("\(Int((options.opacity * 100).rounded()))%")
-                    .monospacedDigit().frame(width: 44, alignment: .trailing)
-            }
-            Text("Enter a whole number from 1 to \(maximum) px.")
-                .font(.callout).foregroundStyle(.secondary)
-                .opacity(width == nil ? 1 : 0)
-            Divider()
-            HStack {
-                Button("Cancel") { finish(nil) }
-                    .configuredNativeShortcut(.escape)
-                Spacer()
-                Button("OK") {
-                    guard let width else { return }
-                    var result = options
-                    result.width = Double(width)
-                    finish(result)
+                DialogGroup("Blending") {
+                    DialogRow("Opacity:", labelWidth: 60) {
+                        TextField("Opacity", value: opacity, format: .number)
+                            .frame(width: 56).textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing)
+                        Text("%").scrubbable(sensitivity: 1, value: opacity, range: 1...100)
+                    }
                 }
-                .configuredNativeShortcut(.return).buttonStyle(.borderedProminent)
-                .disabled(width == nil)
+                Text("Enter a whole number from 1 to \(maximum) px.")
+                    .font(.callout).foregroundStyle(.secondary)
+                    .opacity(width == nil ? 1 : 0)
             }
+            .frame(width: 280)
         }
-        .padding(24).frame(width: 400).fixedSize()
         .onAppear { focused = true }
     }
 }

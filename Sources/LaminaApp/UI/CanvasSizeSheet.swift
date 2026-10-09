@@ -65,83 +65,97 @@ struct CanvasSizeSheet: View {
     }
 
     var body: some View { sheet.roundedControls() }
-    @ViewBuilder private var sheet: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Canvas Size").font(.title2.bold())
-            Text("Current: \(draft.originalWidth) × \(draft.originalHeight) pixels")
-            Text("\(bytes(draft.originalWidth, draft.originalHeight)) uncompressed RGBA canvas")
-                .font(.callout).foregroundStyle(.secondary)
-            Divider()
-            Picker("Units", selection: $draft.unit) {
-                ForEach(CanvasUnit.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-            }
-            HStack {
-                Text("Width").frame(width: 60, alignment: .leading)
-                    .scrubbable(sensitivity: scrubSensitivity(true), value: dimension(true), range: scrubRange(true), step: 1)
-                TextField("Width", value: dimension(true), format: .number.precision(.fractionLength(0...3)))
-            }
-            HStack {
-                Text("Height").frame(width: 60, alignment: .leading)
-                    .scrubbable(sensitivity: scrubSensitivity(false), value: dimension(false), range: scrubRange(false), step: 1)
-                TextField("Height", value: dimension(false), format: .number.precision(.fractionLength(0...3)))
-            }
-            Toggle("Relative to current dimensions", isOn: $draft.relative)
-            Toggle("Lock original aspect ratio", isOn: $draft.locked)
-                .onChange(of: draft.locked) { _, locked in
-                    if locked { draft.set(draft.displayed(widthAxis: true), widthAxis: true) }
+
+    private var unitPicker: some View {
+        Picker("Units", selection: $draft.unit) {
+            ForEach(CanvasUnit.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+        }
+        .labelsHidden().fixedSize()
+    }
+
+    private var newBytes: String {
+        draft.valid ? bytes(Int(draft.width.rounded()), Int(draft.height.rounded())) : "—"
+    }
+
+    private var sheet: some View {
+        DialogLayout(title: "Canvas Size", defaultDisabled: !draft.valid, confirm: {
+            guard draft.valid else { return }
+            DialogColorSwatch.closePicker(session)
+            finish(CanvasSizeOptions(width: Int(draft.width.rounded()), height: Int(draft.height.rounded()), anchor: anchor, fill: fill))
+        }, cancel: { DialogColorSwatch.closePicker(session); finish(nil) }) {
+            VStack(alignment: .leading, spacing: 12) {
+                DialogGroup("Current Size: \(bytes(draft.originalWidth, draft.originalHeight))") {
+                    DialogRow("Width:", labelWidth: 60) { Text("\(draft.originalWidth) Pixels").monospacedDigit() }
+                    DialogRow("Height:", labelWidth: 60) { Text("\(draft.originalHeight) Pixels").monospacedDigit() }
                 }
-            if draft.valid {
-                Text("New: \(Int(draft.width.rounded())) × \(Int(draft.height.rounded())) pixels · \(bytes(Int(draft.width.rounded()), Int(draft.height.rounded()))) uncompressed")
-                    .font(.callout).foregroundStyle(.secondary)
-            } else {
-                Text("Final dimensions must be 1–\(DocumentLimits.maxSide.formatted()) pixels per side.")
-                    .font(.callout).foregroundStyle(.orange)
-            }
-            HStack(alignment: .top, spacing: 24) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Anchor")
-                    Grid(horizontalSpacing: 3, verticalSpacing: 3) {
-                        ForEach(0..<3) { row in
-                            GridRow {
-                                ForEach(0..<3) { column in
-                                    let index = row * 3 + column
-                                    Button { anchor = index } label: {
-                                        Image(systemName: index == anchor ? "circle.fill" : "circle")
-                                            .frame(width: 25, height: 25)
-                                    }
-                                    .tint(index == anchor ? .accentColor : .secondary)
-                                    .help(anchorNames[index]).accessibilityLabel(anchorNames[index])
-                                    .accessibilityValue(index == anchor ? "Selected" : "")
+                DialogGroup("New Size: \(newBytes)") {
+                    HStack(spacing: 8) {
+                        Text("Width:").frame(width: 60, alignment: .trailing)
+                            .scrubbable(sensitivity: scrubSensitivity(true), value: dimension(true), range: scrubRange(true), step: 1)
+                        TextField("Width", value: dimension(true), format: .number.precision(.fractionLength(0...3)))
+                            .frame(width: 80)
+                        unitPicker
+                    }
+                    HStack(spacing: 8) {
+                        Text("Height:").frame(width: 60, alignment: .trailing)
+                            .scrubbable(sensitivity: scrubSensitivity(false), value: dimension(false), range: scrubRange(false), step: 1)
+                        TextField("Height", value: dimension(false), format: .number.precision(.fractionLength(0...3)))
+                            .frame(width: 80)
+                        unitPicker
+                    }
+                    DialogRow("", labelWidth: 60) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Toggle("Relative to current dimensions", isOn: $draft.relative)
+                            // Lamina's own, after the familiar settings.
+                            Toggle("Lock original aspect ratio", isOn: $draft.locked)
+                                .onChange(of: draft.locked) { _, locked in
+                                    if locked { draft.set(draft.displayed(widthAxis: true), widthAxis: true) }
                                 }
-                            }
                         }
                     }
+                    DialogRow("Anchor:", labelWidth: 60) { anchorGrid }
+                        .padding(.top, 4)
+                    if !draft.valid {
+                        Text("Final dimensions must be 1–\(DocumentLimits.maxSide.formatted()) pixels per side.")
+                            .font(.callout).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                    }
                 }
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(anchorNames[anchor]).font(.callout.bold())
-                    Text("Keeps this point fixed. Artwork is not scaled; cropped content remains outside the canvas.")
-                        .font(.callout).foregroundStyle(.secondary)
-                }.padding(.top, 28)
-            }
-            Picker("Canvas extension", selection: $extensionChoice) {
-                ForEach(["Transparent", "Foreground", "Background", "Black", "White", "Custom"], id: \.self) { Text($0) }
-            }
-            if extensionChoice == "Custom" {
                 HStack(spacing: 8) {
-                    Text("Extension color")
-                    DialogColorSwatch(title: "Extension Color", color: $customColor, session: session)
-                        .help("Color for the added canvas")
+                    Text("Canvas extension color:")
+                    Picker("Canvas extension color", selection: $extensionChoice) {
+                        ForEach(["Transparent", "Foreground", "Background", "Black", "White", "Custom"], id: \.self) { Text($0) }
+                    }
+                    .labelsHidden().fixedSize()
+                    if extensionChoice == "Custom" {
+                        DialogColorSwatch(title: "Extension Color", color: $customColor, session: session)
+                            .help("Color for the added canvas")
+                    }
                 }
             }
-            HStack {
-                Button("Cancel") { DialogColorSwatch.closePicker(session); finish(nil) }.configuredNativeShortcut(.escape)
-                Spacer()
-                Button("OK") {
-                    guard draft.valid else { return }
-                    DialogColorSwatch.closePicker(session)
-                    finish(CanvasSizeOptions(width: Int(draft.width.rounded()), height: Int(draft.height.rounded()), anchor: anchor, fill: fill))
-                }.configuredNativeShortcut(.return).disabled(!draft.valid)
+            .textFieldStyle(.roundedBorder)
+            .frame(width: 340, alignment: .leading)
+        }
+    }
+
+    /// The point that stays put while the canvas grows or shrinks around it. Artwork is not scaled; cropped content
+    /// stays outside the canvas.
+    private var anchorGrid: some View {
+        Grid(horizontalSpacing: 2, verticalSpacing: 2) {
+            ForEach(0..<3) { row in
+                GridRow {
+                    ForEach(0..<3) { column in
+                        let index = row * 3 + column
+                        Button { anchor = index } label: {
+                            Image(systemName: index == anchor ? "circle.fill" : "circle")
+                                .frame(width: 22, height: 22)
+                        }
+                        .tint(index == anchor ? .accentColor : .secondary)
+                        .help("\(anchorNames[index]): keeps this point fixed. Artwork is not scaled; cropped content remains outside the canvas.")
+                        .accessibilityLabel(anchorNames[index])
+                        .accessibilityValue(index == anchor ? "Selected" : "")
+                    }
+                }
             }
-        }.textFieldStyle(.roundedBorder).padding(24).frame(width: 450)
+        }
     }
 }

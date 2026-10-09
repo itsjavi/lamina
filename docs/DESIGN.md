@@ -114,7 +114,7 @@ No literal grays (`Color(white:)`, hex) in interface code. The roles live in `So
   sample-ring cursors, and what shows tones or colors (Levels' black, gray and white sliders, color wheels and fields,
   Camera Raw's colored slider tracks, the Color Range mask preview).
 - Custom wells (histograms, curves, the Camera Raw scopes) are `field` with `separator` grid lines and `text` curves
-  and points; image previews in dialogs (Export, Camera Raw develop) sit on `pasteboard`; swatch and well borders are
+  and points; image previews in dialogs (Export, Camera Raw develop, filter previews) sit on `pasteboard`; swatch and well borders are
   `edge`; pressed mode buttons in dialogs and options bars are `activeTool`; selected history states and effect rows
   are `selection`.
 - The options bar, tool rail and status bar sit on `chrome`, the side panels on `panel` (until TASK-58 rebuilds the
@@ -333,16 +333,46 @@ What changes from the shortcuts Lamina shipped before m-5 (applied by TASK-62; c
 ### Dialogs
 
 - Settings on the left; OK (default), Cancel, any extra buttons (Auto, Reset) and the Preview checkbox stacked in a
-  100 pt column on the right. This applies to adjustment, filter, selection (Expand, Contract, Feather, Color Range,
-  Load Selection), Stroke, Fill, Trim, Canvas Size and Layer Style dialogs. Status: **m-5** (TASK-63).
-- Image Size, New Document and Export As put Cancel and the default button in a row at the bottom right (TASK-65).
-- Filter dialogs share one frame: a preview with zoom out, percentage and zoom in, then the settings, each slider paired
-  with a field.
-- Groups of settings sit in titled boxes ("Structure", "Blending", "Location"). Familiar settings come first, Lamina-only
-  ones after them.
+  100 pt column on the right, 18 pt from the settings, inside 20 pt margins. This applies to adjustment, filter,
+  selection (Expand, Contract, Feather, Color Range, Load Selection), Stroke, Fill, Trim, Canvas Size and Layer Style
+  dialogs. **Shipping** (TASK-63) for Levels, Curves, Hue/Saturation, Exposure, Black & White, Color Balance, Gradient
+  Map, Grain, every Filter menu dialog, Color Range, Expand, Contract, Feather, Stroke, Trim and Canvas Size.
+- Image Size puts Cancel and OK in a row at the bottom right (**shipping**, TASK-63); New Document and Export As follow
+  (TASK-65).
+- One layout in code: `DialogLayout` (`Sources/LaminaApp/UI/DialogLayout.swift`) takes the settings, `confirm` and
+  `cancel`, and optionally `extras` (column buttons and controls), a `preview` binding, a `status` line ("Applying…"
+  with a spinner), a `title` heading for dialogs shown as sheets (which have no title bar), `defaultTitle` and
+  `placement: .bottom`. `DialogButton` is a column-wide button, `DialogRow` a right-aligned "Label:" row and
+  `DialogGroup` a titled group box. Floating panels (adjustments, filters, Color Range, Expand/Contract/Feather) and
+  window sheets (Stroke, Trim, Canvas Size, Image Size) keep their presentation and share the layout.
+- Column contents, top to bottom: Levels has OK, Cancel, Auto (click for Contrast; its menu has Color and Color +
+  neutral midtones), Reset, the black, gray and white point eyedroppers, Preview. Curves has OK, Cancel, Reset, Preview.
+  Hue/Saturation has OK, Cancel, Reset, Preview. Color Range has OK, Cancel, the Sample, Add and Remove eyedroppers,
+  Invert (no Preview: the selection always updates). Filters have OK, Cancel, Preview; Remove Background and
+  Content-Aware Fill keep a status line there while their preview is worked out. Stroke, Trim, Canvas Size and
+  Expand/Contract/Feather have OK and Cancel.
+- Filter dialogs share one frame (`FilterPreview`): a 340 × 220 preview of the layer, with zoom out, the percentage and
+  zoom in under it (6.25% to 1600%, starting at 100% of the layer's pixels, centered on the selection or the layer),
+  then the settings, each slider paired with a field and its unit ("Pixels", "%", "°", "levels") in a column of its own.
+  Dragging the preview pans it; while the mouse is down it shows the layer before the filter. It crops the image the
+  canvas previews, so it costs no extra rendering (on layers longer than 2048 px that preview is reduced, so 100% is
+  enlarged from it), and it keeps rendering when the canvas Preview is off. Image adjustments (Image ▸ Adjustments)
+  have no preview frame, as in Photoshop, and neither does an adjustment layer being edited, whose change shows only
+  in the composite.
+- Camera Raw Filter is the exception: its full-height panel stays docked to the window's right edge, with Preview and
+  then Cancel and OK at the bottom right. Its histogram well has an `edge` border.
+- Labels end with a colon and sit right-aligned before their control ("Width:", "Radius:"), or above a slider in
+  Hue/Saturation and Color Range ("Fuzziness:"), as in Photoshop. Groups of settings sit in titled boxes ("Stroke",
+  "Location", "Blending", "Based On", "Trim Away", "Current Size: 13.7 MB", "New Size: 13.7 MB"). Familiar settings come
+  first, Lamina-only ones after them (Hue/Saturation's Apply outside this range instead, Canvas Size's Lock original
+  aspect ratio, explanatory notes).
+- Selection dialogs name their one setting as Photoshop does: Expand By:, Contract By:, Feather Radius:, in pixels.
+  Stroke has Width (px) and Color (Foreground Color or Background Color) under Stroke, Inside, Center and Outside under
+  Location, and Opacity (%) under Blending. Canvas Size's units menu sits beside both Width and Height and changes
+  both; Image Size's Constrain aspect ratio is a link toggle between Width and Height.
 - Layer Style is one dialog: effects listed on the left with checkboxes, the selected effect's settings in the middle,
   buttons and a preview swatch on the right (TASK-64).
-- Return confirms, Escape cancels, and the canvas previews live while a dialog is open.
+- Return confirms, Escape cancels, ⌥P toggles Preview, and the canvas previews live while a dialog is open.
 
 ### Contextual Task Bar
 

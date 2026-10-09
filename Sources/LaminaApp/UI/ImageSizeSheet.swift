@@ -79,70 +79,91 @@ struct ImageSizeSheet: View {
     }
 
     var body: some View { sheet.roundedControls() }
-    @ViewBuilder private var sheet: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Text("Image Size").font(.title2.bold())
-            Text("Current: \(document.width) × \(document.height) pixels").foregroundStyle(.secondary)
-            Picker("Units", selection: $unit) {
-                ForEach(SizeUnit.allCases.filter { resample || $0.isPrint }) { Text($0.rawValue).tag($0) }
-            }
-            HStack {
-                Text("Width").frame(width: 75, alignment: .leading)
-                    .scrubbable(sensitivity: scrubSensitivity(isWidth: true),
-                                value: dimension(isWidth: true), range: scrubRange(isWidth: true), step: 1)
-                    .disabled(!canScrubDimensions)
-                TextField("Width", value: dimension(isWidth: true), format: .number.precision(.fractionLength(0...3)))
-            }
-            HStack {
-                Text("Height").frame(width: 75, alignment: .leading)
-                    .scrubbable(sensitivity: scrubSensitivity(isWidth: false),
-                                value: dimension(isWidth: false), range: scrubRange(isWidth: false), step: 1)
-                    .disabled(!canScrubDimensions)
-                TextField("Height", value: dimension(isWidth: false), format: .number.precision(.fractionLength(0...3)))
-            }
-            Toggle("Lock aspect ratio", isOn: $locked).disabled(!resample)
-            HStack {
-                Text("Resolution").scrubbable(sensitivity: 1, value: $resolution, range: 1...9600, step: 1)
-                TextField("Resolution", value: $resolution, format: .number.precision(.fractionLength(0...3)))
-                    .onChange(of: resolution) { _, new in
-                        guard new.isFinite, new > 0 else { return }
-                        if resample, unit.isPrint {
-                            width *= new / lastResolution
-                            height *= new / lastResolution
+
+    private var unitPicker: some View {
+        Picker("Units", selection: $unit) {
+            ForEach(SizeUnit.allCases.filter { resample || $0.isPrint }) { Text($0.rawValue).tag($0) }
+        }
+        .labelsHidden().frame(width: 120)
+    }
+
+    private func dimensionRow(_ name: String, isWidth: Bool) -> some View {
+        HStack(spacing: 8) {
+            Text(name + ":").frame(width: Self.labelWidth, alignment: .trailing)
+                .scrubbable(sensitivity: scrubSensitivity(isWidth: isWidth),
+                            value: dimension(isWidth: isWidth), range: scrubRange(isWidth: isWidth), step: 1)
+                .disabled(!canScrubDimensions)
+            TextField(name, value: dimension(isWidth: isWidth), format: .number.precision(.fractionLength(0...3)))
+                .frame(width: 80)
+            unitPicker
+        }
+    }
+
+    private static let labelWidth: CGFloat = 80
+
+    private var sheet: some View {
+        DialogLayout(placement: .bottom, title: "Image Size", defaultDisabled: !valid, confirm: {
+            guard valid else { return }
+            finish(ImageSizeOptions(width: Int(width.rounded()), height: Int(height.rounded()),
+                resolution: resolution, sampling: sampling))
+        }, cancel: { finish(nil) }) {
+            VStack(alignment: .leading, spacing: 10) {
+                DialogRow("Image Size:", labelWidth: Self.labelWidth) {
+                    Text(valid ? ByteCountFormatter.string(fromByteCount: Int64(width.rounded()) * Int64(height.rounded()) * 4, countStyle: .memory) : "—")
+                }
+                DialogRow("Dimensions:", labelWidth: Self.labelWidth) {
+                    Text(valid ? "\(Int(width.rounded())) px × \(Int(height.rounded())) px" : "—").monospacedDigit()
+                    Text("was \(document.width) × \(document.height)").foregroundStyle(.secondary)
+                }
+                .padding(.bottom, 4)
+                dimensionRow("Width", isWidth: true)
+                DialogRow("", labelWidth: Self.labelWidth) {
+                    Toggle(isOn: $locked) { Image(systemName: "link") }
+                        .toggleStyle(.button).disabled(!resample)
+                        .help("Constrain aspect ratio")
+                        .accessibilityLabel("Constrain aspect ratio")
+                }
+                dimensionRow("Height", isWidth: false)
+                HStack(spacing: 8) {
+                    Text("Resolution:").frame(width: Self.labelWidth, alignment: .trailing)
+                        .scrubbable(sensitivity: 1, value: $resolution, range: 1...9600, step: 1)
+                    TextField("Resolution", value: $resolution, format: .number.precision(.fractionLength(0...3)))
+                        .frame(width: 80)
+                        .onChange(of: resolution) { _, new in
+                            guard new.isFinite, new > 0 else { return }
+                            if resample, unit.isPrint {
+                                width *= new / lastResolution
+                                height *= new / lastResolution
+                            }
+                            lastResolution = new
                         }
-                        lastResolution = new
+                    Text("Pixels/Inch")
+                }
+                DialogRow("", labelWidth: Self.labelWidth) {
+                    Toggle("Resample:", isOn: $resample).onChange(of: resample) { _, enabled in
+                        if !enabled {
+                            width = Double(document.width)
+                            height = Double(document.height)
+                            locked = true
+                            if !unit.isPrint { unit = .inches }
+                        }
                     }
-                Text("pixels/inch").foregroundStyle(.secondary)
-            }
-            Toggle("Resample", isOn: $resample).onChange(of: resample) { _, enabled in
-                if !enabled {
-                    width = Double(document.width)
-                    height = Double(document.height)
-                    locked = true
-                    if !unit.isPrint { unit = .inches }
+                    Picker("Resample", selection: $sampling) {
+                        ForEach(LayerSampling.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                    }
+                    .labelsHidden().fixedSize().disabled(!resample)
+                }
+                // Lamina's own notes, after the familiar settings.
+                Text(resample ? "Resizes layer pixels and applies existing transforms. Undo restores the originals."
+                              : "Only print dimensions and resolution change. Pixels stay unchanged.")
+                    .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                if !valid {
+                    Text("Use 1–\(DocumentLimits.maxSide.formatted()) pixels per side, up to \(DocumentLimits.maxSurfaceMegapixels) megapixels, and 1–9,600 pixels/inch.")
+                        .foregroundStyle(.orange).font(.callout).fixedSize(horizontal: false, vertical: true)
                 }
             }
-            if resample {
-                Picker("Sampling", selection: $sampling) {
-                    ForEach(LayerSampling.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-                }
-                Text("Resizes layer pixels and applies existing transforms. Undo restores the originals.")
-                    .font(.callout).foregroundStyle(.secondary)
-            } else {
-                Text("Only print dimensions and resolution change. Pixels stay unchanged.")
-                    .font(.callout).foregroundStyle(.secondary)
-            }
-            Text(valid ? "Result: \(Int(width.rounded())) × \(Int(height.rounded())) pixels" : "Use 1–\(DocumentLimits.maxSide.formatted()) pixels per side, up to \(DocumentLimits.maxSurfaceMegapixels) megapixels, and 1–9,600 pixels/inch.")
-                .foregroundStyle(valid ? Color.secondary : Color.orange).font(.callout)
-            HStack {
-                Button("Cancel") { finish(nil) }.configuredNativeShortcut(.escape)
-                Spacer()
-                Button("Resize") {
-                    guard valid else { return }
-                    finish(ImageSizeOptions(width: Int(width.rounded()), height: Int(height.rounded()),
-                        resolution: resolution, sampling: sampling))
-                }.configuredNativeShortcut(.return).disabled(!valid)
-            }
-        }.textFieldStyle(.roundedBorder).padding(24).frame(width: 430)
+            .textFieldStyle(.roundedBorder)
+            .frame(width: 380, alignment: .leading)
+        }
     }
 }

@@ -75,6 +75,23 @@ struct TypeToolTests {
         #expect(session.textFace(inFamily: "Helvetica Neue") == "HelveticaNeue", "they go by the first letter's style")
     }
 
+    /// The bar's font pop-ups start empty and fill as they're shown: laying the bar out must not ask an empty one for
+    /// its first item (which raised and closed the app). The window is never put on screen.
+    @Test func typeBarLaysOutWithItsFontPopUps() async throws {
+        let session = makeSession()
+        let window = NSWindow(contentRect: CGRect(x: -4000, y: -4000, width: 1500, height: 60), styleMask: [.borderless],
+                              backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = NSHostingView(rootView: OptionsBar(session: session) { TypeControls(session: session) })
+        window.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(100))
+        beginEditingText(in: session)
+        session.textDraft?.selection = NSRange(location: 0, length: 3)
+        window.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(session.textFontName == session.currentTextStyle.fontName)
+    }
+
     @Test func textColorPickerPreviewsAndRestoresDraft() throws {
         let session = makeSession()
         session.beginText(at: CGPoint(x: 30, y: 40))

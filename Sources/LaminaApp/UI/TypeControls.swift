@@ -154,7 +154,7 @@ struct FontMenuPicker: NSViewRepresentable {
     private static let multiple = "(Multiple)"
     private static func isMultiple(_ item: NSMenuItem?) -> Bool { item?.representedObject as? String == multiple }
     static func showMultiple(in button: NSPopUpButton) {
-        if !isMultiple(button.item(at: 0)) {
+        if button.numberOfItems == 0 || !isMultiple(button.item(at: 0)) {
             let item = NSMenuItem(title: multiple, action: nil, keyEquivalent: "")
             item.representedObject = multiple
             button.menu?.insertItem(item, at: 0)
@@ -162,7 +162,7 @@ struct FontMenuPicker: NSViewRepresentable {
         if button.indexOfSelectedItem != 0 { button.selectItem(at: 0) }
     }
     static func hideMultiple(in button: NSPopUpButton) {
-        if isMultiple(button.item(at: 0)) { button.removeItem(at: 0) }
+        if button.numberOfItems > 0, isMultiple(button.item(at: 0)) { button.removeItem(at: 0) }
     }
 
     static func dismantleNSView(_ button: NSPopUpButton, coordinator: Coordinator) {

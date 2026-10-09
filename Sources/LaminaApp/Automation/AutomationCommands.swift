@@ -116,7 +116,7 @@ extension AutomationDispatcher {
             }
             let settings = try spec.validate(arguments.object("settings") ?? [:])
             let layer = try resolveLayer(arguments.string("layer") ?? "", in: session)
-            if layer.isGroup { throw AutomationError(.unavailable, "\(layer.name) is a folder; filters change a layer's pixels.") }
+            if layer.isGroup { throw AutomationError(.unavailable, "\(layer.name) is a group; filters change a layer's pixels.") }
             if layer.adjustment != nil {
                 throw AutomationError(.unavailable, "\(layer.name) is an adjustment layer; filters change a layer's pixels.")
             }

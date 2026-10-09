@@ -138,8 +138,8 @@ extension EditorSession {
         }
         let names = Set(document.layers.map(\.name))
         var number = 1
-        while names.contains("Folder \(number)") { number += 1 }
-        var group = ImageLayer(name: "Folder \(number)", blankSize: document.size)
+        while names.contains("Group \(number)") { number += 1 }
+        var group = ImageLayer(name: "Group \(number)", blankSize: document.size)
         group.isGroup = true
         group.parentID = parent
         // Put the wrapper at the topmost selected branch in the common parent.
@@ -208,15 +208,15 @@ extension EditorSession {
         guard canEditLayers, let document, document.layers.count < 10_000 else { return }
         let names = Set(document.layers.map(\.name))
         var number = 1
-        while names.contains("Folder \(number)") { number += 1 }
-        var group = ImageLayer(name: "Folder \(number)", blankSize: document.size)
+        while names.contains("Group \(number)") { number += 1 }
+        var group = ImageLayer(name: "Group \(number)", blankSize: document.size)
         group.isGroup = true
         group.parentID = activeLayer?.isGroup == true ? activeLayerID : activeLayer?.parentID
         var layers = document.layers
         let insertion = layers.firstIndex(where: { $0.id == activeLayerID }).map { $0 + 1 } ?? layers.count
         layers.insert(group, at: insertion)
         guard (try? LayerHierarchy.validate(layers.map(\.hierarchyRecord))) != nil else { return }
-        beginEdit("New Folder")
+        beginEdit("New Group")
         self.document?.layers = layers
         activeLayerID = group.id
         if let parent = group.parentID { collapsedGroupIDs.remove(parent) }

@@ -16,10 +16,10 @@ extension EditorSession {
         guard canEditLayers, let layer = activeLayer, !canPaint else { return nil }
         if selectedLayerIDs.count > 1 { return "Several layers are selected. Select just one to paint on it." }
         if layer.isGroup, !isMaskSelected {
-            return "“\(layer.name)” is a folder, which has no pixels of its own. Paint on a layer inside it, or on the folder’s mask."
+            return "“\(layer.name)” is a group, which has no pixels of its own. Paint on a layer inside it, or on the group’s mask."
         }
         if document?.effectiveVisibleIDs.contains(layer.id) != true {
-            return "“\(layer.name)” is hidden, or inside a hidden folder. Show it to paint on it."
+            return "“\(layer.name)” is hidden, or inside a hidden group. Show it to paint on it."
         }
         if isMaskSelected, layer.mask?.isEnabled != true {
             return "The layer mask is turned off. Shift-click its thumbnail to turn it on, then paint."

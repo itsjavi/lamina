@@ -69,7 +69,7 @@ nonisolated enum PSDDocumentBuilder {
             }
             if record.isGroup {
                 if record.blendKey != "pass" && record.blendKey != "norm" {
-                    notes.append("Folder blend mode “\(record.blendKey)” isn’t supported. The folder will be pass-through.")
+                    notes.append("Group blend mode “\(record.blendKey)” isn’t supported. The group will be pass-through.")
                 }
             } else if record.blendMode == nil, record.blendKey != "pass" {
                 notes.append("Blend mode “\(record.blendKey.trimmingCharacters(in: .whitespaces))” isn’t supported and will be applied as Normal.")

@@ -25,8 +25,8 @@ public enum CommandCatalog {
         .init("name", .string, "The name in the Layers panel."),
         .init("type", .choice(["pixels", "empty", "group", "adjustment", "text", "shape"]), "What the layer is."),
         .init("visible", .boolean, "Whether its eye is on in the Layers panel."),
-        .init("parent", .nullable(.string), "The folder it is in, or null at the top level."),
-        .init("depth", .integer, "How many folders deep it is."),
+        .init("parent", .nullable(.string), "The group it is in, or null at the top level."),
+        .init("depth", .integer, "How many groups deep it is."),
         .init("adjustment", .string, "For adjustment layers, the kind (see add-adjustment-layer).", required: false),
     ]
 

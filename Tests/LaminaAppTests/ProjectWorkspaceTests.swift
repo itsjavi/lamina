@@ -5,20 +5,23 @@ import LaminaCore
 @testable import LaminaApp
 
 @MainActor struct ProjectWorkspaceTests {
-    @Test func newCanvasOpensAnEmptyTabWithoutAModal() {
+    /// New Document's Create opens the document in a tab of its own, leaving the one in front as it was.
+    @Test func newDocumentOpensInANewTab() {
         let workspace = ProjectWorkspace()
         let original = workspace.current
         original.session.createDocument(width: 4000, height: 3000)
-        workspace.newCanvas()
+        #expect(workspace.nextTabName == "Untitled 2")
+        workspace.newDocument(NewDocumentRequest(name: "Untitled 2", width: 640, height: 480, background: .white))
         #expect(workspace.tabs.count == 2)
         #expect(workspace.current !== original)
-        #expect(workspace.current.session.document == nil)
+        #expect(workspace.current.title == "Untitled 2")
+        #expect(workspace.current.session.document?.layers.map(\.name) == ["Background", "Layer 1"])
         #expect(!workspace.current.session.showsNewDocument)
         #expect(workspace.canSwitch)
         #expect(original.session.document?.size.width == 4000)
-        workspace.newCanvas()
-        #expect(workspace.tabs.count == 3)
-        #expect(!workspace.current.session.showsNewDocument)
+        workspace.newDocument(NewDocumentRequest(name: "Banner", width: 1500, height: 500))
+        #expect(workspace.tabs.count == 3 && workspace.current.title == "Banner")
+        #expect(workspace.current.session.document?.layers.map(\.name) == ["Layer 1"])
     }
 
     /// A gradient waiting for Apply used to leave Quit and the close button doing nothing at all; quitting applies it.

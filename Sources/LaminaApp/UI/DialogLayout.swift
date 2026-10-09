@@ -20,6 +20,8 @@ struct DialogLayout<Settings: View, Extras: View>: View {
     /// A heading for dialogs shown as sheets, which have no title bar of their own.
     var title: String?
     var defaultTitle = "OK"
+    /// New Document's is Close, as in Photoshop.
+    var cancelTitle = "Cancel"
     var defaultDisabled = false
     /// The Preview checkbox, for dialogs that preview on the canvas.
     var preview: Binding<Bool>?
@@ -43,7 +45,7 @@ struct DialogLayout<Settings: View, Extras: View>: View {
                         DialogButton(defaultTitle, action: confirm)
                             .buttonStyle(.borderedProminent).configuredNativeShortcut(.return)
                             .disabled(defaultDisabled)
-                        DialogButton("Cancel", action: cancel).configuredNativeShortcut(.escape)
+                        DialogButton(cancelTitle, action: cancel).configuredNativeShortcut(.escape)
                         extras
                         if let preview { DialogPreviewToggle(isOn: preview).padding(.top, 4) }
                         if status != nil || reservesStatus { statusLine.padding(.top, 4) }
@@ -57,7 +59,7 @@ struct DialogLayout<Settings: View, Extras: View>: View {
                     if status != nil || reservesStatus { statusLine }
                     Spacer(minLength: 0)
                     extras
-                    Button(action: cancel) { Text("Cancel").frame(minWidth: 64) }.configuredNativeShortcut(.escape)
+                    Button(action: cancel) { Text(cancelTitle).frame(minWidth: 64) }.configuredNativeShortcut(.escape)
                     Button(action: confirm) { Text(defaultTitle).frame(minWidth: 64) }
                         .buttonStyle(.borderedProminent).configuredNativeShortcut(.return)
                         .disabled(defaultDisabled)
@@ -80,9 +82,11 @@ struct DialogLayout<Settings: View, Extras: View>: View {
 
 extension DialogLayout where Extras == EmptyView {
     init(placement: DialogButtonPlacement = .column, title: String? = nil, defaultTitle: String = "OK",
+         cancelTitle: String = "Cancel",
          defaultDisabled: Bool = false, preview: Binding<Bool>? = nil, status: String? = nil, reservesStatus: Bool = false,
          confirm: @escaping () -> Void, cancel: @escaping () -> Void, @ViewBuilder settings: () -> Settings) {
-        self.init(placement: placement, title: title, defaultTitle: defaultTitle, defaultDisabled: defaultDisabled,
+        self.init(placement: placement, title: title, defaultTitle: defaultTitle, cancelTitle: cancelTitle,
+                  defaultDisabled: defaultDisabled,
                   preview: preview, status: status, reservesStatus: reservesStatus, confirm: confirm, cancel: cancel,
                   settings: settings(), extras: EmptyView())
     }
@@ -90,10 +94,12 @@ extension DialogLayout where Extras == EmptyView {
 
 extension DialogLayout {
     init(placement: DialogButtonPlacement = .column, title: String? = nil, defaultTitle: String = "OK",
+         cancelTitle: String = "Cancel",
          defaultDisabled: Bool = false, preview: Binding<Bool>? = nil, status: String? = nil, reservesStatus: Bool = false,
          confirm: @escaping () -> Void, cancel: @escaping () -> Void,
          @ViewBuilder settings: () -> Settings, @ViewBuilder extras: () -> Extras) {
-        self.init(placement: placement, title: title, defaultTitle: defaultTitle, defaultDisabled: defaultDisabled,
+        self.init(placement: placement, title: title, defaultTitle: defaultTitle, cancelTitle: cancelTitle,
+                  defaultDisabled: defaultDisabled,
                   preview: preview, status: status, reservesStatus: reservesStatus, confirm: confirm, cancel: cancel,
                   settings: settings(), extras: extras())
     }

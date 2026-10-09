@@ -106,9 +106,12 @@ final class EditorSession {
     var projectURL: URL?
     /// The upstream Compositor project this document was imported from; it has no file of its own until saved.
     var importedFrom: URL?
-    /// The name the window, tab and Save panel show: the project's, an import's, or Untitled.
+    /// The name New Document gave a document that has no file yet.
+    var chosenName: String?
+    /// The name the window, tab and Save panel show: the project's, an import's, the one New Document gave it, or
+    /// Untitled.
     var documentName: String {
-        (projectURL ?? importedFrom)?.deletingPathExtension().lastPathComponent ?? "Untitled"
+        (projectURL ?? importedFrom)?.deletingPathExtension().lastPathComponent ?? chosenName ?? "Untitled"
     }
     /// Blocks overlapping edits immediately. Not observed by the UI: controls only dim via
     /// `showsBusy`, after an operation has run long enough to be worth showing, so quick
@@ -642,7 +645,10 @@ final class EditorSession {
         if let corners = transformEdit?.corners { previewCorners(corners.map { CGPoint(x: $0.x + dx, y: $0.y + dy) }) }
         if !alreadyEditing { commitTransform() }
     }
+    /// The New Document dialog is open over this document (File › New…).
     var showsNewDocument = false { didSet { resumeFileRequests() } }
+    /// File › New… in an empty tab: its welcome New Document takes the focus.
+    var newDocumentFocusRequest = 0
     var showsImporter = false { didSet { resumeFileRequests() } }
     var isImporting = false { didSet { resumeFileRequests() } }
     var importError: String? { didSet { resumeFileRequests() } }
@@ -1085,21 +1091,34 @@ final class EditorSession {
         activeLayerID = group.id
     }
 
-    /// `emptyLayer` starts the canvas with a selected blank "Layer 1", as File > New does.
-    func createDocument(width: Int, height: Int, emptyLayer: Bool = false, resolution: Double = 72) {
+    /// `emptyLayer` starts the canvas with a selected blank "Layer 1", as File > New does. A `background` color puts
+    /// a "Background" layer filled with it under everything (New Document's Background Contents), in the same step.
+    func createDocument(width: Int, height: Int, emptyLayer: Bool = false, resolution: Double = 72, background: PaletteColor? = nil) {
         guard !isProjectBusy, !isImporting, (1...DocumentLimits.maxSide).contains(width), (1...DocumentLimits.maxSide).contains(height),
-              resolution.isFinite, (1...9600).contains(resolution) else { return }
+              resolution.isFinite, (1...9600).contains(resolution),
+              background == nil || width * height <= DocumentLimits.maxSurfacePixels else { return }
+        let fill = background.flatMap { Self.backgroundLayer($0, width: width, height: height) }
+        guard background == nil || fill != nil else { return }
         commitTransform()
         beginEdit("New Canvas")
         defer { endEdit() }
         var document = CanvasDocument(width: width, height: height, resolution: resolution)
         let layer = emptyLayer ? ImageLayer(name: "Layer 1", blankSize: document.size) : nil
-        if let layer { document.layers = [layer] }
+        document.layers = [fill, layer].compactMap { $0 }
         self.document = document
-        activeLayerID = layer?.id
+        activeLayerID = layer?.id ?? fill?.id
         renamingLayerID = nil
         viewport.fit(documentSize: document.size)
         showsNewDocument = false
+    }
+
+    /// A layer the whole canvas's size, filled with `color`: a new document's Background.
+    private static func backgroundLayer(_ color: PaletteColor, width: Int, height: Int) -> ImageLayer? {
+        guard let context = try? BrushRaster.context(width: width, height: height, mask: false) else { return nil }
+        context.setFillColor(CGColor(colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, components: [color.red, color.green, color.blue, 1])!)
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        guard let image = context.makeImage(), let thumbnail = try? PixelInvert.thumbnail(of: image) else { return nil }
+        return ImageLayer(asset: ImportedImage(image: image, thumbnail: thumbnail, name: "Background"), origin: .zero)
     }
 
     func fit() {

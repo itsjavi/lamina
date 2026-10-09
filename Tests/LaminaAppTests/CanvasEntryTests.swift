@@ -44,13 +44,13 @@ import UniformTypeIdentifiers
         let pasteboard = NSPasteboard.withUniqueName()
         defer { pasteboard.releaseGlobally() }
         pasteboard.setString("Some copied text", forType: .string)
-        #expect(NewCanvasSheet.clipboardDimensions(pasteboard) == nil)
+        #expect(DocumentPreset.clipboard(pasteboard) == nil)
         let url = try ImageImportTests().fixture(.png)
         defer { try? FileManager.default.removeItem(at: url) }
         pasteboard.clearContents()
         pasteboard.setData(try Data(contentsOf: url), forType: .png)
-        let size = try #require(NewCanvasSheet.clipboardDimensions(pasteboard))
-        #expect(size.width == 64 && size.height == 32)
+        let size = try #require(DocumentPreset.clipboard(pasteboard))
+        #expect(size.pixelWidth == 64 && size.pixelHeight == 32 && size.title == "Clipboard")
     }
 
     @Test func mountingCanvasGivesItKeyboardFocus() async {

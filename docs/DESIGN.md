@@ -609,8 +609,29 @@ named). Keyboard Shortcuts lists every one; function keys show as F1 to F12, and
   dialogs. **Shipping** (TASK-63) for Levels, Curves, Hue/Saturation, Exposure, Black & White, Color Balance, Gradient
   Map, Grain, every Filter menu dialog, Color Range, Expand, Contract, Feather, Stroke, Trim and Canvas Size, for
   Layer Style (TASK-64), and for Fill and Load Selection (TASK-62).
-- Image Size puts Cancel and OK in a row at the bottom right (**shipping**, TASK-63); New Document and Export As follow
-  (TASK-65).
+- Image Size puts Cancel and OK in a row at the bottom right (**shipping**, TASK-63); New Document (Close and Create)
+  and Export As (Cancel and Export) follow (**shipping**, TASK-65).
+- New Document (File ▸ New… ⌘N and the title bar's +; `NewDocumentView`, model in `Document/NewDocument.swift`;
+  **shipping**, TASK-65): on the left the preset tabs as a segmented control (Recent, Photo, Print, Web, Mobile, Film &
+  Video) over a grid of 140 × 104 pt cards, four across and three rows high (scrolling for more), each the format's
+  shape in `icon`, its name and its size ("8.5 × 11 in"; the help tag adds a print size's resolution). Cards are
+  `field` with a `separator` border; the one the details match (either way up; for print sizes at the same resolution)
+  is `selection` with a 2 pt accent border. Recent holds a Clipboard card first when the clipboard holds an image, then
+  the last eight sizes created (newest first, once each, under their preset's name or Custom; saved as
+  `newDocumentRecent`), then Default Lamina Size (1920 × 1080 px at 72 ppi) unless one of them is that size. On the
+  right a 240 pt Preset Details column, labels above their fields as in Photoshop's New Document: PRESET DETAILS, the
+  document's name (an editable title: Untitled, or the next tab's name), Width with the Units menu (Pixels, Inches,
+  Centimeters, Millimeters; changing it converts the size), Height with Orientation's portrait and landscape buttons
+  (swapping the sides; the current one `activeTool`), Resolution with Pixels/Inch or Pixels/Centimeter (1 to 9,600
+  pixels/inch), Background Contents (Transparent, White, Black, Background Color: the toolbar's) with a swatch, and the
+  size in pixels or why Create is dimmed. Close then Create at the bottom right; Return creates, Escape closes. It
+  opens on the clipboard's size when the clipboard holds an image (not in the first window at launch), otherwise on
+  the size last created. With a document open it's a sheet, and Create opens the new document in a tab of its own;
+  an empty tab shows it instead as its welcome, on the pasteboard in a `window` panel with an `edge` border (scrolling
+  when the window is smaller), with Open… and Import Image… at the bottom left in place of Close, where File ▸ New…
+  just puts the focus in Width. Create makes the document with a blank, selected Layer 1; any background but
+  Transparent puts a filled layer named Background under it (up to one surface, 200 megapixels), in the same New
+  Canvas step. The name names the tab, window and Save panel until the document is saved.
 - One layout in code: `DialogLayout` (`Sources/LaminaApp/UI/DialogLayout.swift`) takes the settings, `confirm` and
   `cancel`, and optionally `extras` (column buttons and controls), a `preview` binding, a `status` line ("Applying…"
   with a spinner), a `title` heading for dialogs shown as sheets (which have no title bar), `defaultTitle` and

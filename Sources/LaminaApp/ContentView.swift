@@ -159,8 +159,8 @@ struct ContentView: View {
         .navigationTitle(session.documentName)
         .toolbar {
             ToolbarItem(placement: .navigation) {
-                Button { requestNewCanvas() } label: { Label("New canvas", systemImage: "plus") }
-                    .help("New canvas (⌘N)").accessibilityIdentifier("newCanvasToolbar")
+                Button { requestNewCanvas() } label: { Label("New Document", systemImage: "plus") }
+                    .help("New Document (⌘N)").accessibilityIdentifier("newCanvasToolbar")
                     .disabled(session.isImporting || session.showsBusy || session.levels != nil)
                     .modifier(NewProjectDropTarget(workspace: applicationDelegate?.workspace))
             }
@@ -267,10 +267,19 @@ struct ContentView: View {
         if let applicationDelegate { Task { await applicationDelegate.projects.newCanvas() } }
         else { session.clearProject() }
     }
+    /// The empty window's New Document, centered on the pasteboard and scrolling when the window is too small for it.
     private var welcome: some View {
-        NewCanvasSheet(session: session,
-            onCreate: { session.createNewProject(width: $0.width, height: $0.height, resolution: $0.resolution) },
-            onOpen: { Task { await applicationDelegate?.projects.open() } })
+        GeometryReader { geometry in
+            ScrollView([.horizontal, .vertical]) {
+                NewDocumentView(session: session, presentation: .welcome,
+                    defaultName: applicationDelegate?.workspace.current.title ?? session.documentName,
+                    create: { session.createNewProject($0) },
+                    open: { Task { await applicationDelegate?.projects.open() } })
+                    .padding(20)
+                    .frame(minWidth: geometry.size.width, minHeight: geometry.size.height)
+            }
+            .scrollIndicators(.automatic)
+        }
     }
     private var statusBar: some View {
         HStack(spacing: 14) {

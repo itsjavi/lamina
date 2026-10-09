@@ -9,7 +9,7 @@ final class ProjectTab: Identifiable {
     let session: EditorSession
     let controller: ProjectController
     let defaultName: String
-    var title: String { session.projectURL?.deletingPathExtension().lastPathComponent ?? defaultName }
+    var title: String { session.projectURL?.deletingPathExtension().lastPathComponent ?? session.chosenName ?? defaultName }
     init(name: String) {
         defaultName = name
         session = EditorSession()
@@ -37,6 +37,8 @@ final class ProjectWorkspace {
         tabs = [first]; selectedID = first.id
         first.controller.workspace = self
     }
+    /// The name the next new tab takes, which New Document offers.
+    var nextTabName: String { "Untitled \(nextNumber)" }
     @discardableResult
     func addTab(reuseEmpty: Bool = true) -> ProjectTab {
         if reuseEmpty, tabs.count == 1, current.session.document == nil { return current }
@@ -62,10 +64,11 @@ final class ProjectWorkspace {
         current.controller.window = window
         current.controller.resumeExternalChangeCheck()
     }
-    func newCanvas() {
+    /// New Document's Create with a document open: the new document opens in a tab of its own.
+    func newDocument(_ request: NewDocumentRequest) {
         guard canSwitch else { return }
         current.session.commitTransform()
-        _ = addTab(reuseEmpty: false)
+        addTab(reuseEmpty: false).session.createNewProject(request)
     }
     @discardableResult
     func open(_ suppliedURL: URL? = nil) async -> Bool {

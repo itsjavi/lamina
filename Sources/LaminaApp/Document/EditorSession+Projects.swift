@@ -31,6 +31,7 @@ extension EditorSession {
         activeLayerID = manifest.activeLayerID
         projectURL = url
         importedFrom = nil
+        chosenName = nil
         renamingLayerID = nil
         history.reset()
         viewport.fit(documentSize: document!.size)
@@ -66,14 +67,18 @@ extension EditorSession {
         renamingLayerID = nil
         projectURL = nil
         importedFrom = nil
+        chosenName = nil
         history.reset()
     }
 
-    func createNewProject(width: Int, height: Int, resolution: Double = 72) {
+    /// New Document's Create: a document with a blank selected "Layer 1", over a filled "Background" unless the
+    /// background is transparent, named `name` until it's saved.
+    func createNewProject(width: Int, height: Int, resolution: Double = 72, background: PaletteColor? = nil, name: String? = nil) {
         guard !isProjectBusy, !isImporting, (1...DocumentLimits.maxSide).contains(width), (1...DocumentLimits.maxSide).contains(height),
               resolution.isFinite, (1...9600).contains(resolution) else { return }
         clearProject()
-        createDocument(width: width, height: height, emptyLayer: true, resolution: resolution)
+        createDocument(width: width, height: height, emptyLayer: true, resolution: resolution, background: background)
+        if document != nil { chosenName = name.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.flatMap { $0.isEmpty ? nil : $0 } }
     }
 }
 

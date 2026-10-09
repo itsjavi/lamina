@@ -1,9 +1,11 @@
 ---
 id: TASK-65
 title: New Document and Export As in the familiar layout
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-09 02:14'
+updated_date: '2026-10-09 07:56'
 labels: []
 milestone: m-5
 dependencies:
@@ -36,3 +38,21 @@ The new canvas sheet is Lamina's own, and exporting is split across Export PNGâ€
 <!-- DOD:BEGIN -->
 - [ ] #1 docs/DESIGN.md matches what shipped
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. New Document: rebuild UI/NewCanvasSheet.swift as NewDocumentView (one SwiftUI view, two presentations): segmented preset tabs (Recent, Photo, Print, Web, Mobile, Film & Video), preset cards (Clipboard first in Recent when the clipboard holds an image, then recent sizes, then Default Lamina Size), Preset Details (name, width/height + units, orientation buttons, resolution + Pixels/Inch or Pixels/Centimeter, Background Contents: Transparent, White, Black, Background Color). Model: NewCanvasSize gains resolution units and orientation; DocumentPreset catalog; recent sizes saved in UserDefaults.
+2. EditorSession: createNewProject takes the name and background; a non-transparent background adds a filled bottom layer "Background" under Layer 1 inside the same New Canvas edit; the chosen name names the tab/window/Save panel until saved.
+3. File > New... (and +): with a document open, a window sheet (DialogLayout .bottom, Close then Create; Return creates, Escape closes); Create opens the document in a new tab. An empty tab's welcome view shows the same layout inline, with Open... and Import Image... at the bottom left and Create at the right.
+4. Export As: one sheet (DialogLayout .bottom, Cancel then Export): live zoomable preview with size and estimated file size under it, File Settings group with Format (every ExportFormat.available), Quality (lossy formats), Transparency (formats with alpha) and Matte (background for transparency). ExportOptions gains transparency; saved settings (format, per-format quality, per-format transparency, matte) in one ExportSettings type, keeping today's keys.
+5. Quick Export as PNG: straight to the save panel, encoded with the saved PNG settings. Remove Export JPEG... and its shortcut entry; renamedIDs carries a custom Export JPEG key to Export As (dropped on collision).
+6. Tests: New Document creation with each background and unit, presets/orientation/resolution units; Export As writing each format with transparency off; saved settings; shortcut carry-over/removal. swift build, targeted then full swift test.
+7. DESIGN.md (Menus > File, Shortcut changes, Dialogs: New Document and Export As sections), screenshots in backlog/assets/task-65/, notes, ACs, summary.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Slice 1, New Document: NewCanvasSheet became NewDocumentView (UI/NewDocumentView.swift) with its model in Document/NewDocument.swift (NewCanvasSize gains Pixels/Centimeter and orientation; DocumentPreset catalog; RecentDocumentSizes). Decisions: File > New... with a document open is a window sheet (Photoshop's modal New Document) whose Create opens a new tab (ProjectWorkspace.newDocument replaces newCanvas, which opened an empty tab); an empty tab shows the same layout inline as its welcome, with Open... and Import Image... at the bottom left instead of Close (nothing to close), and File > New... there just refocuses Width. The sheet holds edits through showsNewDocument rather than isProjectBusy, which dimmed the dialog and showed Working... Default Lamina Size stays 1920 x 1080 px at 72 ppi (today's default; the mockup's 2400 x 1500 was illustrative). Clipboard card sits first in Recent only, as in Photoshop. A non-transparent background adds a filled Background layer under the blank selected Layer 1 inside the same New Canvas step (one undo entry as before), limited to one surface (200 MP). Preset Details labels sit above their fields without colons, as in the mockup and Photoshop's New Document. The chosen name names the tab, window and Save panel (EditorSession.chosenName) until saved. Segmented control needed 4 columns of cards (590 pt) to fit its six tabs.
+<!-- SECTION:NOTES:END -->

@@ -359,12 +359,41 @@ final class ProjectController {
         }
     }
 
+    /// File › New… and the toolbar's +: the New Document dialog, whose Create opens the document in a new tab. An
+    /// empty tab already shows New Document as its welcome, so there it only puts the focus back in it.
     func newCanvas() async {
-        if let workspace { workspace.newCanvas(); return }
+        guard session.document != nil else { session.newDocumentFocusRequest += 1; return }
+        guard let window, session.canStartProjectOperation else { return }
+        session.cancelCrop()
+        session.commitTransform()
+        let defaultName = workspace?.nextTabName ?? "Untitled"
+        // Holds edits, Undo and other file commands while the dialog is open, as `isProjectBusy` would, without
+        // dimming the dialog or showing Working… in the status bar.
+        session.showsNewDocument = true
+        let request: NewDocumentRequest? = await withCheckedContinuation { continuation in
+            let sheet = NSWindow()
+            sheet.styleMask = [.titled, .fullSizeContentView]
+            sheet.title = "New Document"
+            func finish(_ request: NewDocumentRequest?) {
+                window.endSheet(sheet)
+                sheet.orderOut(nil)
+                sheet.contentViewController = nil
+                continuation.resume(returning: request)
+            }
+            sheet.contentViewController = NSHostingController(rootView: NewDocumentView(
+                session: session, presentation: .dialog, defaultName: defaultName,
+                create: { finish($0) }, close: { finish(nil) }).roundedControls())
+            window.beginSheet(sheet)
+        }
+        session.showsNewDocument = false
+        guard let request else { return }
+        if let workspace { workspace.newDocument(request); return }
         guard begin() else { return }
         let proceed = await confirmReplacement()
         session.isProjectBusy = false
-        if proceed { session.clearProject(); stopWatchingProject() }
+        guard proceed else { return }
+        stopWatchingProject()
+        session.createNewProject(request)
     }
 
     func close(_ window: NSWindow) async {

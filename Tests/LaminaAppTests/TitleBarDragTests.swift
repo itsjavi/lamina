@@ -25,7 +25,7 @@ struct TitleBarDragTests {
 
     @Test func overflowingTabsStillLeaveTheRestOfTheTitleBarDraggable() async throws {
         let workspace = ProjectWorkspace()
-        for _ in 0..<12 { workspace.newCanvas() }
+        for _ in 0..<12 { workspace.addTab(reuseEmpty: false) }
         let (window, hosting) = try await host(workspace, width: 280)
         defer { window.orderOut(nil) }
         // Far too many tabs to fit 280pt: they collapse behind the overflow pill instead of scrolling, and

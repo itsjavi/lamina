@@ -47,7 +47,7 @@ nonisolated enum MaskTracing {
 extension EditorSession {
     /// The document-space outline of a layer's mask's black (hidden) areas; nil when there's nothing to trace.
     /// Throws `MaskTracing.Failure.tooDetailed` for an outline too detailed to draw.
-    private func maskSelectionOutline(layerID: UUID) throws -> CGPath? {
+    func maskSelectionOutline(layerID: UUID) throws -> CGPath? {
         guard let layer = document?.layers.first(where: { $0.id == layerID }), let mask = layer.mask?.asset.image,
               let traced = try MaskTracing.darkPixels(in: mask) else { return nil }
         var toDocument = BrushRaster.pixelToDocument(layer.maskTransform, width: mask.width, height: mask.height)
@@ -55,7 +55,7 @@ extension EditorSession {
     }
     /// The document-space outline of a layer's visible (≥ 50% opaque) pixels; nil when there's nothing to trace.
     /// Throws `MaskTracing.Failure.tooDetailed` for an outline too detailed to draw.
-    private func layerSelectionOutline(layerID: UUID) throws -> CGPath? {
+    func layerSelectionOutline(layerID: UUID) throws -> CGPath? {
         guard let layer = document?.layers.first(where: { $0.id == layerID }), !layer.isGroup,
               let image = layer.asset?.image, let traced = try MaskTracing.opaquePixels(in: image) else { return nil }
         var toDocument = BrushRaster.pixelToDocument(layer.transform, width: image.width, height: image.height)

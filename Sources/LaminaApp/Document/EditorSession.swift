@@ -147,7 +147,7 @@ final class EditorSession {
     private var fileRequestWaiters: [CheckedContinuation<Void, Never>] = []
     var canStartProjectOperation: Bool {
         _ = showsBusy // Re-evaluate in the UI when a long operation starts or ends.
-        return selectionAmountOperation == nil && colorRange == nil && textDraft == nil && !isProjectBusy && !isImporting && brushStroke == nil && warpStroke == nil && levels == nil && layerStyle == nil && !showsNewDocument && !showsImporter && renamingLayerID == nil && importError == nil && !showsConversionSheet
+        return selectionAmountOperation == nil && commandDialog == nil && colorRange == nil && textDraft == nil && !isProjectBusy && !isImporting && brushStroke == nil && warpStroke == nil && levels == nil && layerStyle == nil && !showsNewDocument && !showsImporter && renamingLayerID == nil && importError == nil && !showsConversionSheet
     }
     func waitForFileRequest() async {
         while !canStartProjectOperation {
@@ -325,6 +325,10 @@ final class EditorSession {
     var selectionAntialiased = true
     /// How far Feather softens the selection's edge each time it is applied, in document pixels.
     var selectionAmountOperation: SelectionAmountOperation? { didSet { resumeFileRequests() } }
+    /// Edit › Fill… or Select › Load Selection… is open, waiting for OK.
+    var commandDialog: CommandDialog? { didSet { resumeFileRequests() } }
+    /// Edit › Fill…'s settings, kept for the next time.
+    var fillOptions = FillOptions()
     /// Select > Color Range's panel is open; the selection shown is its preview until OK.
     var colorRange: ColorRangeEdit? { didSet { resumeFileRequests() } }
     /// The dialog whose color the picker is open on (`ColorPickerTarget.dialog`).
@@ -705,7 +709,7 @@ final class EditorSession {
     var isModified: Bool { history.isModified }
     var canUseHistory: Bool {
         _ = showsBusy
-        return selectionAmountOperation == nil && colorRange == nil && textDraft == nil && !isProjectBusy && !isImporting && brushStroke == nil && warpStroke == nil && levels == nil && layerStyle == nil && !showsNewDocument && !showsImporter && renamingLayerID == nil && importError == nil && transformEdit == nil && !showsConversionSheet
+        return selectionAmountOperation == nil && commandDialog == nil && colorRange == nil && textDraft == nil && !isProjectBusy && !isImporting && brushStroke == nil && warpStroke == nil && levels == nil && layerStyle == nil && !showsNewDocument && !showsImporter && renamingLayerID == nil && importError == nil && transformEdit == nil && !showsConversionSheet
     }
     var canUndo: Bool { canUseHistory && (history.canUndo || gradientEdit != nil) }
     var canRedo: Bool { canUseHistory && history.canRedo }
@@ -750,7 +754,7 @@ final class EditorSession {
     var activeLayer: ImageLayer? { document?.layers.first { $0.id == activeLayerID } }
     var canEditLayers: Bool {
         _ = showsBusy
-        return selectionAmountOperation == nil && colorRange == nil && textDraft == nil && document != nil && brushStroke == nil && warpStroke == nil && !isProjectBusy && !isImporting && !showsNewDocument && !showsImporter && renamingLayerID == nil && transformEdit == nil && cropRect == nil && gradientEdit == nil && pixelMove == nil && hueSaturation == nil && levels == nil && filterEdit == nil && layerStyle == nil
+        return selectionAmountOperation == nil && commandDialog == nil && colorRange == nil && textDraft == nil && document != nil && brushStroke == nil && warpStroke == nil && !isProjectBusy && !isImporting && !showsNewDocument && !showsImporter && renamingLayerID == nil && transformEdit == nil && cropRect == nil && gradientEdit == nil && pixelMove == nil && hueSaturation == nil && levels == nil && filterEdit == nil && layerStyle == nil
     }
 
     func addBlankLayer() {

@@ -782,6 +782,7 @@ final class CanvasView: NSView {
             guard let self, let window = self.window, event.windowNumber == window.windowNumber,
                   !(window.firstResponder is NSText) else { return originalEvent }
             if self.handleKeyboardZoom(event) { return nil }
+            if self.handleFillKey(event) { return nil }
             guard event.modifierFlags.intersection([.command, .control, .option]).isEmpty,
                   let key = event.charactersIgnoringModifiers else { return originalEvent }
             // Shift-+ / Shift-− step the active layer's blend mode, in every tool.
@@ -796,6 +797,21 @@ final class CanvasView: NSView {
             else { self.session.changeBrushHardness(increase: key == "}") }
             return nil
         }
+    }
+
+    /// ⌥⌫ and ⌘⌫ fill with the foreground and background colors and ⇧⌫ opens Edit › Fill…, wherever focus sits but
+    /// a text field, as in Photoshop. None has a menu item of its own: Fill… shows its first key, ⇧F5.
+    private func handleFillKey(_ event: NSEvent) -> Bool {
+        guard [51, 117].contains(event.keyCode) else { return false }
+        switch event.modifierFlags.intersection([.command, .control, .option, .shift]) {
+        case .option, .command:
+            guard session.canFill else { return false }
+            let source: EditorSession.FillSource = event.modifierFlags.contains(.option) ? .foreground : .background
+            Task { await session.fillSelection(with: source) }
+        case .shift: session.beginFill()
+        default: return false
+        }
+        return true
     }
 
     /// Handle default zoom shortcuts on keyDown, including key repeat, without waiting for a menu command.
@@ -2156,7 +2172,7 @@ final class CanvasView: NSView {
         // was still held — and with it the Eyedropper standing in for the Brush. Every key press re-reads it.
         optionHeld = event.modifierFlags.contains(.option)
         if [51, 117].contains(event.keyCode), event.modifierFlags.intersection([.command, .control, .option, .shift]) == .shift {
-            if session.canContentAwareFill { session.beginFilter(.contentAwareFill) }
+            session.beginFill()
             return
         }
         if let edit = session.levels {

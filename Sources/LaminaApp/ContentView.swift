@@ -13,6 +13,8 @@ struct ContentView: View {
     @State private var colorRangePanel = FloatingPanelController(name: "colorRangePanel")
     @State private var filterPanel = FloatingPanelController(name: "filterPanel")
     @State private var layerStylePanel = FloatingPanelController(name: "layerStylePanel")
+    /// Edit › Fill… and Select › Load Selection….
+    @State private var commandDialogPanel = FloatingPanelController(name: "commandDialogPanel")
     @State private var isDropTargeted = false
     /// The dock's widths, split and open panels, shared with the Window menu.
     private let dockLayout = DockLayout.shared
@@ -212,6 +214,19 @@ struct ContentView: View {
                 selectionAmountPanel.show(title: operation.rawValue + " Selection",
                     content: SelectionAmountSheet(session: session, operation: operation))
             } else { selectionAmountPanel.close() }
+        }
+        .onChange(of: session.commandDialog) { _, dialog in
+            switch dialog {
+            case .fill:
+                commandDialogPanel.onClose = { Task { await session.finishFill(nil) } }
+                commandDialogPanel.show(title: "Fill", content: FillSheet(session: session))
+            case .loadSelection:
+                guard let channel = session.defaultSelectionChannel else { session.commandDialog = nil; return }
+                commandDialogPanel.onClose = { session.finishLoadSelection(nil) }
+                commandDialogPanel.show(title: "Load Selection",
+                    content: LoadSelectionSheet(session: session, channels: session.selectionChannels, initial: channel))
+            case nil: commandDialogPanel.close()
+            }
         }
         // Last Filter applies without the panel.
         .onChange(of: session.filterEdit == nil || session.filterEdit?.repeating == true) { _, closed in

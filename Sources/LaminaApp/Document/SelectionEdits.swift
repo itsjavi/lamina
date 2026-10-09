@@ -48,19 +48,11 @@ extension EditorSession {
     /// Whether the active layer (or its mask) can take a fill or clear right now.
     var canEditPixels: Bool { canPaint }
 
-    /// Fills the selection with the foreground or background color, as one undo step.
+    /// Fills the selection with the foreground or background color, as one undo step (⌥⌫, ⌘⌫).
     /// With no selection it fills the whole layer; an empty selection fills nothing.
     /// On a mask the palette is black/white, so this reveals or hides.
     func fillSelection(with source: FillSource) async {
-        guard canEditPixels, let layer = activeLayer else { return }
-        let value = paletteColor(background: source == .background)
-        // A text layer that is still text takes the color as its own, rather than being painted over: the letters
-        // change color and stay editable.
-        if !isMaskSelected, selection == nil, layer.liveText != nil, recolorText(layer.id, to: value) { return }
-        let color = isMaskSelected
-            ? CGColor(gray: value.red, alpha: 1)
-            : CGColor(colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, components: [value.red, value.green, value.blue, 1])!
-        await applyPixelEdit(to: layer, name: isMaskSelected ? "Fill Mask" : "Fill") { try $0.fill(color) }
+        await fill(paletteColor(background: source == .background))
     }
 
     /// Delete with a selection: image pixels become transparent; on a mask the

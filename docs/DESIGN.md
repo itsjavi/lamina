@@ -295,7 +295,7 @@ divider and 24 × 22 icon button).
 | Liquify (Filter ▸ Liquify…) | brush picker │ Strength: │ … Cancel ⊘ · Commit ✓ |
 | Dodge / Burn | brush picker │ Range: Shadows, Midtones, Highlights · Exposure: │ pressure for size |
 | Horizontal Type | font family · font style · size px │ Left, Center, Right · color · Character panel │ … Cancel ⊘ · Commit ✓ (while editing; leading and tracking are in Properties ▸ Character, TASK-59) |
-| Rectangle / Ellipse / Line | Fill swatch · Stroke swatch and width (in progress, TASK-32) · stroke options (in progress, TASK-34) │ path operations (in progress, TASK-34) │ Radius (Rectangle) or Weight (Line). This order and the placeholders ship with TASK-53 (the stroke swatch shows "none": an empty `field` well crossed by a `secondaryText` line; the width reads "1 px"); the labels keep today's wording, without colons, until TASK-57 |
+| Rectangle / Ellipse / Line | Fill: swatch · Stroke: swatch and width (in progress, TASK-32) · stroke options (in progress, TASK-34) │ path operations (in progress, TASK-34) │ Radius: px (Rectangle) or Weight: px (Line, was Width). The placeholders shipped with TASK-53 (the stroke swatch shows "none": an empty `field` well crossed by a `secondaryText` line; the width reads "1 px") |
 | Hand | 100% · Fit Screen · Fill Screen (shipping, TASK-52) |
 | Zoom | Zoom In, Zoom Out │ Scrubby Zoom │ 100% · Fit Screen · Fill Screen (the three buttons ship with TASK-52; the rest is TASK-57) |
 

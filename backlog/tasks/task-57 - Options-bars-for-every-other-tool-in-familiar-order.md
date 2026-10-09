@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-09 02:14'
-updated_date: '2026-10-09 07:01'
+updated_date: '2026-10-09 07:02'
 labels: []
 milestone: m-5
 dependencies:
@@ -68,4 +68,6 @@ Crop: Ratio pop-up shows CropRatio.title (Free → Ratio, Original → Original 
 Gradient: preset swatch pop-over (GradientSwatch per GradientStyle), Linear/Radial as GradientShapeIcon icon buttons, Opacity PercentField, Reverse, ⊘/✓ while gradientEdit is pending (was Cancel/Apply text). Paint Bucket: Fill: Foreground pop-up (one item), Opacity, Tolerance, Anti-alias, Contiguous, All Layers checkbox.
 
 Rebased onto main after TASK-59 landed (Properties ▸ Character, with its own FontFaces and FontFamilyPopUp): the Type bar uses that FontFaces (family(of:), styles(of:), face(in:like:)) instead of a second copy. Type: FontMenuPicker (generalized from TypeFontPicker: family list loaded once, styles rebuilt per open, names drawn in their faces via StyledName, hover previews kept), size with a textformat.size label, alignment icon buttons, color, Character panel button (DockLayout.shared.show(.properties)), ⊘/✓ while textDraft exists. Edit Text button dropped (clicking text, double-click in Layers edit it). EditorSession.textFontName / textFace(inFamily:) / setTextFont back both pop-ups.
+
+Shapes: Fill: swatch, Stroke: placeholders (colon added), path operations, then Radius: or Weight: (was Width) as OptionsBarField; the sliders went, like every other bar's px fields. ShapeStrokePlaceholders no longer ends with a divider, so the Ellipse bar doesn't end on one.
 <!-- SECTION:NOTES:END -->

@@ -1,14 +1,15 @@
 import SwiftUI
 import LaminaCore
 
+/// The shape tools' bar: Fill, then the stroke and path operations to come (placeholders), then the shape's own
+/// setting, Radius for rectangles and Weight for lines.
 struct ShapeControls: View {
     @Bindable var session: EditorSession
 
     var body: some View {
-        HStack(spacing: 12) {
-            // Fill, then the stroke and path operations to come (placeholders), then the shape's own setting.
+        OptionsBarRow {
             HStack(spacing: 6) {
-                Text("Fill")
+                Text("Fill:")
                 Button { session.openColorPicker(background: false) } label: {
                     let swatch = RoundedRectangle(cornerRadius: 3, style: .continuous)
                     swatch.fill(Color(nsColor: session.foregroundColor.nsColor))
@@ -17,42 +18,21 @@ struct ShapeControls: View {
                 }
                 .buttonStyle(.plain)
                 .help("Shapes fill with the foreground color; click to change it")
+                .accessibilityLabel("Fill color")
             }
             ShapeStrokePlaceholders(session: session)
-            if session.tool == .line {
-                HStack(spacing: 6) {
-                    Text("Width").scrubbable(sensitivity: 1, value: $session.shapeLineWidth, range: 1...5000)
-                    Slider(value: Binding(get: { min(100, session.shapeLineWidth) },
-                                          set: { session.shapeLineWidth = $0.rounded() }), in: 1...100)
-                        .frame(width: 100)
-                    TextField("Width", value: Binding(get: { session.shapeLineWidth },
-                                                      set: { session.shapeLineWidth = $0.isFinite ? min(5000, max(1, $0)) : 4 }),
-                              format: .number.precision(.fractionLength(0)))
-                        .frame(width: 48).textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing)
-                        .arrowSteps(value: { session.shapeLineWidth },
-                                    change: { session.shapeLineWidth = min(5000, max(1, $0)) })
-                        .unitSuffix("px")
-                }
-            }
             if session.tool == .rectangle {
-                HStack(spacing: 6) {
-                    Text("Radius").scrubbable(sensitivity: 1, value: $session.shapeCornerRadius, range: 0...5000)
-                    Slider(value: Binding(get: { min(200, session.shapeCornerRadius) },
-                                          set: { session.shapeCornerRadius = $0.rounded() }), in: 0...200)
-                        .frame(width: 100)
-                    TextField("Radius", value: Binding(get: { session.shapeCornerRadius },
-                                                       set: { session.shapeCornerRadius = $0.isFinite ? min(5000, max(0, $0)) : 0 }),
-                              format: .number.precision(.fractionLength(0)))
-                        .frame(width: 48).textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing)
-                        .arrowSteps(value: { Double(session.shapeCornerRadius) },
-                                    change: { session.shapeCornerRadius = min(5000, max(0, CGFloat($0))) })
-                        .unitSuffix("px")
-                }
-                .help("Round the rectangle's corners by this many pixels; 0 keeps them square")
+                OptionsBarDivider()
+                OptionsBarField(label: "Radius", value: $session.shapeCornerRadius, range: 0...5000, unit: "px", width: 48)
+                    .help("Round the rectangle's corners by this many pixels; 0 keeps them square")
             }
-            Spacer(minLength: 0)
+            if session.tool == .line {
+                OptionsBarDivider()
+                OptionsBarField(label: "Weight", value: $session.shapeLineWidth, range: 1...5000, unit: "px", width: 48)
+                    .help("How thick the line is, in pixels")
+            }
         }
-        .padding(.horizontal, 18).toolHeaderBar().releasesFocusOnCommit(session)
+        .releasesFocusOnCommit(session)
         .disabled(session.showsBusy || session.document == nil)
     }
 }

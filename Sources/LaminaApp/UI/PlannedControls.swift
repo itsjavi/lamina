@@ -42,8 +42,7 @@ struct ShapeStrokePlaceholders: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            // No colon, like the bar's other labels until TASK-57 gives them all one.
-            Text("Stroke")
+            Text("Stroke:")
             Button { session.showInProgress(.shapeStroke) } label: {
                 // No stroke: an empty well crossed by a line, as color wells show "none".
                 let swatch = RoundedRectangle(cornerRadius: 3, style: .continuous)
@@ -80,6 +79,5 @@ struct ShapeStrokePlaceholders: View {
         }
         .help(PlannedFeature.pathOperations.helpTag)
         .accessibilityLabel(PlannedFeature.pathOperations.name)
-        OptionsBarDivider()
     }
 }

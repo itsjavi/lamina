@@ -3,8 +3,8 @@ import LaminaCore
 
 struct CurvesControls: View {
     @Binding var settings: CurvesSettings
-    /// The graph's height: the dialog's, or Properties' shorter one.
-    var graphHeight: CGFloat = 260
+    /// Properties' narrower layout: a shorter graph, and Remove Point under the fields.
+    var compact = false
     @State private var selected: Int?
     @State private var dragging: Int?
     private var points: [CurvePoint] { settings.channels[settings.channel.index] }
@@ -38,7 +38,7 @@ struct CurvesControls: View {
                     context.fill(Path(ellipseIn: CGRect(x: p.x-4, y: p.y-4, width: 8, height: 8)), with: .color(selected == i ? .accentColor : ColorRole.text.color))
                 }
             }
-            .frame(height: graphHeight).background(ColorRole.field.color)
+            .frame(height: compact ? 200 : 260).background(ColorRole.field.color)
             .overlay { Rectangle().strokeBorder(ColorRole.edge.color) }
             .contentShape(Rectangle())
             .overlay { GeometryReader { geometry in
@@ -69,12 +69,18 @@ struct CurvesControls: View {
                 Text("Input:").padding(.leading, 6)
                 pointField(\.x, name: "Input")
                 Spacer(minLength: 0)
-                Button("Remove Point") {
-                    if let selected, selected > 0, selected < points.count-1 { settings.channels[settings.channel.index].remove(at: selected); self.selected = nil }
-                }.disabled(selected == nil || selected == 0 || selected == points.count-1)
+                if !compact { removeButton }
             }
+            // Properties is too narrow for the button beside the fields.
+            if compact { removeButton }
             Text("Click to add a point. Drag to adjust.").font(.caption).foregroundStyle(.secondary)
         }
+    }
+
+    private var removeButton: some View {
+        Button("Remove Point") {
+            if let selected, selected > 0, selected < points.count-1 { settings.channels[settings.channel.index].remove(at: selected); self.selected = nil }
+        }.disabled(selected == nil || selected == 0 || selected == points.count-1)
     }
 
     /// One coordinate of the selected point. The end points keep their input at 0 and 255; a middle point stays

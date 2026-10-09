@@ -34,7 +34,7 @@ struct CharacterProperties: View {
                     if face.isEmpty { Text("(Multiple)").tag("") }
                     ForEach(FontFaces.styles(of: family), id: \.name) { Text($0.style).tag($0.name) }
                 }
-                .labelsHidden()
+                .labelsHidden().fixedSize().frame(maxWidth: .infinity, alignment: .leading)
                 .disabled(family == nil)
                 .help("Font style")
                 HStack(spacing: 6) {

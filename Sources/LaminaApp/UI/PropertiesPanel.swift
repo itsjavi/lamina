@@ -23,8 +23,8 @@ struct PropertiesPanel: View {
                 }
                 footer(kind)
             }
+            // No foreground style of its own: controls keep the system's, dimmed when they're disabled.
             .font(.system(size: 12)).monospacedDigit()
-            .foregroundStyle(ColorRole.text.color)
             .releasesFocusOnCommit(session)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("propertiesPanel")
@@ -82,7 +82,9 @@ struct PropertiesTitle: View {
 
     var body: some View {
         HStack(spacing: 7) {
+            // Curves' symbol turned a quarter, as the Layers panel shows it, so it reads as a curve.
             Image(systemName: kind.symbol).font(.system(size: 15))
+                .rotationEffect(.degrees(kind == .adjustment(.curves) ? 90 : 0))
                 .foregroundStyle(ColorRole.icon.color).frame(width: 18)
                 .accessibilityHidden(true)
             Text(kind.title).font(.system(size: 12, weight: .semibold)).lineLimit(1)
@@ -152,6 +154,7 @@ struct PropertiesButtonGrid<Content: View>: View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 6), GridItem(.flexible(), spacing: 6)], alignment: .leading, spacing: 6) {
             content.frame(maxWidth: .infinity)
         }
+        .frame(maxWidth: .infinity)
         .buttonStyle(PropertiesButtonStyle())
     }
 }
@@ -418,7 +421,6 @@ private struct AlignProperties: View {
                 }
                 .disabled(!session.canDistributeLayers)
             }
-            .foregroundStyle(ColorRole.icon.color)
         }
     }
 }
@@ -453,15 +455,14 @@ private struct MaskProperties: View {
         PropertiesSection("Masks") {
             HStack(spacing: 6) {
                 Text("Refine").foregroundStyle(ColorRole.secondaryText.color)
-                PropertiesButtonGrid {
-                    Button("Color Range…") { session.beginColorRange(forMask: true) }
-                        .disabled(!session.canSelectColorRange)
-                        .help("Make the mask from the image's colors (Select ▸ Color Range…, aimed at the mask)")
-                    Button("Invert") { Task { await session.invertPixels() } }
-                        .disabled(!session.canInvert)
-                        .help("Turn the mask over: what it hid shows, and what showed is hidden")
-                }
+                Button("Color Range…") { session.beginColorRange(forMask: true) }
+                    .disabled(!session.canSelectColorRange)
+                    .help("Make the mask from the image's colors (Select ▸ Color Range…, aimed at the mask)")
+                Button("Invert") { Task { await session.invertPixels() } }
+                    .disabled(!session.canInvert)
+                    .help("Turn the mask over: what it hid shows, and what showed is hidden")
             }
+            .buttonStyle(PropertiesButtonStyle())
         }
     }
 }

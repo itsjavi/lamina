@@ -123,7 +123,7 @@ struct FilterControls: View {
         switch kind {
         case .curves:
             CurvesControls(settings: Binding(get: { settings.curves }, set: { new in update { $0.curves = new } }),
-                           graphHeight: compact ? 200 : 260)
+                           compact: compact)
         case .exposure:
             control("Exposure", \.exposure.exposure, range: ExposureSettings.exposureRange, unit: "", decimals: 2, logarithmic: false)
             control("Offset", \.exposure.offset, range: ExposureSettings.offsetRange, unit: "", decimals: 4, logarithmic: false)

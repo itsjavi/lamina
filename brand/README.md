@@ -48,7 +48,7 @@ Current shots (window 1440×874 points):
 | ----------------- | --------------------------------------------------------------------------- |
 | `screenshot.webp` | The demo as it opens: the "Golden hour" title selected with the Move tool    |
 | `camera-raw.webp` | Sky layer selected, Filter › Camera Raw Filter…, `--panels`                  |
-| `curves.webp`     | Warm grade selected, Layer › Edit Adjustment…, `--panels`                    |
+| `curves.webp`     | Warm grade selected, Layer › Layer Content Options…, `--panels`              |
 | `oil-painting.webp` | `scripts/oil-painting-project.swift`'s seascape as it opens, 2400 wide. Showcases agent painting (strokes are generated outside the app until the agent painting milestone lands) |
 
 Selecting layers and choosing menu commands in the background takes an agent with background app control (clicks on

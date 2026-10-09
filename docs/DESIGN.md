@@ -268,7 +268,7 @@ empty layer, a mask targeted). Status: **shipping** (TASK-54). Tools familiar ed
 
 Each bar starts with the active tool's icon (16 pt, `text`, in a 44 pt slot with the tool's name as its help tag and
 accessibility label; no tool name is written out), then groups separated by 1 × 20 pt `separator` dividers (│ below).
-Fit Screen fits the document with a margin, as View ▸ Fit Canvas does; Fill Screen zooms until the document covers the
+Fit Screen fits the document with a margin, as View ▸ Fit on Screen does; Fill Screen zooms until the document covers the
 whole canvas area, centered. Controls: icon
 buttons 24 × 22, pop-ups and fields 22 high, percent fields with a slider pop-up. Labels end with a colon
 ("Opacity:", "Tolerance:"), checkboxes and buttons don't. Edits in progress end with Cancel ⊘ and Commit ✓ icon
@@ -515,53 +515,88 @@ are **shipping**.
 
 ### Menus
 
-Separators are shown as │. Items not listed don't exist. Status: **m-5** (TASK-62). Edit ▸ Free Transform ⌘T and
-Edit ▸ Transform ▸ (Distort │ Flip Horizontal · Flip Vertical) are **shipping** (TASK-56), replacing Layer ▸ Transform
-Layer / Transform Selection and Flip Layer Horizontal / Vertical; TASK-62 puts them in the order below. During a Free
-Transform, Flip turns the box over across the reference point as part of the edit (dimmed while distorting);
-otherwise it flips the selected layers about their middle at once. Until TASK-62, View ▸ Show Transform Controls stays
-in the View menu with no shortcut. The in-progress menu items ship with TASK-53 in today's menus, as close to these
-places as today's order allows: Save a Copy… after Save As…, Rasterize and Convert to Editable Vectors after Apply
-Layer Mask, Combine Shapes ▸ and Release to Layers after Move Layer Down, and in Window, Contextual Task Bar between
-the panels and the open documents (in `DockCommands`). TASK-62 moves them with the rest. Layer ▸ Layer Style ▸
-(Blending Options… │ the six effects │ Copy, Paste and Clear Layer Style) is **shipping** (TASK-64); the new items have
-no keys and can be given one (Keyboard Shortcuts, More Menu Commands). Layer ▸ Layer Content Options… (was Edit
-Adjustment…, a key set for it carries over) is **shipping** (TASK-59): with an adjustment layer selected it shows
-Properties; TASK-62 puts it in the order below.
+Separators are shown as │. Items not listed don't exist, except what macOS adds to every app (Services, Quit and Keep
+Windows, Edit's Writing Tools, AutoFill, Start Dictation and Emoji & Symbols, Window's tiling items, the Help menu's
+Search). Status: **shipping** (TASK-62), the whole menu bar in this order, with these names, submenus and separators;
+the in-progress items are TASK-53's placeholders (`PlannedMenuItem`), Layer Style is TASK-64's, Layer Content Options…
+TASK-59's and Window's panel items TASK-58's (`DockCommands`). Items without a key here have none by default and take
+one in Keyboard Shortcuts (More Menu Commands), as every menu item does.
 
 - **Lamina:** About Lamina · Check for Updates… │ Settings… ⌘K │ Services ▸ │ Hide Lamina ⌃⌘H · Hide Others ⌥⌘H · Show All │ Quit Lamina ⌘Q
-- **File:** New… ⌘N · New from Clipboard ⌥⌘N · Open… ⌘O · Open Recent ▸ │ Close ⌘W │ Save ⌘S · Save As… ⇧⌘S · Save a Copy… ⌥⌘S (in progress: layered Photoshop files, TASK-27) │ Export ▸ (Quick Export as PNG │ Export As… ⌥⇧⌘W) │ Place Embedded…
+- **File:** New… ⌘N · New from Clipboard ⌥⌘N · Open… ⌘O · Open Recent ▸ (recent projects │ Clear Recent File List) │ Close ⌘W │ Save ⌘S · Save As… ⇧⌘S · Save a Copy… ⌥⌘S (in progress: layered Photoshop files, TASK-27) │ Export ▸ (Quick Export as PNG │ Export As… ⌥⇧⌘W · Export JPEG… ⌥⇧⌘S, until TASK-65 makes it Export As…'s JPEG format) │ Place Embedded…
 - **Edit:** Undo ⌘Z · Redo ⇧⌘Z │ Cut ⌘X · Copy ⌘C · Copy Merged ⇧⌘C · Paste ⌘V · Clear │ Fill… ⇧F5 · Stroke… · Content-Aware Fill… │ Free Transform ⌘T · Transform ▸ (Distort │ Flip Horizontal · Flip Vertical) │ Keyboard Shortcuts… ⌥⇧⌘K
 - **Image:** Adjustments ▸ (Levels… ⌘L · Curves… ⌘M · Exposure… │ Hue/Saturation… ⌘U · Color Balance… ⌘B · Black & White… ⌥⇧⌘B │ Invert ⌘I · Gradient Map… │ Grain…) │ Image Size… ⌥⌘I · Canvas Size… ⌥⌘C · Image Rotation ▸ (180° · 90° Clockwise · 90° Counter Clockwise │ Flip Canvas Horizontal · Flip Canvas Vertical) · Trim…
-- **Layer:** New ▸ (Layer… ⇧⌘N │ Group… · Group from Layers… │ Layer Via Copy ⌘J) · Duplicate Layer… · Delete ▸ Layer │ Rename Layer… · Layer Style ▸ (Blending Options… │ Stroke… · Inner Shadow… · Inner Glow… · Color Overlay… · Outer Glow… · Drop Shadow… │ Copy Layer Style · Paste Layer Style · Clear Layer Style) │ New Adjustment Layer ▸ (Grain… │ Levels… · Curves… · Exposure… │ Hue/Saturation… · Color Balance… · Black & White… │ Invert · Gradient Map… │ Gaussian Blur… · Motion Blur… · Add Noise…) · Layer Content Options… │ Layer Mask ▸ (Reveal All · Hide All · Reveal Selection · Hide Selection │ Delete · Apply) · Create Clipping Mask ⌥⌘G · Remove Background │ Rasterize (in progress, TASK-32) · Convert to Editable Vectors (in progress, TASK-35) │ Group Layers ⌘G · Ungroup Layers ⇧⌘G · Hide Layers ⌘, · Hide All Other Layers │ Arrange ▸ (Bring Forward ⌘] · Send Backward ⌘[ │ Move Out of Group) · Combine Shapes ▸ (in progress, TASK-34) · Release to Layers (in progress, TASK-34) │ Align ▸ (Top Edges · Vertical Centers · Bottom Edges │ Left Edges · Horizontal Centers · Right Edges) · Distribute ▸ (Vertical Centers · Horizontal Centers │ Horizontally · Vertically) │ Merge Down ⌘E (Merge Layers with several selected) · Merge Visible ⇧⌘E · Flatten Image
+- **Layer:** New ▸ (Layer… ⇧⌘N │ Group… · Group from Layers… │ Layer Via Copy ⌘J) · Duplicate Layer… · Delete ▸ Layer │ Rename Layer… · Layer Style ▸ (Blending Options… │ Stroke… · Inner Shadow… · Inner Glow… · Color Overlay… · Outer Glow… · Drop Shadow… │ Copy Layer Style · Paste Layer Style · Clear Layer Style) │ New Adjustment Layer ▸ (Grain… │ Levels… · Curves… · Exposure… │ Hue/Saturation… · Color Balance… · Black & White… │ Invert · Gradient Map… │ Gaussian Blur… · Motion Blur… · Add Noise…) · Layer Content Options… │ Layer Mask ▸ (Reveal All · Hide All · Reveal Selection · Hide Selection │ Delete · Apply) · Create Clipping Mask ⌥⌘G · Remove Background… │ Rasterize (in progress, TASK-32) · Convert to Editable Vectors (in progress, TASK-35) │ Group Layers ⌘G · Ungroup Layers ⇧⌘G · Hide Layers ⌘, · Hide All Other Layers │ Arrange ▸ (Bring Forward ⌘] · Send Backward ⌘[ │ Move Out of Group) · Combine Shapes ▸ (in progress, TASK-34) · Release to Layers (in progress, TASK-34) │ Align ▸ (Top Edges · Vertical Centers · Bottom Edges │ Left Edges · Horizontal Centers · Right Edges) · Distribute ▸ (Vertical Centers · Horizontal Centers │ Horizontally · Vertically) │ Merge Down ⌘E (Merge Layers with several selected) · Merge Visible ⇧⌘E · Flatten Image
 - **Type:** Panels ▸ (Character · Paragraph), both opening Properties
 - **Select:** All ⌘A · Deselect ⌘D · Inverse ⇧⌘I │ Color Range… · Subject │ Modify ▸ (Expand… · Contract… · Feather… ⇧F6) │ Load Selection…
 - **Filter:** Last Filter ⌃⌘F │ Camera Raw Filter… ⇧⌘A · Lens Correction… ⇧⌘R · Liquify… ⇧⌘X │ Blur ▸ (Gaussian Blur… · Motion Blur…) · Noise ▸ Add Noise… · Pixelate ▸ Dither… · Render ▸ Vignette… · Sharpen ▸ (Unsharp Mask… │ Tonal Contrast…) · Stylize ▸ Bloom / Glow… · Other ▸ High Pass…
 - **View:** Zoom In ⌘+ · Zoom Out ⌘− · Fit on Screen ⌘0 · 100% ⌘1 │ Extras ⌘H · Show ▸ (Grid ⌘' · Guides ⌘; · Pixel Grid) │ Rulers ⌘R │ Snap ⇧⌘; · Snap To ▸ (Guides · Grid · Layers · Document Bounds) │ Guides ▸ (Lock Guides ⌥⌘; · Clear Guides) │ Grid Settings…
-- **Window:** Workspace ▸ (Essentials (Default) │ Reset Essentials) │ Adjustments · History · Layers · Properties │ Contextual Task Bar (in progress, TASK-67) │ open documents. The Workspace submenu and the panel items are shipping (TASK-58), after the system's Minimize, Zoom and Bring All to Front.
+- **Window:** Minimize · Zoom (then the system's tiling items and Bring All to Front) │ Workspace ▸ (Essentials (Default) │ Reset Essentials) │ Adjustments · History · Layers · Properties │ Contextual Task Bar (in progress, TASK-67) │ open documents
 - **Help:** Search
+
+How the menus behave where the names alone don't say:
+
+- **Edit:** Free Transform and Transform ▸ (TASK-56): during a Free Transform, Flip turns the box over across the
+  reference point as part of the edit (dimmed while distorting); otherwise it flips the selected layers about their
+  middle at once. Clear empties the selected pixels (on a mask, fills them with the background color). Fill… and
+  Content-Aware Fill… are described under [Dialogs](#dialogs); ⌥⌫ and ⌘⌫ fill with the foreground and background
+  colors straight away and have no menu items (Keyboard Shortcuts lists them under Canvas & Layers, with Fill…'s
+  second key ⇧⌫). All three work wherever focus is, except in a text field.
+- **Image ▸ Adjustments** open the adjustment dialogs on the layer's pixels; Invert inverts the mask instead when the
+  mask is targeted. Image Rotation ▸ rotates and flips the whole canvas.
+- **Layer:** New ▸ Layer…, Group…, Group from Layers… and Duplicate Layer… make the layer (Group from Layers… groups the
+  selected layers, as Group Layers does) and open its name for editing in Layers, where familiar editors ask for it in
+  a dialog first; Duplicate Layer… copies every selected layer and opens the name only for a single copy. Layer Via
+  Copy copies the selected pixels to a new layer, or with no selection the whole layer. Delete ▸ Layer deletes the
+  selected layers (a mask goes with Layer Mask ▸ Delete, an effect from its row). Layer Content Options… (was Edit
+  Adjustment…; TASK-59) brings Properties, where an adjustment layer's settings are, to the front. Layer Mask ▸ Reveal All and Hide All add a mask all white or all black whatever is
+  selected, Reveal Selection and Hide Selection one from the selection (dimmed without one); Option-clicking the
+  Layers panel's mask button still picks between them. Remove Background… keeps its ellipsis: in Lamina it is a dialog
+  (Basic or Advanced, with a preview). Hide Layers hides every selected layer and reads Show Layers once they are all
+  hidden; Hide All Other Layers reads Show All Other Layers once the others are hidden. Align ▸ and Distribute ▸ follow
+  the Move bar's rules for what can be lined up.
+- **Type ▸ Panels ▸** Character and Paragraph both bring Properties to the front, where the type settings live.
+- **Select ▸ Load Selection…** replaces Layer's Pixels and Mask's Black Areas (see [Dialogs](#dialogs)); ⌘-clicking a
+  thumbnail in Layers still loads it.
+- **View:** Extras (⌘H) shows or hides the grid, guides, pixel grid and selection edges together, without changing
+  Show ▸'s own checkmarks, which say what returns with Extras; hidden extras aren't snapped to and guides can't be
+  dragged. Turning Grid, Guides or Pixel Grid on, adding a guide, or Grid Settings… shows Extras again, as in Photoshop.
+  Extras is saved as `extras`. Snap (⇧⌘;) is the one switch for everything that snaps (moves, resizes, crops,
+  marquees, shapes, guides) to what Snap To ▸ picks, saved as `snap` as before; the second, unsaved Snap toggle View had
+  before TASK-62 (moves and crops only) folded into it, and ⌃ while dragging still skips snapping. Show Transform
+  Controls is a Move bar checkbox only.
+- **Order, in code:** SwiftUI puts menus an app makes after the system's View menu, so Lamina makes View itself after
+  Filter and `MenuBarOrder` (`UI/MenuBarOrder.swift`) takes away the system's, left holding only Enter Full Screen (the
+  window's green button and Window's Full Screen Tile still offer it). Curves… keeps ⌘M only if the system's Minimize
+  doesn't have it, so Lamina makes Minimize and Zoom itself, without keys, and `MenuBarOrder` keeps them first in
+  Window, above the tiling items AppKit adds. The menus' layout is in `LaminaMain.swift` (one `Commands` per menu, and
+  `FilterKind.filterMenu`, `AdjustmentKind.menuSections`, `LayerAlignment.menuSections` and
+  `LayerDistribution.menuSections`, which Keyboard Shortcuts shares).
 
 ### Shortcut changes
 
-What changes from the shortcuts Lamina shipped before m-5 (applied by TASK-62; custom shortcuts people set carry over):
+What changes from the shortcuts Lamina shipped before m-5. **Shipping** (TASK-62; the earlier rows with the task
+named). Keyboard Shortcuts lists every one; function keys show as F1 to F12, and ⌘, is no longer reserved.
 
 | Command | Before | After |
 | --- | --- | --- |
 | Filter ▸ Last Filter | ⌘F | ⌃⌘F |
 | Layer ▸ Merge Visible | none | ⇧⌘E |
 | File ▸ Export ▸ Quick Export as PNG (was Export PNG…) | ⇧⌘E | none |
-| File ▸ Export ▸ Export As… | none | ⌥⇧⌘W (Export JPEG… and its ⌥⇧⌘S fold into it) |
+| File ▸ Export ▸ Export As… | none | ⌥⇧⌘W (Export JPEG… keeps ⌥⇧⌘S in Export ▸ until TASK-65 folds it in) |
 | Select ▸ Subject | ⌥⌘A | none |
-| View ▸ Extras | none | ⌘H (Show Transform Controls becomes a Move bar checkbox only; ⌘H left it with TASK-56) |
+| View ▸ Extras | none | ⌘H (Show Transform Controls is a Move bar checkbox only; ⌘H left it with TASK-56) |
 | Edit ▸ Free Transform (was Layer ▸ Transform Layer / Transform Selection) | ⌘T | ⌘T (shipping, TASK-56) |
 | Hide Lamina | none | ⌃⌘H |
 | Edit ▸ Fill… | none | ⇧F5, also ⇧⌫ |
 | Edit ▸ Content-Aware Fill… | ⇧⌫ | none |
+| Fill with the foreground / background color (no menu items) | ⌥⌫ / ⌘⌫ (Edit menu items) | ⌥⌫ / ⌘⌫ (Canvas & Layers) |
 | Color Balance… / Black & White… | none | ⌘B / ⌥⇧⌘B |
-| Camera Raw Filter… / Lens Correction… / Liquify… | none | ⇧⌘A / ⇧⌘R / ⇧⌘X (Liquify… shipped with TASK-54, at the top of the Filter menu until TASK-62 orders it) |
+| Camera Raw Filter… / Lens Correction… / Liquify… | none | ⇧⌘A / ⇧⌘R / ⇧⌘X (Liquify… shipped with TASK-54) |
 | Select ▸ Modify ▸ Feather… | none | ⇧F6 |
 | Layer ▸ Hide Layers | none | ⌘, |
 | Edit ▸ Keyboard Shortcuts… | none | ⌥⇧⌘K |
+| Window ▸ Minimize | ⌘M (the system's) | none: ⌘M is Image ▸ Adjustments ▸ Curves… |
 | Lamina ▸ Settings… | none (no Settings window) | ⌘K (shipping, TASK-51) |
 | File ▸ Save a Copy… / Pen Tool | none | ⌥⌘S / P (shipping as placeholders, TASK-53) |
 | Tools (shipped with TASK-54) | B with Tab cycling modes, R for Smear | E Eraser, O Dodge and Burn, R Blur and Smudge, Shift plus key cycles a slot; Tab does nothing on the canvas |
@@ -572,8 +607,8 @@ What changes from the shortcuts Lamina shipped before m-5 (applied by TASK-62; c
   100 pt column on the right, 18 pt from the settings, inside 20 pt margins. This applies to adjustment, filter,
   selection (Expand, Contract, Feather, Color Range, Load Selection), Stroke, Fill, Trim, Canvas Size and Layer Style
   dialogs. **Shipping** (TASK-63) for Levels, Curves, Hue/Saturation, Exposure, Black & White, Color Balance, Gradient
-  Map, Grain, every Filter menu dialog, Color Range, Expand, Contract, Feather, Stroke, Trim and Canvas Size, and for
-  Layer Style (TASK-64).
+  Map, Grain, every Filter menu dialog, Color Range, Expand, Contract, Feather, Stroke, Trim and Canvas Size, for
+  Layer Style (TASK-64), and for Fill and Load Selection (TASK-62).
 - Image Size puts Cancel and OK in a row at the bottom right (**shipping**, TASK-63); New Document and Export As follow
   (TASK-65).
 - One layout in code: `DialogLayout` (`Sources/LaminaApp/UI/DialogLayout.swift`) takes the settings, `confirm` and
@@ -581,14 +616,30 @@ What changes from the shortcuts Lamina shipped before m-5 (applied by TASK-62; c
   with a spinner), a `title` heading for dialogs shown as sheets (which have no title bar), `defaultTitle` and
   `placement: .bottom`. `DialogButton` is a column-wide button, `DialogRow` a right-aligned "Label:" row and
   `DialogGroup` a titled group box; `DialogPreviewToggle` is the Preview checkbox, for a dialog that puts it in its
-  extras with something under it (Layer Style's swatch). Floating panels (adjustments, filters, Color Range, Expand/Contract/Feather) and
-  window sheets (Stroke, Trim, Canvas Size, Image Size) keep their presentation and share the layout.
+  extras with something under it (Layer Style's swatch). Floating panels (adjustments, filters, Color Range,
+  Expand/Contract/Feather, Fill, Load Selection) and window sheets (Stroke, Trim, Canvas Size, Image Size) keep their
+  presentation and share the layout.
 - Column contents, top to bottom: Levels has OK, Cancel, Auto (click for Contrast; its menu has Color and Color +
   neutral midtones), Reset, the black, gray and white point eyedroppers, Preview. Curves has OK, Cancel, Reset, Preview.
   Hue/Saturation has OK, Cancel, Reset, Preview. Color Range has OK, Cancel, the Sample, Add and Remove eyedroppers,
   Invert (no Preview: the selection always updates). Filters have OK, Cancel, Preview; Remove Background and
-  Content-Aware Fill keep a status line there while their preview is worked out. Stroke, Trim, Canvas Size and
-  Expand/Contract/Feather have OK and Cancel.
+  Content-Aware Fill keep a status line there while their preview is worked out. Stroke, Fill, Load Selection, Trim,
+  Canvas Size and Expand/Contract/Feather have OK and Cancel.
+- Fill (Edit ▸ Fill…, ⇧F5 or ⇧⌫; `FillSheet`, model in `Document/Fill.swift`): Contents: Foreground Color, Background
+  Color, Color…, Content-Aware, Black, 50% Gray, White, then a Blending group with Opacity (%). Choosing Color… opens
+  the app's color picker at once and shows the chosen color in a well beside the menu, which opens it again.
+  Content-Aware needs a selection on an image's pixels (dimmed otherwise) and opens Content-Aware Fill, with its own
+  preview, so Opacity is dimmed for it. OK fills the selection, or the whole layer or mask without one, as one "Fill"
+  undo step; on a mask a color fills with its brightness, and the swatches stand for white and black. A text layer
+  filled whole with an opaque color takes it as its text color and stays editable. The dialog remembers its settings.
+- Load Selection (Select ▸ Load Selection…; `LoadSelectionSheet`, model in `Document/LoadSelection.swift`): a Source
+  group with Document (the document in front), Channel (each layer's "Name Transparency", its pixels at least 50%
+  opaque, and each "Name Mask", what the mask reveals, at least 50% white, top layer first; it starts on the active
+  layer's, its mask when the mask is targeted) and Invert, then an Operation group: New Selection, Add to Selection,
+  Subtract from Selection (dimmed without a selection). A mask is a channel over the whole canvas, its edge's value
+  beyond its own pixels, so an inverted reveal-all mask is exactly its black areas, what Mask's Black Areas selected.
+  A new selection from an empty channel keeps the old one (a beep); taking away everything leaves no selection.
+- While Fill or Load Selection is open, other edits, Undo and `lamina` edits wait ("The Fill dialog is open.").
 - Filter dialogs share one frame (`FilterPreview`): a 340 × 220 preview of the layer, with zoom out, the percentage and
   zoom in under it (6.25% to 1600%, starting at 100% of the layer's pixels, centered on the selection or the layer),
   then the settings, each slider paired with a field and its unit ("Pixels", "%", "°", "levels") in a column of its own.
@@ -708,11 +759,14 @@ placeholder goes too.
 - Use native controls and SF Symbols; take every custom color from a named role. The mockup
   ([references/redesign_v2.html](references/redesign_v2.html)) shows layout and contents, not pixels to copy; its HTML
   imitates controls that the app draws natively.
-- The frame lives in `Sources/LaminaApp/ContentView.swift`, menus in `LaminaMain.swift`, tool bars in
+- The frame lives in `Sources/LaminaApp/ContentView.swift`, menus in `LaminaMain.swift` (and `UI/MenuBarOrder.swift`,
+  `UI/DockCommands.swift`), tool bars in
   `Sources/LaminaApp/UI/*Controls.swift`, the dock in `UI/Dock.swift` and `UI/DockLayout.swift`, panels in
   `UI/PropertiesPanel.swift`, `UI/AdjustmentsPanel.swift`, `UI/LayersPanel.swift` and `UI/HistoryPanel.swift`, shortcuts in
-  `UI/KeyboardShortcuts.swift` (`ShortcutDefinition.all`). Custom shortcuts for menu commands without a default are
-  saved by menu title, so renaming an item means carrying its saved key over.
+  `UI/KeyboardShortcuts.swift` (`ShortcutDefinition.all`). Custom shortcuts are saved by entry id ("Menus:Title" for a
+  command with a default key, "More Menu Commands:Menu › Item" for one without), so renaming or moving an item means
+  adding its old id to `ShortcutSettings.renamedIDs`, which carries the saved key over (`KeyboardShortcutTests` checks
+  that every old id leads to a command).
 - `lamina` commands and the MCP server don't depend on menu names, but README, website and screenshots do
   (`brand/README.md`).
 

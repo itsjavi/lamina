@@ -80,7 +80,7 @@ tool, as an MCP server, or by writing a project while you watch it update. Vecto
 - Add Noise, Vignette, Bloom / Glow, Tonal Contrast, Lens Correction and Remove Background
 - Unsharp Mask (Amount, Radius, Threshold) and High Pass
 - Live previews, limited to the selection when there is one
-- Last Filter (⌘F) runs the last filter again with the same settings
+- Last Filter (⌃⌘F) runs the last filter again with the same settings
 
 ### Canvas and files
 - Multiple projects in tabs

@@ -3,7 +3,7 @@ import AppKit
 /// Keeps the menu bar in the order docs/DESIGN.md (Menus) gives it where SwiftUI alone can't:
 /// - View after Filter, as familiar editors have it. SwiftUI places menus an app makes (`CommandMenu`) after the
 ///   system's View menu, so Lamina makes its own View menu after Filter, and AppKit still keeps the system's for its
-///   Enter Full Screen item. That one goes; the window's green button still enters full screen.
+///   Enter Full Screen item. That one goes; Lamina's View menu has its own Enter Full Screen (`FullScreenState`).
 /// - Minimize and Zoom first in Window. Lamina makes them itself, without ⌘M (Curves…), and AppKit puts its window
 ///   tiling items (Fill, Center, Move & Resize) above any Minimize it doesn't know as its own.
 /// SwiftUI builds the menu bar again as commands change and AppKit adds its items late, so a change to either menu
@@ -59,5 +59,21 @@ enum MenuBarOrder {
         window.removeItem(zoom)
         window.insertItem(minimize, at: 0)
         window.insertItem(zoom, at: 1)
+    }
+}
+
+/// Whether a window is in full screen, so View › Enter Full Screen can read Exit Full Screen while it is.
+@MainActor @Observable
+final class FullScreenState {
+    static let shared = FullScreenState()
+    private(set) var isFullScreen = false
+    @ObservationIgnored private var observers: [NSObjectProtocol] = []
+
+    private init() {
+        for (name, value) in [(NSWindow.didEnterFullScreenNotification, true), (NSWindow.didExitFullScreenNotification, false)] {
+            observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.isFullScreen = value }
+            })
+        }
     }
 }

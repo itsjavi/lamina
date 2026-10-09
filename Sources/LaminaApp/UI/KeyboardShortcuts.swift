@@ -113,7 +113,7 @@ struct ShortcutDefinition: Identifiable {
             "Select › Load Selection…",
             "View › Show › Pixel Grid",
             "View › Snap To › Guides", "View › Snap To › Grid", "View › Snap To › Layers", "View › Snap To › Document Bounds",
-            "View › Guides › Clear Guides", "View › Grid Settings…",
+            "View › Guides › Clear Guides", "View › Grid Settings…", "View › Enter Full Screen",
             "Window › Minimize", "Window › Zoom",
             "Window › Workspace › Essentials (Default)", "Window › Workspace › Reset Essentials",
         ]

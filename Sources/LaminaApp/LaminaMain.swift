@@ -639,6 +639,12 @@ private struct ViewMenuCommands: Commands {
             Button("Grid Settings…") { Task { await applicationDelegate.projects.gridSettings() } }
                 .assignableShortcut("View › Grid Settings…")
                 .disabled(noDocument)
+            Divider()
+            // AppKit's own View menu, which held this item, gives way to this one (MenuBarOrder). No ⌃⌘F: that's Last Filter.
+            Button(FullScreenState.shared.isFullScreen ? "Exit Full Screen" : "Enter Full Screen") {
+                NSApp.keyWindow?.toggleFullScreen(nil)
+            }
+                .assignableShortcut("View › Enter Full Screen")
         }
     }
 }

@@ -146,7 +146,7 @@ struct BrushFlowTests {
         let masking = session()
         masking.addLayerMask(revealing: true)
         masking.selectLayerTarget(try #require(masking.activeLayerID), mask: true)
-        masking.maskPaintWhite = false
+        masking.foregroundColor = .black
         masking.beginBrush(at: CGPoint(x: 40, y: 40))
         masking.finishBrushImmediately()
         let masked = try await alpha(masking)

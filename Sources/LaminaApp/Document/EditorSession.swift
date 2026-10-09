@@ -289,7 +289,6 @@ final class EditorSession {
         savedBrushDefaults = current
     }
     @ObservationIgnored var cloneOffset: CGSize?
-    var maskPaintWhite = false { didSet { refreshGradient() } }
     var backgroundColor = PaletteColor.white { didSet { refreshGradient(); saveBrushDefaults() } }
     var gradientSettings = GradientSettings() { didSet { refreshGradient() } }
     var gradientEdit: GradientEdit?

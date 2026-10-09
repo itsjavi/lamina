@@ -18,18 +18,20 @@ struct PlannedMenuItem: View {
     }
 }
 
-/// The Brush bar's bristle presets, until TASK-57 moves them into the brush picker.
-struct BristlePresetsMenu: View {
+/// The bristle presets at the foot of the Brush's brush picker (TASK-46).
+struct BristlePresetList: View {
     let session: EditorSession
 
     var body: some View {
-        Menu("Presets") {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Bristle Presets").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
             ForEach(PlannedFeature.bristlePresets) { feature in
-                Button(feature.title) { session.showInProgress(feature) }.help(feature.helpTag)
+                Button(feature.title) { session.showInProgress(feature) }
+                    .buttonStyle(.borderless)
+                    .help(feature.helpTag)
             }
         }
-        .fixedSize()
-        .help("Bristle brush presets · In progress")
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("brushPresets")
     }
 }

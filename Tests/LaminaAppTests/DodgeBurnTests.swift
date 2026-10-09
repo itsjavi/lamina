@@ -79,7 +79,8 @@ struct DodgeBurnTests {
         #expect(try pixel(session, 60).value > once + 5)
     }
 
-    @Test func exposureAndOpacityScaleItAndZeroChangesNothing() throws {
+    /// Exposure is how far they go; the Brush's Opacity, which their bar doesn't show, plays no part.
+    @Test func exposureScalesItOpacityDoesntAndZeroChangesNothing() throws {
         var moves: [Int] = []
         for (exposure, opacity) in [(1.0, 1.0), (0.5, 1.0), (1.0, 0.5), (0.25, 1.0)] {
             let session = try session()
@@ -89,7 +90,7 @@ struct DodgeBurnTests {
             moves.append(try pixel(session, 60).value - 128)
         }
         #expect(moves[0] > moves[1] && moves[1] > moves[3] && moves[3] > 0)
-        #expect(abs(moves[1] - moves[2]) <= 1, "half exposure and half opacity cap the stroke alike")
+        #expect(abs(moves[0] - moves[2]) <= 1, "opacity leaves the stroke as it is")
 
         let session = try session(tool: .burn)
         session.toneExposure = 0

@@ -8,6 +8,12 @@ nonisolated extension PaletteColor {
         guard let rgb = color.usingColorSpace(.sRGB) else { return nil }
         self.init(red: min(1, max(0, rgb.redComponent)), green: min(1, max(0, rgb.greenComponent)), blue: min(1, max(0, rgb.blueComponent)))
     }
+    /// The color's lightness as one gray (Rec. 601 weights), what it paints on a mask.
+    var gray: CGFloat {
+        // A gray stays exactly itself: the weighted sum would leave white a hair short of 1.
+        red == green && green == blue ? red : min(1, max(0, red * 0.299 + green * 0.587 + blue * 0.114))
+    }
+    var grayscale: PaletteColor { PaletteColor(red: gray, green: gray, blue: gray) }
 }
 
 extension EditorSession {
@@ -16,36 +22,31 @@ extension EditorSession {
         set { brushSettings.red = newValue.red; brushSettings.green = newValue.green; brushSettings.blue = newValue.blue }
     }
     var canEditPalette: Bool { _ = showsBusy; return !isProjectBusy && brushStroke == nil }
+    /// The swatch as it paints: in gray while a mask is targeted, since a mask holds only grays.
     func paletteColor(background: Bool) -> PaletteColor {
-        if isMaskSelected { return (background ? !maskPaintWhite : maskPaintWhite) ? .white : .black }
-        return background ? backgroundColor : foregroundColor
+        let color = background ? backgroundColor : foregroundColor
+        return isMaskSelected ? color.grayscale : color
     }
     func setPaletteColor(_ color: PaletteColor, background: Bool) {
         guard canEditPalette else { return }
-        if isMaskSelected {
-            let white = color == .white
-            maskPaintWhite = background ? !white : white
-        } else if background { backgroundColor = color }
+        if background { backgroundColor = color }
         else {
             foregroundColor = color
             // Type paints in the foreground color, so text being edited follows the swatch. A text layer merely
             // selected keeps its color: it changes only while its text is open for editing.
-            if tool == .type, textDraft != nil { setDraftTextColor(color) }
+            if tool == .type, textDraft != nil, !isMaskSelected { setDraftTextColor(color) }
         }
     }
     func swapPaletteColors() {
         guard canEditPalette else { return }
-        if isMaskSelected { maskPaintWhite.toggle() }
-        else {
-            let old = foregroundColor
-            setPaletteColor(backgroundColor, background: false)
-            backgroundColor = old
-        }
+        let old = foregroundColor
+        setPaletteColor(backgroundColor, background: false)
+        backgroundColor = old
     }
     func resetPaletteColors() {
         guard canEditPalette else { return }
-        if isMaskSelected { maskPaintWhite = false }
-        else { setPaletteColor(.black, background: false); backgroundColor = .white }
+        setPaletteColor(.black, background: false)
+        backgroundColor = .white
     }
 
     func openColorPicker(background: Bool) {

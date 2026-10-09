@@ -29,6 +29,8 @@ enum NavigationTool: String, CaseIterable {
     /// The Brush and the tools that were once its modes. Flow, the pressure buttons and Smoothing are theirs; the other
     /// brush tools lay their full tip.
     var usesBrushDynamics: Bool { [.brush, .eraser, .dodge, .burn].contains(self) }
+    /// The Brush and Eraser trail the pointer on Smoothing's string; Dodge and Burn follow it straight.
+    var usesSmoothing: Bool { self == .brush || self == .eraser }
     /// Smudge and Liquify move the layer's pixels (`WarpStroke`) rather than painting through the tip.
     var warps: Bool { self == .smudge || self == .liquify }
     /// Tools that draw and edit selections, sharing modifiers, moving, and nudging.

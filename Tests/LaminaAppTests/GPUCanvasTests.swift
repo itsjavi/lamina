@@ -184,7 +184,7 @@ import LaminaCore
         let session = try paintable(masked: masked)
         session.tool = .brush
         session.isMaskSelected = paintingMask
-        session.maskPaintWhite = false
+        session.foregroundColor = .black
         stroke(session)
         #expect(session.brushStroke != nil)
         session.zoom(to: 1)

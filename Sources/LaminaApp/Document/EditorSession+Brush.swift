@@ -78,11 +78,15 @@ extension EditorSession {
                 // At 0% nothing would change; there's no stroke to make.
                 guard toneExposure > 0 else { return }
                 settings.toning = BrushToning(lightens: lightens, range: toneRange, exposure: toneExposure)
+                // Exposure alone sets how far they go, as the bar shows; the Brush's Opacity, Flow and opacity
+                // pressure aren't theirs.
+                settings.opacity = 1; settings.flow = 1; settings.pressureOpacity = false
             }
             settings.healingMode = spotHealingMode
             // Flow and the pressure buttons belong to the Brush, Eraser, Dodge and Burn; the other brush tools lay their full tip.
             if !tool.usesBrushDynamics { settings.flow = 1; settings.pressureSize = false; settings.pressureOpacity = false }
-            if isMaskSelected { settings.red = maskPaintWhite ? 1 : 0; settings.green = settings.red; settings.blue = settings.red }
+            // A mask paints in the gray of the foreground color: black hides, white reveals.
+            if isMaskSelected { settings.red = foregroundColor.gray; settings.green = settings.red; settings.blue = settings.red }
             let stroke = try makeRasterEdit(for: layer, settings: settings, growsMask: tool.usesBrushDynamics)
             if let offset = sourceOffset {
                 guard let sample = cloneSample(document, for: stroke, offset: offset) else { return }
@@ -119,7 +123,7 @@ extension EditorSession {
     /// is in screen points, so it feels the same however far the canvas is zoomed in. Nil while the
     /// string is still slack, which is the whole point: those jitters never reach the stroke.
     private func smoothed(_ point: CGPoint) -> CGPoint? {
-        guard tool.usesBrushDynamics, brushSettings.smoothing > 0, let anchor = brushAnchor else { return point }
+        guard tool.usesSmoothing, brushSettings.smoothing > 0, let anchor = brushAnchor else { return point }
         let radius = brushSettings.smoothing / max(0.01, viewport.zoom)
         let delta = CGPoint(x: point.x - anchor.x, y: point.y - anchor.y)
         let distance = hypot(delta.x, delta.y)
@@ -155,7 +159,7 @@ extension EditorSession {
         do {
             // Smoothing leaves the brush short of the pointer; the stroke ends where the hand did.
             if let pointer = brushPointer, let anchor = brushAnchor, pointer != anchor,
-               tool.usesBrushDynamics, brushSettings.smoothing > 0 {
+               tool.usesSmoothing, brushSettings.smoothing > 0 {
                 try stroke.append(pointer, pressure: brushPressure)
             }
             try stroke.flush()
@@ -259,6 +263,8 @@ extension EditorSession {
         }
         let value = CGFloat(percent) / 100
         switch tool {
+        // Dodge and Burn have Exposure where the other brushes have Opacity.
+        case .dodge, .burn: toneExposure = value
         case _ where tool.isBrushTool: brushSettings.opacity = value
         case .gradient: gradientSettings.opacity = value
         case .paintBucket: bucketSettings.opacity = value

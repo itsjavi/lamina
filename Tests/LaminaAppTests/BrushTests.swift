@@ -167,6 +167,7 @@ struct BrushTests {
         session.addLayerMask()
         session.brushSettings.diameter = 40
         session.brushSettings.hardness = 0
+        session.foregroundColor = .black
         session.beginBrush(at: CGPoint(x: 40, y: 40))
         let live = try preview(try #require(session.brushStroke), canvas: session.document!.size)
         await session.finishBrush()
@@ -178,7 +179,7 @@ struct BrushTests {
         #expect(try pixel(result, x: 40, y: 40)[3] < 25)
         #expect(session.activeLayer?.asset?.image === source)
         #expect(session.activeLayer?.mask?.asset.image.width == 80)
-        session.maskPaintWhite = true
+        session.foregroundColor = .white
         session.brushSettings.hardness = 1
         session.beginBrush(at: CGPoint(x: 40, y: 40))
         await session.finishBrush()
@@ -395,13 +396,42 @@ struct BrushTests {
         session.selectLayerTarget(try #require(session.activeLayerID), mask: true)
         session.brushSettings.diameter = 20
         session.brushSettings.opacity = 0.5
-        session.maskPaintWhite = false
+        session.foregroundColor = .black
         session.beginBrush(at: CGPoint(x: 40, y: 40))
         session.continueBrush(at: CGPoint(x: 42, y: 40))
         await session.finishBrush()
         let result = try await render(session)
         #expect(abs(try pixel(result, x: 40, y: 40)[3] - 128) <= 1)
         #expect(try pixel(result, x: 5, y: 5)[3] == 255)
+    }
+    /// A mask paints in the gray of the foreground color, and the swatches show that gray while it is targeted;
+    /// D and X still give and swap black and white.
+    @Test func maskPaintingUsesTheForegroundColorsGray() async throws {
+        let session = makeSession(width: 80, height: 80)
+        session.brushSettings.diameter = 200
+        session.beginBrush(at: CGPoint(x: 40, y: 40))
+        session.continueBrush(at: CGPoint(x: 41, y: 40))
+        await session.finishBrush() // Opaque red layer over the whole canvas.
+        session.addLayerMask(revealing: true)
+        session.selectLayerTarget(try #require(session.activeLayerID), mask: true)
+        let orange = PaletteColor(red: 1, green: 0.5, blue: 0)
+        session.foregroundColor = orange
+        let gray = 0.299 + 0.5 * 0.587
+        #expect(abs(session.paletteColor(background: false).red - gray) < 0.001)
+        #expect(session.paletteColor(background: false).green == session.paletteColor(background: false).blue)
+        session.brushSettings.diameter = 20
+        session.beginBrush(at: CGPoint(x: 40, y: 40))
+        session.continueBrush(at: CGPoint(x: 42, y: 40))
+        await session.finishBrush()
+        #expect(abs(try pixel(try await render(session), x: 40, y: 40)[3] - Int((gray * 255).rounded())) <= 2)
+        #expect(session.foregroundColor == orange, "the color itself is kept for the layer's pixels")
+        session.resetPaletteColors()
+        #expect(session.paletteColor(background: false) == .black && session.paletteColor(background: true) == .white)
+        session.swapPaletteColors()
+        #expect(session.paletteColor(background: false) == .white)
+        session.selectLayerTarget(try #require(session.activeLayerID), mask: false)
+        session.foregroundColor = orange
+        #expect(session.paletteColor(background: false) == orange)
     }
     @Test func shiftBracketsStepHardnessByQuarters() {
         let session = makeSession()
@@ -436,6 +466,13 @@ struct BrushTests {
         session.selectTool(.move)
         session.typeOpacityDigit(3, at: 60)
         #expect(session.gradientSettings.opacity == 0.1)
+        // Dodge and Burn's bar has Exposure where the others have Opacity, and the keys set it.
+        session.selectTool(.dodge)
+        session.typeOpacityDigit(7, at: 70)
+        #expect(session.toneExposure == 0.7)
+        session.selectTool(.blur)
+        session.typeOpacityDigit(2, at: 80)
+        #expect(session.brushSettings.opacity == 0.2, "Blur's Strength")
     }
     @Test func largeBlankCanvasOnlyAllocatesTouchedTilesUntilCommit() throws {
         let session = makeSession(width: 10_000, height: 10_000)

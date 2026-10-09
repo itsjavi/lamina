@@ -183,7 +183,8 @@ struct PaintBucketTests {
         let id = try #require(session.activeLayerID)
         session.addLayerMask(revealing: true)
         session.selectLayerTarget(id, mask: true)
-        // Hide the top half: the mask's palette is black (hide) on white (reveal).
+        // Hide the top half: black (hide) on white (reveal), the default colors (D).
+        session.resetPaletteColors()
         session.selectionAntialiased = false
         session.applySelection(CGPath(rect: CGRect(x: 0, y: 0, width: 100, height: 20), transform: nil), mode: .replace, name: "Select")
         await session.fillSelection(with: .foreground)

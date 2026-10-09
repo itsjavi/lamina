@@ -214,7 +214,7 @@ struct LayerMaskTests {
         // Painting black on the folder's mask hides the layer inside only there.
         session.selectTool(.brush)
         session.brushSettings = BrushSettings(diameter: 8, hardness: 1, red: 0, green: 0, blue: 0)
-        session.maskPaintWhite = false
+        session.foregroundColor = .black
         session.beginBrush(at: CGPoint(x: 10, y: 10))
         session.continueBrush(at: CGPoint(x: 11, y: 10))
         await session.finishBrush()
@@ -249,7 +249,7 @@ struct LayerMaskTests {
         session.addLayerMask()
         session.selectTool(.brush)
         session.brushSettings = BrushSettings(diameter: 30, hardness: 1, red: 0, green: 0, blue: 0)
-        session.maskPaintWhite = false
+        session.foregroundColor = .black
         let view = CanvasView(session: session)
         let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 400, height: 200), styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = view

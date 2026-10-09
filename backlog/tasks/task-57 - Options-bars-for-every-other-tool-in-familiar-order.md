@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-09 02:14'
-updated_date: '2026-10-09 06:47'
+updated_date: '2026-10-09 06:52'
 labels: []
 milestone: m-5
 dependencies:
@@ -60,4 +60,6 @@ Each tool's bar orders and names its controls its own way: a Mode picker instead
 
 <!-- SECTION:NOTES:BEGIN -->
 Selection tools: SelectionModeButtons (New/Add/Subtract icons, pressed while Shift/Option or an outline applies), Feather: px sets EditorSession.selectionToolFeather for the next marquee/lasso outline (applySelection(feather:)); adding to or subtracting from a softer selection keeps the softer edge, since a selection has one edge softness. Expand/Contract/Feather buttons, Deselect and the empty-selection readout left the bar (Select ▸ Modify and ⌘D cover them). Object Selection keeps Anti-alias (it changes the result) as a Lamina extra. Shared pieces: OptionsBarRow, OptionsBarCommitButtons, OptionsBarIconButton (now generic, with isPressed), OptionsBarField, PercentField, OptionsBarPicker (UI/OptionsBar.swift, UI/OptionsBarFields.swift).
+
+Painting tools: BrushPicker (tip preview + size; pop-over with Size in square-root slider steps and Hardness, plus BristlePresetList for the Brush, replacing BristlePresetsMenu). PercentField for Opacity/Flow/Smoothing/Strength/Exposure. Pressure toggles only where pressure works (Brush, Eraser; size for Dodge/Burn), so the spec's pressure buttons on Spot Healing, Clone Stamp, Blur/Smudge were left out and the rows updated. Mask painting: maskPaintWhite removed; a targeted mask paints the foreground's gray (PaletteColor.gray, Rec. 601; exact for grays), the swatches show gray (paletteColor), D/X reset and swap the real colors; the toolbar swatch's Black/White pop-over stays as a quick pick. Dodge/Burn: strokes take Exposure only (Opacity, Flow, opacity pressure and Smoothing, which their bar doesn't show, no longer apply) and 1–0 set Exposure; Blur/Smudge/Liquify's Strength is the opacity the keys already set. Spot Healing keeps Opacity as a Lamina extra (healing honors it). Liquify's Cancel/Done became ⊘/✓.
 <!-- SECTION:NOTES:END -->

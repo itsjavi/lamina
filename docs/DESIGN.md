@@ -258,7 +258,7 @@ holds carries over to new documents with the brush settings.
 | Colors | Foreground over background swatches, default colors and swap controls | D, X |
 
 Liquify is not a toolbar tool: Filter ▸ Liquify… (⇧⌘X) picks the Liquify brush, with its own bar (brush picker,
-Strength, then Cancel and Done). Done (Return) goes back to the tool chosen before and keeps the strokes; Cancel
+Strength, then Cancel ⊘ and Commit ✓). Commit (Return) goes back to the tool chosen before and keeps the strokes; Cancel
 (Escape) jumps History back to where Liquify was chosen, so Redo can bring the strokes back, then goes back too.
 Picking any other tool keeps the strokes, as Done does. The menu item is dimmed without a layer's pixels to push (an
 empty layer, a mask targeted). Status: **shipping** (TASK-54). Tools familiar editors have and Lamina has no task for
@@ -285,20 +285,37 @@ divider and 24 × 22 icon button).
 | Magic Wand | selection icons │ Sample Size: · Tolerance: · Anti-alias · Contiguous · Sample All Layers │ Select Subject |
 | Crop | Ratio (Ratio, Original Ratio, 1:1 (Square), 4:3, 16:9, …) · W ⇄ H · Clear │ … Cancel · Commit |
 | Eyedropper | Show Sampling Ring |
-| Spot Healing Brush | brush picker │ Type: Content-Aware \| Create Texture \| Proximity Match │ pressure for size |
-| Brush | brush picker (Size, Hardness; bristle presets in progress, TASK-46, shipping as a Presets pop-up at the start of today's bar until TASK-57 builds the picker) │ Opacity · pressure for opacity · Flow │ Smoothing │ pressure for size |
-| Clone Stamp | brush picker │ Opacity · pressure for opacity │ Aligned · Sample: Current Layer, All Layers │ pressure for size |
-| Eraser | brush picker │ Opacity · pressure for opacity · Flow · Smoothing │ pressure for size |
+| Spot Healing Brush | brush picker │ Type: Content-Aware \| Create Texture \| Proximity Match │ Opacity: (Lamina) |
+| Brush | brush picker (Size, Hardness; bristle presets in progress, TASK-46) │ Opacity: · pressure for opacity · Flow: │ Smoothing: │ pressure for size |
+| Clone Stamp | brush picker │ Opacity: │ Aligned · Sample: Current Layer, All Layers |
+| Eraser | brush picker │ Opacity: · pressure for opacity · Flow: · Smoothing: │ pressure for size |
 | Gradient | gradient preset picker · Linear, Radial │ Opacity · Reverse |
 | Paint Bucket | Fill: Foreground │ Opacity · Tolerance · Anti-alias · Contiguous · All Layers |
-| Blur / Smudge | brush picker │ Strength · Radius (Blur only, Lamina) │ pressure for size |
-| Dodge / Burn | brush picker │ Range: Shadows, Midtones, Highlights · Exposure │ pressure for size |
+| Blur / Smudge | brush picker │ Strength: · Radius: px (Blur only, Lamina) |
+| Liquify (Filter ▸ Liquify…) | brush picker │ Strength: │ … Cancel ⊘ · Commit ✓ |
+| Dodge / Burn | brush picker │ Range: Shadows, Midtones, Highlights · Exposure: │ pressure for size |
 | Horizontal Type | font family · font style · size │ Left, Center, Right · color · Character panel │ … Cancel · Commit (leading and tracking are in Properties ▸ Character, shipping with TASK-59) |
 | Rectangle / Ellipse / Line | Fill swatch · Stroke swatch and width (in progress, TASK-32) · stroke options (in progress, TASK-34) │ path operations (in progress, TASK-34) │ Radius (Rectangle) or Weight (Line). This order and the placeholders ship with TASK-53 (the stroke swatch shows "none": an empty `field` well crossed by a `secondaryText` line; the width reads "1 px"); the labels keep today's wording, without colons, until TASK-57 |
 | Hand | 100% · Fit Screen · Fill Screen (shipping, TASK-52) |
 | Zoom | Zoom In, Zoom Out │ Scrubby Zoom │ 100% · Fit Screen · Fill Screen (the three buttons ship with TASK-52; the rest is TASK-57) |
 
 The painting bars carry no color swatch: color comes from the toolbar's swatches, black and white for masks included.
+While a mask is targeted, the swatches show their colors in gray and every tool paints, fills and draws gradients in
+that gray (Rec. 601 weights; the colors themselves are kept for the layer's pixels): black hides, white reveals, and D
+and X give and swap them, as in familiar editors. The toolbar swatch's Black · Hide / White · Reveal pop-over stays for
+picking either quickly.
+
+The painting bars (`BrushControls`, **shipping**, TASK-57) start with the brush picker (`BrushPicker`,
+`UI/BrushPicker.swift`): the tip drawn in `text`, solid to its hardness and fading to its edge, with the size in pixels
+under it and a chevron. A click opens a pop-over with Size: (a slider in square-root steps, 1–2000 px, and its field)
+and Hardness: (0–100%), and for the Brush the bristle presets, in progress. [ and ] still step the size and Shift-[
+and Shift-] the hardness. Opacity, Flow, Smoothing, Strength and Exposure are `PercentField`s: the label (drag it to
+scrub), the field with %, and a chevron opening a slider. The pressure buttons are pressed icon buttons
+(`scribble.variable` for size, `drop.halffull` for opacity), shown only on the tools a pen's pressure works on (Brush,
+Eraser, and size for Dodge and Burn). The number keys set the bar's main percentage: Opacity, Strength for Blur,
+Smudge and Liquify, Exposure for Dodge and Burn (whose strokes no longer take the Brush's Opacity, Flow or Smoothing,
+which their bar doesn't show). Spot Healing keeps an Opacity field, which familiar editors don't have there, since
+Lamina's healing honors it.
 
 The selection tools' bars (`LassoControls`, **shipping**, TASK-57) start with New Selection (`square`), Add to
 Selection (`plus.square`) and Subtract from Selection (`minus.square`), icon buttons that show the mode pressed:
@@ -606,7 +623,7 @@ on the next click and is announced to VoiceOver. A placeholder looks like a ship
 | Mixer Brush Tool | Brush flyout | TASK-47 |
 | Palette Knife Tool | Brush flyout | TASK-50 |
 | Polygon Tool, Star Tool | Shapes flyout | TASK-32 |
-| Bristle presets: Flat Bristle, Round Bristle, Fan, Dry Brush | brush picker (until TASK-57, a Presets pop-up at the start of the Brush bar) | TASK-46 |
+| Bristle presets: Flat Bristle, Round Bristle, Fan, Dry Brush | the Brush's brush picker, under Size and Hardness | TASK-46 |
 | Shape Stroke: the stroke swatch and width | shape tool bars | TASK-32 |
 | Stroke Options, Path Operations | shape tool bars | TASK-34 |
 | Save a Copy… ⌥⌘S | File, after Save As… | TASK-27 |
@@ -633,7 +650,7 @@ How it works (`Sources/LaminaApp/Document/PlannedFeature.swift`):
   Brush, Palette Knife, Brush.
 - Help tags read "Pen Tool (P) · In progress", "Shape Stroke · In progress" (macOS shows none on menu items, so menu
   placeholders are told apart only by their message). Menu placeholders are `PlannedMenuItem`,
-  bar controls `BristlePresetsMenu` and `ShapeStrokePlaceholders` (`UI/PlannedControls.swift`). Menu items without a
+  bar controls `BristlePresetList` (in the brush picker) and `ShapeStrokePlaceholders` (`UI/PlannedControls.swift`). Menu items without a
   default key take one in Keyboard Shortcuts like any other (`PlannedFeature.assignableMenuCommands`).
 
 When a feature task with visible interface is created, add its row, its `PlannedFeature` case and its placeholder. When

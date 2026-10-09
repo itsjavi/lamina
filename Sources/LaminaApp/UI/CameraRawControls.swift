@@ -39,6 +39,8 @@ struct CameraRawControls: View {
                     .frame(height: 110)
                     .background(ColorRole.field.color)
                     .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                    // Without it the white well disappears into the panel in light appearance.
+                    .overlay { RoundedRectangle(cornerRadius: 4, style: .continuous).strokeBorder(ColorRole.edge.color) }
                 HStack {
                     clipButton(shadows: true)
                     Spacer()

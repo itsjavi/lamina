@@ -34,6 +34,9 @@ nonisolated enum FilterKind: String, CaseIterable, Sendable {
         self == .curves || self == .exposure || self == .gradientMap || self == .grain
             || self == .blackWhite || self == .colorBalance
     }
+    /// Filter dialogs show their own preview of the layer above the settings; Image adjustments and Camera Raw
+    /// (which previews on the canvas beside its docked panel) don't.
+    var showsDialogPreview: Bool { !isImageAdjustment && self != .cameraRaw }
 }
 
 /// Remove Background's two ways of working: Apple's own subject mask on its own, or that mask refined against the
@@ -584,10 +587,13 @@ extension EditorSession {
         }
         if previewAdjustmentEditing(preview: preview) { return }
         if edit.kind.isAutomatic, edit.preparedPreview != nil, edit.preparedSettings == edit.settings { brushRevision += 1; return }
-        guard preview else {
+        // A filter dialog's own preview keeps rendering with Preview off; only the canvas stops showing it
+        // (`previewImage(for:)`).
+        guard preview || edit.kind.showsDialogPreview else {
             edit.pending = nil; edit.preparedPreview = nil; brushRevision += 1
             return
         }
+        if !preview { brushRevision += 1 }
         edit.pending = edit.previewJob
         edit.pendingTransform = edit.grownTransform
         renderFilterPreview(edit)
@@ -622,7 +628,7 @@ extension EditorSession {
             let current = sourceVersion == edit.previewSourceVersion
             edit.previewError = result.2
             if let scope = result.1 { edit.cameraRawScope = scope }
-            if (edit.preview || edit.kind.isAutomatic), current || !edit.kind.isAutomatic {
+            if (edit.preview || edit.kind.isAutomatic || edit.kind.showsDialogPreview), current || !edit.kind.isAutomatic {
                 edit.preparedPreview = result.0
                 edit.preparedTransform = placement
                 edit.preparedSettings = current ? job.settings : nil

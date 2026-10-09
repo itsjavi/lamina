@@ -1,13 +1,33 @@
 import SwiftUI
 
-/// Select > Color Range's panel: the eyedroppers, Fuzziness and Invert, with the selection updating on the canvas.
+/// Select › Color Range…: Fuzziness and the selection preview on the left; OK, Cancel, the eyedroppers and Invert in
+/// the column on the right, with the selection updating on the canvas.
 struct ColorRangeSheet: View {
     @Bindable var session: EditorSession
     private var edit: ColorRangeEdit? { session.colorRange }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 6) {
+        DialogLayout(confirm: { session.commitColorRange() }, cancel: { session.cancelColorRange() }) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Text("Fuzziness:")
+                        .scrubbable(sensitivity: 1, value: fuzziness, range: ColorRangeEdit.fuzzinessRange)
+                    TextField("Fuzziness", value: fuzziness, format: .number.precision(.fractionLength(0)))
+                        .frame(width: 48).textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing)
+                }
+                Slider(value: fuzziness, in: ColorRangeEdit.fuzzinessRange).accessibilityLabel("Fuzziness")
+                preview.padding(.top, 4)
+                Text(edit?.hasColors == true ? "Shift-click adds a color, Option-click takes one away."
+                                             : "Click the image to pick the color to select.")
+                    .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                if let error = edit?.error {
+                    Text(error).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .help("How far a color may be from the picked ones and still be selected")
+            .frame(width: ColorRangeEdit.previewSize.width, alignment: .leading)
+        } extras: {
+            HStack(spacing: 4) {
                 ForEach(HueSampleMode.allCases, id: \.self) { mode in
                     Button { edit?.sampleMode = mode } label: { eyedropper(mode) }
                         .buttonStyle(.plain)
@@ -17,36 +37,14 @@ struct ColorRangeSheet: View {
                         .help(help(mode))
                         .accessibilityLabel("\(mode.rawValue) color")
                 }
-                Spacer()
             }
-            preview
-            Text(edit?.hasColors == true ? "Shift-click adds a color, Option-click takes one away."
-                                         : "Click the image to pick the color to select.")
-                .font(.callout).foregroundStyle(.secondary)
-            HStack(spacing: 10) {
-                Text("Fuzziness").fixedSize()
-                    .scrubbable(sensitivity: 1, value: fuzziness, range: ColorRangeEdit.fuzzinessRange)
-                Slider(value: fuzziness, in: ColorRangeEdit.fuzzinessRange)
-                TextField("Fuzziness", value: fuzziness, format: .number.precision(.fractionLength(0)))
-                    .frame(width: 48).textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing)
-            }
-            .help("How far a color may be from the picked ones and still be selected")
+            .frame(maxWidth: .infinity)
+            .padding(.top, 4)
             Toggle("Invert", isOn: Binding(get: { edit?.invert ?? false }, set: { edit?.invert = $0; session.updateColorRange() }))
                 .help("Select everything except those colors, such as all but a green screen")
-            if let error = edit?.error {
-                Text(error).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
-            }
-            Divider()
-            HStack {
-                Button("Cancel") { session.cancelColorRange() }.configuredNativeShortcut(.escape)
-                Spacer()
-                Button("OK") { session.commitColorRange() }
-                    .configuredNativeShortcut(.return).buttonStyle(.borderedProminent)
-            }
+                .padding(.top, 4)
         }
-        .padding(24).frame(width: 340).fixedSize()
     }
-
     /// The selection in black and white, white where selected, shaped like the canvas: black until a color is picked.
     private var preview: some View {
         let image = edit?.image

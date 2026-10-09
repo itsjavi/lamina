@@ -8,9 +8,14 @@ struct CurvesControls: View {
     private var points: [CurvePoint] { settings.channels[settings.channel.index] }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Picker("Channel", selection: $settings.channel) {
-                ForEach(LevelsChannel.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-            }.onChange(of: settings.channel) { _, _ in selected = nil; dragging = nil }
+            HStack(spacing: 8) {
+                Text("Channel:")
+                Picker("Channel", selection: $settings.channel) {
+                    ForEach(LevelsChannel.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                }
+                .labelsHidden().fixedSize()
+                .onChange(of: settings.channel) { _, _ in selected = nil; dragging = nil }
+            }
             Canvas { context, size in
                 func position(_ p: CurvePoint) -> CGPoint { CGPoint(x: p.x/255*size.width, y: (1-p.y/255)*size.height) }
                 var grid = Path()
@@ -32,6 +37,7 @@ struct CurvesControls: View {
                 }
             }
             .frame(height: 260).background(ColorRole.field.color)
+            .overlay { Rectangle().strokeBorder(ColorRole.edge.color) }
             .contentShape(Rectangle())
             .overlay { GeometryReader { geometry in
                 Color.clear.contentShape(Rectangle()).gesture(DragGesture(minimumDistance: 0).onChanged { event in
@@ -54,17 +60,37 @@ struct CurvesControls: View {
                     settings.channels[settings.channel.index] = p
                 }.onEnded { _ in dragging = nil })
             } }
-            Text("Click to add a point. Drag to adjust.").font(.caption).foregroundStyle(.secondary)
-            HStack {
-                if let selected, points.indices.contains(selected) {
-                    Text("Input \(Int(points[selected].x)) · Output \(Int(points[selected].y))").monospacedDigit()
-                }
-                Spacer()
-                Button("Remove point") {
+            // The selected point's values, as Photoshop's Output and Input fields; empty until a point is picked.
+            HStack(spacing: 8) {
+                Text("Output:")
+                pointField(\.y, name: "Output")
+                Text("Input:").padding(.leading, 6)
+                pointField(\.x, name: "Input")
+                Spacer(minLength: 0)
+                Button("Remove Point") {
                     if let selected, selected > 0, selected < points.count-1 { settings.channels[settings.channel.index].remove(at: selected); self.selected = nil }
                 }.disabled(selected == nil || selected == 0 || selected == points.count-1)
             }
-            Button("Reset curve") { settings.channels[settings.channel.index] = [CurvePoint(x: 0,y: 0), CurvePoint(x: 255,y: 255)]; selected = nil }
+            Text("Click to add a point. Drag to adjust.").font(.caption).foregroundStyle(.secondary)
         }
+    }
+
+    /// One coordinate of the selected point. The end points keep their input at 0 and 255; a middle point stays
+    /// between its neighbors.
+    private func pointField(_ key: WritableKeyPath<CurvePoint, Double>, name: String) -> some View {
+        let index = selected.flatMap { points.indices.contains($0) ? $0 : nil }
+        let movable = index.map { key == \CurvePoint.y || ($0 > 0 && $0 < points.count - 1) } ?? false
+        return TextField(name, value: Binding<Double?>(
+            get: { index.map { points[$0][keyPath: key].rounded() } },
+            set: { value in
+                guard let value, let index, movable else { return }
+                var p = points
+                var clamped = min(255, max(0, value.rounded()))
+                if key == \CurvePoint.x { clamped = min(p[index + 1].x - 1, max(p[index - 1].x + 1, clamped)) }
+                p[index][keyPath: key] = clamped
+                settings.channels[settings.channel.index] = p
+            }), format: .number.precision(.fractionLength(0)))
+            .frame(width: 48).textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing)
+            .disabled(!movable)
     }
 }

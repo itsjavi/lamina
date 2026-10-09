@@ -32,47 +32,40 @@ struct HueSaturationSheet: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 12) {
+        DialogLayout(preview: preview, confirm: { Task { await session.commitHueSaturation() } },
+                     cancel: { session.cancelHueSaturation() }) {
+            VStack(alignment: .leading, spacing: 8) {
                 Picker("Range", selection: settings.range) {
                     ForEach(ColorRange.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                 }
-                .pickerStyle(.menu).frame(width: 160).labelsHidden().disabled(current.colorize)
-                Spacer()
-                samplingControls
+                .pickerStyle(.menu).labelsHidden().fixedSize().disabled(current.colorize)
+                .help("The colors the adjustment changes: Master is all of them")
+                slider("Hue", value: settings.hue, range: hueRange, unit: "°", track: hueTrack, reset: resetValues.hue)
+                slider("Saturation", value: settings.saturation, range: saturationRange, unit: "", track: saturationTrack,
+                       reset: resetValues.saturation)
+                slider("Lightness", value: settings.lightness, range: -100...100, unit: "",
+                       track: .opposing(.black, .white), reset: resetValues.lightness)
+                if showsSpectrum { SpectrumEditor(settings: settings).padding(.top, 8) }
+                HStack(spacing: 8) {
+                    Toggle("Colorize", isOn: Binding(get: { current.colorize }, set: { colorize in
+                        // Photoshop starts colorizing at hue 0, saturation 25.
+                        settings.wrappedValue = colorize ? .colorizeStart : HueSaturationSettings()
+                    }))
+                    Spacer(minLength: 0)
+                    samplingControls
+                }
+                .padding(.top, 8)
+                // Lamina's own, after the familiar settings.
+                if showsSpectrum { Toggle("Apply outside this range instead", isOn: settings.invertRange) }
+                if session.adjustmentOriginal == nil && session.selection != nil {
+                    Text("Limited to the selection").font(.callout).foregroundStyle(.secondary)
+                }
             }
-            slider("Hue", value: settings.hue, range: hueRange, unit: "°", track: hueTrack, reset: resetValues.hue)
-            slider("Saturation", value: settings.saturation, range: saturationRange, unit: "", track: saturationTrack,
-                   reset: resetValues.saturation)
-            slider("Lightness", value: settings.lightness, range: -100...100, unit: "",
-                   track: .opposing(.black, .white), reset: resetValues.lightness)
-            if showsSpectrum {
-                SpectrumEditor(settings: settings)
-                Toggle("Apply outside this range instead", isOn: settings.invertRange)
-            }
-            HStack(spacing: 18) {
-                Toggle("Colorize", isOn: Binding(get: { current.colorize }, set: { colorize in
-                    // Photoshop starts colorizing at hue 0, saturation 25.
-                    settings.wrappedValue = colorize ? .colorizeStart : HueSaturationSettings()
-                }))
-                Toggle("Preview", isOn: preview)
-                Button("Reset") { settings.wrappedValue = current.colorize ? .colorizeStart : HueSaturationSettings() }
-                Spacer()
-            }
-            if session.adjustmentOriginal == nil && session.selection != nil {
-                Text("Limited to the selection").font(.callout).foregroundStyle(.secondary)
-            }
-            Divider()
-            HStack {
-                Button("Cancel") { session.cancelHueSaturation() }.configuredNativeShortcut(.escape)
-                Spacer()
-                Button("OK") { Task { await session.commitHueSaturation() } }
-                    .configuredNativeShortcut(.return).buttonStyle(.borderedProminent)
-            }
+            .frame(width: 320, alignment: .leading)
+        } extras: {
+            DialogButton("Reset") { settings.wrappedValue = current.colorize ? .colorizeStart : HueSaturationSettings() }
         }
-        .padding(24).frame(width: 460).fixedSize()
     }
-
     /// Eyedroppers set the selected range from the image; the targeted tool drags on it.
     private var samplingControls: some View {
         HStack(spacing: 6) {
@@ -122,24 +115,30 @@ struct HueSaturationSheet: View {
         .frame(width: 24, height: 20)
     }
 
-    /// A colored slider plus an exact field. A double-click on the title or knob resets that one value.
+    /// Photoshop's layout: the title above, then a colored slider paired with an exact field. A double-click on the
+    /// title or knob resets that one value.
     private func slider(_ title: String, value: Binding<Double>, range: ClosedRange<Double>, unit: String,
                         track: CameraRawSliderTrack, reset: Double) -> some View {
-        HStack(spacing: 10) {
-            Text(title).frame(width: 76, alignment: .leading)
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title + ":")
                 .onTapGesture(count: 2) { value.wrappedValue = reset }
                 .scrubbable(sensitivity: 1, value: value, range: range)
-            CameraRawSlider(value: value.wrappedValue, range: range, track: track, help: "\(title). Double-click to reset.",
-                            onChange: { value.wrappedValue = $0.rounded() }, onReset: { value.wrappedValue = reset })
-            TextField(title, value: value, format: .number.precision(.fractionLength(0)))
-                .frame(width: 48).textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing)
-                .unitSuffix(unit)
-                // A field's own submit swallows Return, so it confirms the window itself, as OK does.
-                .onSubmit {
-                    value.wrappedValue = min(range.upperBound, max(range.lowerBound, value.wrappedValue))
-                    Task { await session.commitHueSaturation() }
+            HStack(spacing: 8) {
+                CameraRawSlider(value: value.wrappedValue, range: range, track: track, help: "\(title). Double-click to reset.",
+                                onChange: { value.wrappedValue = $0.rounded() }, onReset: { value.wrappedValue = reset })
+                HStack(spacing: 2) {
+                    TextField(title, value: value, format: .number.precision(.fractionLength(0)))
+                        .frame(width: 48).textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing)
+                        // A field's own submit swallows Return, so it confirms the window itself, as OK does.
+                        .onSubmit {
+                            value.wrappedValue = min(range.upperBound, max(range.lowerBound, value.wrappedValue))
+                            Task { await session.commitHueSaturation() }
+                        }
+                    Text(unit).frame(width: 12, alignment: .leading)
                 }
+            }
         }
+        .padding(.top, 6)
     }
 }
 

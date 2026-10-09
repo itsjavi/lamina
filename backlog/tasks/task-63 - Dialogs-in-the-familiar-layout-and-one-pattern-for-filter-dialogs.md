@@ -1,9 +1,11 @@
 ---
 id: TASK-63
 title: 'Dialogs in the familiar layout, and one pattern for filter dialogs'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-09 02:14'
+updated_date: '2026-10-09 04:56'
 labels: []
 milestone: m-5
 dependencies:
@@ -36,3 +38,13 @@ Lamina's dialogs are floating panels with their own layouts and OK and Cancel at
 <!-- DOD:BEGIN -->
 - [ ] #1 docs/DESIGN.md matches what shipped
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Shared layout in UI/DialogLayout.swift: DialogLayout (settings left, 100 pt button column right: OK default/Return, Cancel/Escape, extra buttons, Preview checkbox, status line) with a .bottom placement (Cancel then default button at the bottom right) for Image Size; DialogLabel/dialog rows with colon labels; reusable by TASK-62 (Fill, Load Selection).
+2. FilterPreview (UI/FilterPreview.swift): crop of the filter edit's own preview image (the filtered layer the canvas shows), zoom out / percentage / zoom in, drag to pan, hold to see the original; keep rendering the dialog preview while the canvas Preview is off (canvas gate previewImage(for:) unchanged).
+3. FilterSheet: filters (not Image adjustments, not Camera Raw) get the preview frame then the settings; every non-Camera Raw kind uses DialogLayout; Curves gets Output:/Input: fields; Camera Raw keeps its docked layout with Cancel and OK at the bottom right and an edge border on its histogram well.
+4. Levels, Hue/Saturation, Color Range, Expand/Contract/Feather, Stroke, Trim, Canvas Size in DialogLayout with mockup labels, groups and button columns; Image Size in the bottom variant. Lamina-only settings after familiar ones.
+5. DESIGN.md Dialogs section with component names and sizes; tests (swift build, targeted suites, full swift test); screenshots of Levels, a filter, Canvas Size, Stroke into backlog/assets/task-63.
+<!-- SECTION:PLAN:END -->

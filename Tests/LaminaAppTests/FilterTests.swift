@@ -46,6 +46,34 @@ struct FilterTests {
         #expect(try #require(middle.last) < 20, "and it fades out on the far side")
     }
 
+    /// A filter dialog's own preview keeps rendering with Preview off, as Photoshop's does; only the canvas stops
+    /// showing it. Image adjustments have no dialog preview, so turning Preview off still drops their render.
+    @Test func dialogPreviewKeepsRenderingWithTheCanvasPreviewOff() async throws {
+        let session = EditorSession()
+        session.createDocument(width: 40, height: 20)
+        let context = try BrushRaster.context(width: 40, height: 20, mask: false)
+        context.setFillColor(CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: 20, height: 20))
+        let image = try #require(context.makeImage())
+        session.insert(ImportedImage(image: image, thumbnail: image, name: "Half"))
+        #expect(FilterKind.gaussianBlur.showsDialogPreview)
+        #expect(!FilterKind.curves.showsDialogPreview && !FilterKind.cameraRaw.showsDialogPreview)
+        session.beginFilter(.gaussianBlur)
+        let edit = try #require(session.filterEdit)
+        session.updateFilter(FilterSettings(radius: 3), preview: false)
+        await edit.previewTask?.value
+        #expect(edit.preparedPreview != nil, "the dialog still has a preview to show")
+        #expect(edit.previewImage(for: edit.layerID) == nil, "the canvas doesn't")
+        session.cancelFilter()
+
+        session.beginFilter(.exposure)
+        let exposure = try #require(session.filterEdit)
+        session.updateFilter(exposure.settings, preview: false)
+        await exposure.previewTask?.value
+        #expect(exposure.preparedPreview == nil)
+        session.cancelFilter()
+    }
+
     /// Dragging a blur bigger grows the layer to make room for it. The last preview stays on the canvas, in the place it
     /// was made for, until the preview from the grown layer replaces it — it used to be dropped, and the unblurred layer
     /// flashed up in between.

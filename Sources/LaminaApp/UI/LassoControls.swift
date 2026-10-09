@@ -147,7 +147,7 @@ struct PolygonalLassoToolIcon: View {
     }
 }
 
-/// Selection modifiers share the filter panels' floating window and control layout.
+/// Select › Modify › Expand…, Contract… and Feather…: one amount in pixels, in the dialogs' shared layout.
 struct SelectionAmountSheet: View {
     let session: EditorSession
     let operation: EditorSession.SelectionAmountOperation
@@ -173,37 +173,36 @@ struct SelectionAmountSheet: View {
         return value
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 10) {
-                Text("Amount").frame(minWidth: 60, alignment: .leading)
-                    .scrubbable(sensitivity: 1,
-                                value: Binding<Int>(get: { amount ?? 1 }, set: { input = String($0) }),
-                                range: 1...maximum)
-                Slider(value: Binding(get: { Double(amount ?? 1) },
-                                      set: { input = String(Int($0.rounded())) }),
-                       in: 1...Double(maximum), step: 1)
-                TextField("Amount", text: $input)
-                    .frame(width: 56).textFieldStyle(.roundedBorder)
-                    .multilineTextAlignment(.trailing).focused($focused)
-                    .unitSuffix("px")
-            }
-            Text("Enter a whole number from 1 to \(maximum) px.")
-                .font(.callout).foregroundStyle(.secondary)
-                .opacity(amount == nil ? 1 : 0)
-            Divider()
-            HStack {
-                Button("Cancel") { session.selectionAmountOperation = nil }
-                    .configuredNativeShortcut(.escape)
-                Spacer()
-                Button("OK") {
-                    if let amount { session.confirmSelectionAmount(amount) }
-                }
-                .configuredNativeShortcut(.return).buttonStyle(.borderedProminent)
-                .disabled(amount == nil)
-            }
+    /// Photoshop's names for the one setting.
+    private var label: String {
+        switch operation {
+        case .expand: "Expand By:"
+        case .contract: "Contract By:"
+        case .feather: "Feather Radius:"
         }
-        .padding(24).frame(width: 380).fixedSize()
+    }
+
+    var body: some View {
+        DialogLayout(defaultDisabled: amount == nil,
+                     confirm: { if let amount { session.confirmSelectionAmount(amount) } },
+                     cancel: { session.selectionAmountOperation = nil }) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Text(label)
+                        .scrubbable(sensitivity: 1,
+                                    value: Binding<Int>(get: { amount ?? 1 }, set: { input = String($0) }),
+                                    range: 1...maximum)
+                    TextField(label, text: $input)
+                        .frame(width: 56).textFieldStyle(.roundedBorder)
+                        .multilineTextAlignment(.trailing).focused($focused)
+                    Text("pixels")
+                }
+                Text("Enter a whole number from 1 to \(maximum) pixels.")
+                    .font(.callout).foregroundStyle(.secondary)
+                    .opacity(amount == nil ? 1 : 0)
+            }
+            .frame(width: 250, alignment: .leading)
+        }
         .onAppear { focused = true }
     }
 }

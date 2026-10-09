@@ -310,7 +310,7 @@ are dimmed: the corner handles are the controls.
 | Paint Bucket | Fill: Foreground │ Opacity · Tolerance · Anti-alias · Contiguous · All Layers |
 | Blur / Smudge | brush picker │ Strength · Radius (Blur only, Lamina) │ pressure for size |
 | Dodge / Burn | brush picker │ Range: Shadows, Midtones, Highlights · Exposure │ pressure for size |
-| Horizontal Type | font family · font style · size │ Left, Center, Right · color · Character panel │ … Cancel · Commit |
+| Horizontal Type | font family · font style · size │ Left, Center, Right · color · Character panel │ … Cancel · Commit (leading and tracking are in Properties ▸ Character, shipping with TASK-59) |
 | Rectangle / Ellipse / Line | Fill swatch · Stroke swatch and width (in progress, TASK-32) · stroke options (in progress, TASK-34) │ path operations (in progress, TASK-34) │ Radius (Rectangle) or Weight (Line). This order and the placeholders ship with TASK-53 (the stroke swatch shows "none": an empty `field` well crossed by a `secondaryText` line; the width reads "1 px"); the labels keep today's wording, without colons, until TASK-57 |
 | Hand | 100% · Fit Screen · Fill Screen (shipping, TASK-52) |
 | Zoom | Zoom In, Zoom Out │ Scrubby Zoom │ 100% · Fit Screen · Fill Screen (the three buttons ship with TASK-52; the rest is TASK-57) |
@@ -320,7 +320,8 @@ The painting bars carry no color swatch: color comes from the toolbar's swatches
 ### Dock and panels
 
 Tab groups with a 26 pt tab row and a panel menu (≡) at the right; the active tab is `text` with an underline.
-Status: the frame is **shipping** (TASK-58); Adjustments' grid is **shipping** (TASK-60); Properties' and Layers' contents are **m-5** (TASK-59, TASK-61).
+Status: the frame is **shipping** (TASK-58); Adjustments' grid (TASK-60) and Properties (TASK-59) are **shipping**;
+Layers' contents are **m-5** (TASK-61).
 
 - Right of the canvas: the 34 pt panel icon column (`chrome`, 28 pt buttons with 16 pt icons, the open panel's
   button on `activeTool`), then the dock, 292 pt wide by default and 240–360 pt by dragging its left edge. Properties
@@ -330,28 +331,60 @@ Status: the frame is **shipping** (TASK-58); Adjustments' grid is **shipping** (
   `dockTopHeight`, `dockClosedPanels`, `dockTopTab`).
 - The panel menu (≡) holds Close (the front tab's panel) and Close Tab Group. A group with every panel closed collapses
   and gives its height to the other; with every dock panel closed only the icon column stays and the canvas takes the
-  dock's width. Renaming a layer or editing an adjustment layer opens Layers again.
+  dock's width. Renaming a layer opens Layers again; adding an adjustment layer, double-clicking one (its thumbnail)
+  and Layer ▸ Layer Content Options… open Properties and bring it to the front.
 - Window lists Adjustments, History, Layers and Properties alphabetically, as familiar editors do. A panel is checked
   while it is on screen (open and in front of its group); choosing a checked panel closes it, choosing any other opens
   it and brings it to the front. Window ▸ Workspace ▸ Essentials (Default) is the only workspace and always checked;
   Reset Essentials restores the default width and split, opens every dock panel with Properties in front, and closes
   History. All of them take a shortcut in Keyboard Shortcuts; none has a default key.
-- Until TASK-59 fills it, Properties reads "No properties". Layers moved in unchanged, its own title row included, until TASK-61.
+- Layers moved in unchanged, its own title row included, until TASK-61. Properties reads "No properties" only before a
+  document exists.
 - Code: `UI/Dock.swift` (`DockArea`, `Dock`, `DockGroup`, `PanelIconColumn`, `HistoryFlyout`, `DockResizeEdge`),
   `UI/DockLayout.swift` (`DockLayout.shared`, `DockPanel`), `UI/DockCommands.swift` (the Window items). A panel fills
   its tab through `Dock`'s content builder: `PropertiesPanel` (`UI/PropertiesPanel.swift`), `AdjustmentsPanel`
   (`UI/AdjustmentsPanel.swift`), `LayersPanel`.
 
-- **Properties** shows what is selected (TASK-59):
+- **Properties** shows what is selected. **Shipping** (TASK-59).
 
-  | Selection | Sections |
-  | --- | --- |
-  | Nothing (document) | Canvas (W, H, resolution) · Rulers & Grids (units, grid, guides, rulers) · Quick Actions: Image Size, Crop, Trim, Rotate |
-  | Pixel layer | Transform (W, H, X, Y, angle, flips) · Align and Distribute · Interpolation (Lamina's per-layer sampling) · Quick Actions: Remove Background, Select Subject |
-  | Type layer | Transform · Character (family, style, size, leading, tracking, color) · Paragraph (alignment) |
-  | Group | Transform · Align and Distribute |
-  | Adjustment layer | the adjustment's controls, live, with a footer: clip to layer, reset, visibility, delete |
-  | Layer mask | Refine: Color Range…, Invert · footer: load selection from mask, apply, delete |
+  | Selection | Title | Sections |
+  | --- | --- | --- |
+  | Nothing (document) | Document | Canvas (W · link · H, in the ruler units; Resolution, Pixels/Inch) · Rulers & Grids (Units: Pixels, Inches, Centimeters, Millimeters; Grid, Guides, Rulers checkboxes) · Quick Actions: Image Size, Crop, Trim, Rotate |
+  | Pixel layer, shape layer | Pixel Layer, Shape Layer | Transform (W · link · H, X · Y, angle, Flip Horizontal, Flip Vertical) · Align and Distribute (six align buttons, then four distribute buttons) · Layer (Interpolation: Lamina's per-layer sampling) · Quick Actions: Remove Background, Select Subject |
+  | Type layer | Type Layer | Transform · Character (family, style, size, leading, tracking, color) · Paragraph (Left, Center, Right) |
+  | Group, or several layers | Layer Group, *n* Layers | Transform · Align and Distribute |
+  | Adjustment layer | the kind ("Curves") | the adjustment's controls, live · footer: Clip to Layer Below, Reset to Adjustment Defaults, Hide/Show Layer, Delete Layer |
+  | Layer mask (its thumbnail targeted) | Layer Mask | Masks (Refine: Color Range…, Invert) · footer: Load Selection from Mask, Apply Mask, Delete Mask |
+
+  - The title row (32 pt) shows the kind's 15 pt icon in `icon` and its name in 12 pt semibold; Curves' icon is turned
+    a quarter, as in Layers. Sections have an 11.5 pt semibold heading with a chevron that folds them; which headings
+    are folded is remembered for every selection (ToolDefaults `propertiesCollapsed`). Sections are separated by
+    `separator` lines, padded 10 pt, and scroll when the group is too short; the footer (30 pt, 15 pt icons) stays at
+    the bottom. Fields use monospaced digits; row labels in the panel have no colon ("Resolution", "Units",
+    "Interpolation"), except inside the adjustment controls it shares with the dialogs ("Channel:", "Hue:"). Quick
+    actions are `control` plates two to a row.
+  - Every change is one undo step and goes through the path its menu or bar uses. Transform fields work as the Free
+    Transform bar's (`TransformValueField`): typed, stepped or scrubbed values show at once and apply when the field
+    is done, and during a Free Transform they join it. W and H are the box's own size in pixels (kept at its top
+    left, linked by the Move tool's aspect lock); X and Y the top left of the upright bounds around it; the angle
+    turns it about its middle. Canvas W and H apply as Canvas Size… (around the center, transparent), Resolution as
+    Image Size… without resampling; both wait for Return or leaving the field. Rotate rotates 90° clockwise, and
+    holding it offers Image ▸ Image Rotation's three.
+  - A type layer that is only selected changes as a whole and at once (Character's color through the app's picker,
+    one step however long it stays open; Cancel leaves none). While its text is being edited, the changes go to the
+    selected letters and are applied with the text, as the Type bar's are. Leading (empty is Auto) and tracking are
+    here only, not in the Type bar.
+  - An adjustment layer's controls are the dialogs' own (`LevelsControls`, `HueSaturationControls`, `CurvesControls`,
+    `FilterControls` with `compact`: each slider's title above it), writing to the layer as they move. A drag is one
+    undo step, closed when the mouse button comes up; a typed value or a menu choice is one step. Levels counts the
+    layers below the adjustment for its histogram and Auto. The eyedroppers and Hue/Saturation's targeted adjustment
+    stay in Image ▸ Adjustments' dialogs. Reset puts back what a new layer of the kind starts with (a Gradient Map
+    from the current colors), keeping a Grain or Add Noise layer's pattern. Invert has no settings and says so.
+  - Color Range… on a mask opens Select ▸ Color Range… aimed at it: OK makes the mask from the colors picked (white
+    where they match), as one "Mask Color Range" step, and leaves the selection as it was. Invert inverts the mask.
+  - Code: `UI/PropertiesPanel.swift` (panel, sections, document, transform, align, mask), `UI/PropertiesCharacter.swift`
+    (Character, Paragraph, `FontFamilyPopUp`), `UI/AdjustmentProperties.swift` (controls, footer),
+    `Document/PropertiesEditing.swift` (`PropertiesKind`, `changeProperty` and the edits it makes).
 
 - **Adjustments** (**shipping**, TASK-60): a grid of labeled icons that add an adjustment layer in one click, in this
   order: Grain, Levels, Curves, Exposure, Hue/Saturation, Color Balance, Black & White, Invert, Gradient Map; then a
@@ -396,7 +429,9 @@ places as today's order allows: Save a Copy… after Save As…, Rasterize and C
 Layer Mask, Combine Shapes ▸ and Release to Layers after Move Layer Down, and in Window, Contextual Task Bar between
 the panels and the open documents (in `DockCommands`). TASK-62 moves them with the rest. Layer ▸ Layer Style ▸
 (Blending Options… │ the six effects │ Copy, Paste and Clear Layer Style) is **shipping** (TASK-64); the new items have
-no keys and can be given one (Keyboard Shortcuts, More Menu Commands).
+no keys and can be given one (Keyboard Shortcuts, More Menu Commands). Layer ▸ Layer Content Options… (was Edit
+Adjustment…, a key set for it carries over) is **shipping** (TASK-59): with an adjustment layer selected it shows
+Properties; TASK-62 puts it in the order below.
 
 - **Lamina:** About Lamina · Check for Updates… │ Settings… ⌘K │ Services ▸ │ Hide Lamina ⌃⌘H · Hide Others ⌥⌘H · Show All │ Quit Lamina ⌘Q
 - **File:** New… ⌘N · New from Clipboard ⌥⌘N · Open… ⌘O · Open Recent ▸ │ Close ⌘W │ Save ⌘S · Save As… ⇧⌘S · Save a Copy… ⌥⌘S (in progress: layered Photoshop files, TASK-27) │ Export ▸ (Quick Export as PNG │ Export As… ⌥⇧⌘W) │ Place Embedded…
@@ -464,8 +499,8 @@ What changes from the shortcuts Lamina shipped before m-5 (applied by TASK-62; c
   Dragging the preview pans it; while the mouse is down it shows the layer before the filter. It crops the image the
   canvas previews, so it costs no extra rendering (on layers longer than 2048 px that preview is reduced, so 100% is
   enlarged from it), and it keeps rendering when the canvas Preview is off. Image adjustments (Image ▸ Adjustments)
-  have no preview frame, as in Photoshop, and neither does an adjustment layer being edited, whose change shows only
-  in the composite.
+  have no preview frame, as in Photoshop. Adjustment layers have no dialog: they are edited in Properties, with the
+  same controls.
 - Camera Raw Filter is the exception: its full-height panel stays docked to the window's right edge, with Preview and
   then Cancel and OK at the bottom right. Its histogram well has an `edge` border.
 - Labels end with a colon and sit right-aligned before their control ("Width:", "Radius:"), or above a slider in

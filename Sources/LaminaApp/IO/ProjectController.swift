@@ -42,24 +42,19 @@ final class ProjectController {
     private var writing: Task<Bool, Never>?
     func finishWriting() async { if let writing { _ = await writing.value } }
 
-    func exportPNG() async {
+    /// File › Export › Quick Export as PNG: straight to the Save panel, with the PNG settings Export As… last used.
+    func quickExportPNG() async {
         guard session.document != nil, begin() else { return }
         defer { session.isProjectBusy = false }
         guard let snapshot = session.projectSnapshot() else { return }
-        let panel = NSSavePanel()
-        panel.allowedContentTypes = [.png]
-        panel.canCreateDirectories = true
-        panel.isExtensionHidden = false
-        panel.title = "Export PNG"
-        panel.nameFieldStringValue = session.documentName + ".png"
-        let response: NSApplication.ModalResponse
-        if let window { response = await panel.beginSheetModal(for: window) }
-        else { response = await panel.begin() }
-        guard response == .OK, let url = panel.url else { return }
+        guard let url = await exportDestination(.png, title: "Quick Export as PNG") else { return }
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-        do { try await ImageExporter.shared.exportPNG(snapshot, to: url) }
-        catch { await showError("Couldn’t export PNG", error: error) }
+        do {
+            let raster = try await ImageExporter.shared.render(snapshot)
+            let data = try await ImageExporter.shared.encodedData(raster, options: ExportSettings.options(for: .png))
+            try await ImageExporter.shared.write(data, to: url)
+        } catch { await showError("Couldn’t export PNG", error: error) }
     }
 
     func canvasSize() async {
@@ -206,23 +201,20 @@ final class ProjectController {
         session.gridAppearance = settings?.1 ?? original.appearance
     }
 
-    func exportJPEG() async { await exportImage(choosing: [.jpeg], title: "Export JPEG") }
-
-    /// File › Export As…: any format this Mac can write, starting from the last one exported.
-    func exportAs() async { await exportImage(choosing: ExportFormat.available, title: "Export As") }
-
-    private func exportImage(choosing formats: [ExportFormat], title: String) async {
+    /// File › Export › Export As…: any format this Mac can write, starting from the last one exported, then the
+    /// Save panel.
+    func exportAs() async {
         guard let window, session.document != nil, begin() else { return }
         defer { session.isProjectBusy = false }
         guard let snapshot = session.projectSnapshot() else { return }
-        var name = formats.count == 1 ? formats[0].title : "image"
+        var name = "image"
         do {
             let raster = try await ImageExporter.shared.render(snapshot)
-            let export: (format: ExportFormat, data: Data)? = await withCheckedContinuation { continuation in
+            let export: (options: ExportOptions, data: Data)? = await withCheckedContinuation { continuation in
                 let sheet = NSWindow()
                 sheet.styleMask = [.titled, .fullSizeContentView]
-                sheet.title = title
-                sheet.contentViewController = NSHostingController(rootView: ExportSheet(raster: raster, session: session, formats: formats) { export in
+                sheet.title = "Export As"
+                sheet.contentViewController = NSHostingController(rootView: ExportSheet(raster: raster, session: session, formats: ExportFormat.available) { export in
                     window.endSheet(sheet)
                     sheet.orderOut(nil)
                     // Release the hosted view and its closure after dismissal.
@@ -232,19 +224,26 @@ final class ProjectController {
                 window.beginSheet(sheet)
             }
             guard let export else { return }
-            name = export.format.title
-            let panel = NSSavePanel()
-            panel.allowedContentTypes = [export.format.type]
-            panel.canCreateDirectories = true
-            panel.isExtensionHidden = false
-            panel.title = "Export \(name)"
-            panel.nameFieldStringValue = session.documentName
-                + "." + export.format.fileExtension
-            guard await panel.beginSheetModal(for: window) == .OK, let url = panel.url else { return }
+            name = export.options.format.title
+            guard let url = await exportDestination(export.options.format, title: "Export \(name)") else { return }
             let scoped = url.startAccessingSecurityScopedResource()
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             try await ImageExporter.shared.write(export.data, to: url)
         } catch { await showError("Couldn’t export \(name)", error: error) }
+    }
+
+    /// The Save panel for an export, named after the document.
+    private func exportDestination(_ format: ExportFormat, title: String) async -> URL? {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [format.type]
+        panel.canCreateDirectories = true
+        panel.isExtensionHidden = false
+        panel.title = title
+        panel.nameFieldStringValue = session.documentName + "." + format.fileExtension
+        let response: NSApplication.ModalResponse
+        if let window { response = await panel.beginSheetModal(for: window) }
+        else { response = await panel.begin() }
+        return response == .OK ? panel.url : nil
     }
 
     private func saveCurrent(asNew: Bool = false) async -> Bool {

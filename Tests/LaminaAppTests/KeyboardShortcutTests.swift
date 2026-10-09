@@ -199,6 +199,26 @@ struct KeyboardShortcutTests {
         #expect(settings.menu("z", modifiers: .command) == ShortcutChord("y", 1))
     }
 
+    /// TASK-65: Export JPEG… is gone, its ⌥⇧⌘S free; a key someone gave it moves to Export As…, unless Export As… has
+    /// one of its own or the key now belongs to another command.
+    @Test func exportJPEGKeysMoveToExportAs() {
+        #expect(!ShortcutDefinition.all.contains { $0.title == "Export JPEG" })
+        #expect(!ShortcutDefinition.all.contains { $0.original == ShortcutChord("s", 11) }, "⌥⇧⌘S belongs to nothing")
+        func settings(_ saved: [String: ShortcutChord]) -> ShortcutSettings {
+            let defaults = UserDefaults(suiteName: "KeyboardShortcutTests-\(UUID().uuidString)")!
+            defaults.set(try! JSONEncoder().encode(saved), forKey: "keyboardShortcuts.v1")
+            return ShortcutSettings(defaults: defaults)
+        }
+        let exportAs: (KeyEquivalent, EventModifiers) = ("w", [.command, .option, .shift])
+        #expect(settings(["Menus:Export JPEG": ShortcutChord("j", 11)]).menu(exportAs.0, modifiers: exportAs.1) == ShortcutChord("j", 11))
+        #expect(settings(["Menus:Export JPEG": ShortcutChord("j", 11), "Menus:Export As": ShortcutChord("x", 11)])
+            .menu(exportAs.0, modifiers: exportAs.1) == ShortcutChord("x", 11), "Export As…'s own key wins")
+        // ⌘J is Layer Via Copy's: the carried key gives way and Export As… keeps its default.
+        let collided = settings(["Menus:Export JPEG": ShortcutChord("j", 1)])
+        #expect(collided.menu(exportAs.0, modifiers: exportAs.1) == ShortcutChord("w", 11))
+        #expect(collided.menu("j", modifiers: .command) == ShortcutChord("j", 1))
+    }
+
     /// Every old name leads to a command that exists.
     @Test func everyRenamedEntryLeadsToACommand() {
         let known = Set(ShortcutDefinition.all.map(\.id))

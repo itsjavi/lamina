@@ -63,8 +63,8 @@ extension AutomationDispatcher {
         ]
     }
 
-    /// File › Export PNG or Export JPEG, without their panels: the same renderer and encoders, the bytes returned for
-    /// `lamina` to write.
+    /// File › Export › Export As… in PNG or JPEG, without its dialog and panel: the same renderer and encoders, the
+    /// bytes returned for `lamina` to write.
     func exportDocument(_ arguments: Arguments) async throws -> JSONValue {
         let tab = try tab(arguments)
         guard let snapshot = tab.session.projectSnapshot() else { throw AutomationError(.unavailable, "The document has no canvas yet.") }

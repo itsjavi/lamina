@@ -154,41 +154,47 @@ actor ImageExporter {
     /// The flattened canvas encoded as `options.format`, with a preview decoded back from the encoded file, so the
     /// export sheet shows the format's own artifacts.
     func encode(_ raster: ExportRaster, options: ExportOptions) throws -> ExportResult {
+        let data = try encodedData(raster, options: options)
         try Task.checkCancellation()
         return try autoreleasepool {
-            let image = raster.image
+            // Full size, so the dialog's 100% view shows the real artifacts; capped to keep memory in bounds.
+            let side = min(max(raster.image.width, raster.image.height), 8192)
+            let preview = options.format == .pdf ? try pdfPreview(data, maxPixelSize: side) : try decodedPreview(data, maxPixelSize: side)
+            return ExportResult(data: data, preview: preview)
+        }
+    }
+
+    /// The flattened canvas encoded as `options.format`: the file Export As… and Quick Export as PNG write.
+    func encodedData(_ raster: ExportRaster, options: ExportOptions) throws -> Data {
+        try Task.checkCancellation()
+        return try autoreleasepool {
+            var image = raster.image
+            if options.fillsTransparency {
+                image = try matted(image, options: options)
+                try Task.checkCancellation()
+            }
             var properties: [CFString: Any] = [kCGImagePropertyDPIWidth: raster.resolution, kCGImagePropertyDPIHeight: raster.resolution]
             if options.format.hasQuality {
                 // ImageIO's AVIF encoder fails at exactly 1 (lossless), and gives the same file from 0.99 up.
                 let best = options.format == .avif ? 0.99 : 1
                 properties[kCGImageDestinationLossyCompressionQuality] = min(best, max(0, options.quality))
             }
-            let data: Data
             switch options.format {
-            case .jpeg:
-                let flattened = try matted(image, options: options)
-                try Task.checkCancellation()
-                data = try encode(flattened, type: .jpeg, properties: properties as CFDictionary)
-            case .png, .heic, .avif:
-                data = try encode(image, type: options.format.type, properties: properties as CFDictionary)
+            case .png, .jpeg, .heic, .avif:
+                return try encode(image, type: options.format.type, properties: properties as CFDictionary)
             case .webP:
-                data = try WebPEncoder.encode(image, quality: options.quality)
+                return try WebPEncoder.encode(image, quality: options.quality)
             case .tiff:
                 // LZW: lossless, read by everything that reads TIFF, and far smaller than uncompressed.
                 properties[kCGImagePropertyTIFFDictionary] = [kCGImagePropertyTIFFCompression: 5]
-                data = try encode(image, type: .tiff, properties: properties as CFDictionary)
+                return try encode(image, type: .tiff, properties: properties as CFDictionary)
             case .pdf:
-                data = try pdf(raster)
+                return try pdf(ExportRaster(image: image, resolution: raster.resolution))
             }
-            try Task.checkCancellation()
-            // Full size, so the dialog's 100% view shows the real artifacts; capped to keep memory in bounds.
-            let side = min(max(image.width, image.height), 8192)
-            let preview = options.format == .pdf ? try pdfPreview(data, maxPixelSize: side) : try decodedPreview(data, maxPixelSize: side)
-            return ExportResult(data: data, preview: preview)
         }
     }
 
-    /// `image` over the options' color, opaque, for formats without alpha.
+    /// `image` over the options' matte, opaque: for JPEG, which has no alpha, and with Transparency off.
     private func matted(_ image: CGImage, options: ExportOptions) throws -> CGImage {
         guard let context = CGContext(data: nil, width: image.width, height: image.height,
             bitsPerComponent: 8, bytesPerRow: image.width * 4,
@@ -275,12 +281,53 @@ nonisolated struct ExportOptions: Equatable, Sendable {
     var format: ExportFormat
     /// For the formats that have one (`ExportFormat.hasQuality`).
     var quality = ExportOptions.defaultQuality
-    /// The color under transparent areas, for formats without alpha (JPEG).
+    /// The color under transparent areas (Matte), for formats without alpha (JPEG) and with `transparency` off.
     var red: CGFloat = 1
     var green: CGFloat = 1
     var blue: CGFloat = 1
+    /// Keeps transparent areas transparent, in the formats that can (`ExportFormat.keepsTransparency`).
+    var transparency = true
+    /// Whether transparent areas are filled with the matte.
+    var fillsTransparency: Bool { !format.keepsTransparency || !transparency }
 }
 nonisolated struct ExportResult: @unchecked Sendable {
     let data: Data
     let preview: CGImage
+}
+
+/// What Export As… remembers between exports: the format last exported, and for each format the quality and
+/// Transparency it was last exported with; the matte is shared. Quick Export as PNG uses PNG's.
+nonisolated enum ExportSettings {
+    static let formatKey = "exportAsFormat"
+    static let matteKey = "exportMatte"
+    /// Keys from before Export As… had one dialog, so a quality saved by Export JPEG… carries over.
+    static func qualityKey(_ format: ExportFormat) -> String {
+        format == .jpeg ? "jpegExportQuality" : "\(format.rawValue)ExportQuality"
+    }
+    static func transparencyKey(_ format: ExportFormat) -> String { "\(format.rawValue)ExportTransparency" }
+
+    /// The format last exported if it's among `formats`, otherwise the first of them.
+    static func format(among formats: [ExportFormat], in store: (any ToolDefaultsStore)? = ToolDefaults.store) -> ExportFormat {
+        (store?.object(forKey: formatKey) as? String).flatMap(ExportFormat.init(rawValue:)).flatMap { formats.contains($0) ? $0 : nil }
+            ?? formats.first ?? .png
+    }
+
+    /// `format` with the settings it was last exported with.
+    static func options(for format: ExportFormat, in store: (any ToolDefaultsStore)? = ToolDefaults.store) -> ExportOptions {
+        var options = ExportOptions(format: format)
+        if let quality = store?.object(forKey: qualityKey(format)) as? Double, quality.isFinite { options.quality = min(1, max(0, quality)) }
+        if let transparency = store?.object(forKey: transparencyKey(format)) as? Bool { options.transparency = transparency }
+        if let matte = store?.object(forKey: matteKey) as? [Double], matte.count == 3, matte.allSatisfy({ (0...1).contains($0) }) {
+            (options.red, options.green, options.blue) = (matte[0], matte[1], matte[2])
+        }
+        return options
+    }
+
+    /// Remembers an export's settings, and its format as the one Export As… starts on.
+    static func save(_ options: ExportOptions, in store: (any ToolDefaultsStore)? = ToolDefaults.store) {
+        store?.set(options.format.rawValue, forKey: formatKey)
+        if options.format.hasQuality { store?.set(options.quality, forKey: qualityKey(options.format)) }
+        if options.format.keepsTransparency { store?.set(options.transparency, forKey: transparencyKey(options.format)) }
+        store?.set([Double(options.red), Double(options.green), Double(options.blue)], forKey: matteKey)
+    }
 }

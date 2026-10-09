@@ -138,7 +138,7 @@ struct ShortcutDefinition: Identifiable {
             entry("New", "n", 1, menu: true), entry("New from Clipboard", "n", 3, menu: true), entry("Open", "o", 1, menu: true),
             entry("Close", "w", 1, menu: true),
             entry("Save", "s", 1, menu: true), entry("Save As", "s", 9, menu: true), entry("Save a Copy", "s", 3, menu: true),
-            entry("Export As", "w", 11, menu: true), entry("Export JPEG", "s", 11, menu: true),
+            entry("Export As", "w", 11, menu: true),
             entry("Undo", "z", 1, menu: true), entry("Redo", "z", 9, menu: true),
             entry("Cut", "x", 1, menu: true), entry("Copy", "c", 1, menu: true), entry("Copy Merged", "c", 9, menu: true),
             entry("Paste", "v", 1, menu: true), entry("Fill", ShortcutChord.functionKey(5), 8, menu: true),
@@ -232,6 +232,8 @@ final class ShortcutSettings {
             "Menus:New Canvas": "Menus:New", "Menus:Open Project": "Menus:Open", "Menus:Close Project": "Menus:Close",
             "Menus:Export PNG": "\(more):File › Export › Quick Export as PNG",
             "\(more):File › Export As…": "Menus:Export As",
+            // TASK-65: Export JPEG… became Export As…'s JPEG format; a key set for it carries over unless it collides.
+            "Menus:Export JPEG": "Menus:Export As",
             "\(more):File › Open Recent › Clear Menu": "\(more):File › Open Recent › Clear Recent File List",
             "\(more):File › Import Images…": "\(more):File › Place Embedded…",
             "\(more):Lamina › Hide Lamina": "Menus:Hide Lamina",

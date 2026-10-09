@@ -133,16 +133,12 @@ private struct FileMenuCommands: Commands {
                 .configuredKeyboardShortcut("s", modifiers: [.command, .option])
             Divider()
             Menu("Export") {
-                Button("Quick Export as PNG") { Task { await projects.exportPNG() } }
+                Button("Quick Export as PNG") { Task { await projects.quickExportPNG() } }
                     .assignableShortcut("File › Export › Quick Export as PNG")
                     .disabled(!canExport)
                 Divider()
                 Button("Export As…") { Task { await projects.exportAs() } }
                     .configuredKeyboardShortcut("w", modifiers: [.command, .option, .shift])
-                    .disabled(!canExport)
-                // Until TASK-65 makes it Export As…'s JPEG format.
-                Button("Export JPEG…") { Task { await projects.exportJPEG() } }
-                    .configuredKeyboardShortcut("s", modifiers: [.command, .option, .shift])
                     .disabled(!canExport)
             }
             Divider()
@@ -576,7 +572,7 @@ private struct ViewMenuCommands: Commands {
         CommandGroup(replacing: .toolbar) {}
         CommandGroup(replacing: .sidebar) {}
         CommandMenu("View") {
-            // With a dialog's preview open (Export JPEG), these zoom that preview rather than the canvas.
+            // With a dialog's preview open (Export As), these zoom that preview rather than the canvas.
             Button("Zoom In") {
                 guard !(NSApp.keyWindow?.firstResponder is NSText) else { return }
                 if let preview = session.previewZoom { preview(.zoomIn) } else { session.zoomKeyboard(by: 1) }

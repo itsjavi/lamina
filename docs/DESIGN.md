@@ -523,7 +523,7 @@ TASK-59's and Window's panel items TASK-58's (`DockCommands`). Items without a k
 one in Keyboard Shortcuts (More Menu Commands), as every menu item does.
 
 - **Lamina:** About Lamina · Check for Updates… │ Settings… ⌘K │ Services ▸ │ Hide Lamina ⌃⌘H · Hide Others ⌥⌘H · Show All │ Quit Lamina ⌘Q
-- **File:** New… ⌘N · New from Clipboard ⌥⌘N · Open… ⌘O · Open Recent ▸ (recent projects │ Clear Recent File List) │ Close ⌘W │ Save ⌘S · Save As… ⇧⌘S · Save a Copy… ⌥⌘S (in progress: layered Photoshop files, TASK-27) │ Export ▸ (Quick Export as PNG │ Export As… ⌥⇧⌘W · Export JPEG… ⌥⇧⌘S, until TASK-65 makes it Export As…'s JPEG format) │ Place Embedded…
+- **File:** New… ⌘N · New from Clipboard ⌥⌘N · Open… ⌘O · Open Recent ▸ (recent projects │ Clear Recent File List) │ Close ⌘W │ Save ⌘S · Save As… ⇧⌘S · Save a Copy… ⌥⌘S (in progress: layered Photoshop files, TASK-27) │ Export ▸ (Quick Export as PNG │ Export As… ⌥⇧⌘W) │ Place Embedded…
 - **Edit:** Undo ⌘Z · Redo ⇧⌘Z │ Cut ⌘X · Copy ⌘C · Copy Merged ⇧⌘C · Paste ⌘V · Clear │ Fill… ⇧F5 · Stroke… · Content-Aware Fill… │ Free Transform ⌘T · Transform ▸ (Distort │ Flip Horizontal · Flip Vertical) │ Keyboard Shortcuts… ⌥⇧⌘K
 - **Image:** Adjustments ▸ (Levels… ⌘L · Curves… ⌘M · Exposure… │ Hue/Saturation… ⌘U · Color Balance… ⌘B · Black & White… ⌥⇧⌘B │ Invert ⌘I · Gradient Map… │ Grain…) │ Image Size… ⌥⌘I · Canvas Size… ⌥⌘C · Image Rotation ▸ (180° · 90° Clockwise · 90° Counter Clockwise │ Flip Canvas Horizontal · Flip Canvas Vertical) · Trim…
 - **Layer:** New ▸ (Layer… ⇧⌘N │ Group… · Group from Layers… │ Layer Via Copy ⌘J) · Duplicate Layer… · Delete ▸ Layer │ Rename Layer… · Layer Style ▸ (Blending Options… │ Stroke… · Inner Shadow… · Inner Glow… · Color Overlay… · Outer Glow… · Drop Shadow… │ Copy Layer Style · Paste Layer Style · Clear Layer Style) │ New Adjustment Layer ▸ (Grain… │ Levels… · Curves… · Exposure… │ Hue/Saturation… · Color Balance… · Black & White… │ Invert · Gradient Map… │ Gaussian Blur… · Motion Blur… · Add Noise…) · Layer Content Options… │ Layer Mask ▸ (Reveal All · Hide All · Reveal Selection · Hide Selection │ Delete · Apply) · Create Clipping Mask ⌥⌘G · Remove Background… │ Rasterize (in progress, TASK-32) · Convert to Editable Vectors (in progress, TASK-35) │ Group Layers ⌘G · Ungroup Layers ⇧⌘G · Hide Layers ⌘, · Hide All Other Layers │ Arrange ▸ (Bring Forward ⌘] · Send Backward ⌘[ │ Move Out of Group) · Combine Shapes ▸ (in progress, TASK-34) · Release to Layers (in progress, TASK-34) │ Align ▸ (Top Edges · Vertical Centers · Bottom Edges │ Left Edges · Horizontal Centers · Right Edges) · Distribute ▸ (Vertical Centers · Horizontal Centers │ Horizontally · Vertically) │ Merge Down ⌘E (Merge Layers with several selected) · Merge Visible ⇧⌘E · Flatten Image
@@ -583,7 +583,8 @@ named). Keyboard Shortcuts lists every one; function keys show as F1 to F12, and
 | Filter ▸ Last Filter | ⌘F | ⌃⌘F |
 | Layer ▸ Merge Visible | none | ⇧⌘E |
 | File ▸ Export ▸ Quick Export as PNG (was Export PNG…) | ⇧⌘E | none |
-| File ▸ Export ▸ Export As… | none | ⌥⇧⌘W (Export JPEG… keeps ⌥⇧⌘S in Export ▸ until TASK-65 folds it in) |
+| File ▸ Export ▸ Export As… | none | ⌥⇧⌘W |
+| File ▸ Export JPEG… (now Export As…'s JPEG format, TASK-65) | ⌥⇧⌘S | gone: ⌥⇧⌘S belongs to nothing; a key someone gave Export JPEG… moves to Export As… unless Export As… has its own or the key now collides |
 | Select ▸ Subject | ⌥⌘A | none |
 | View ▸ Extras | none | ⌘H (Show Transform Controls is a Move bar checkbox only; ⌘H left it with TASK-56) |
 | Edit ▸ Free Transform (was Layer ▸ Transform Layer / Transform Selection) | ⌘T | ⌘T (shipping, TASK-56) |
@@ -632,10 +633,24 @@ named). Keyboard Shortcuts lists every one; function keys show as F1 to F12, and
   just puts the focus in Width. Create makes the document with a blank, selected Layer 1; any background but
   Transparent puts a filled layer named Background under it (up to one surface, 200 megapixels), in the same New
   Canvas step. The name names the tab, window and Save panel until the document is saved.
+- Export As (File ▸ Export ▸ Export As… ⌥⇧⌘W; `ExportSheet`, settings in `ExportSettings`, `IO/ImageExporter.swift`;
+  **shipping**, TASK-65) is the one export dialog, a sheet: on the left a 520 × 330 pt preview on `pasteboard` with an
+  `edge` border, the encoded file read back so it shows the format's own artifacts (fitted; drag or scroll to move,
+  double-click switches between Fit and 100%, and View's zoom keys zoom it), under it zoom out, the percentage, zoom
+  in and Fit, then the image's size and the file's ("2,400 × 1,500 px · 1 MB", "Updating…" while it encodes). On the
+  right a 250 pt File Settings group: Format: (every format this Mac writes: PNG, JPEG, HEIC, AVIF, WebP, TIFF, PDF;
+  AVIF and HEIC only where ImageIO can encode them), Quality: (a slider and a percent field for JPEG, HEIC, AVIF and
+  WebP; dimmed and reading Lossless for the others), Transparency (on keeps transparent areas transparent; off, and
+  always for JPEG, fills them with the matte) and Matte: (a color well, the background for transparency, dimmed while
+  Transparency keeps them). The rows stay the same for every format, dimmed where they don't apply. Cancel then
+  Export at the bottom right; Export goes on to the Save panel. It starts on the format last exported, each format on
+  the quality and Transparency it was last exported with (Export JPEG…'s saved quality carries over), the matte shared
+  by all; Cancel saves nothing. Quick Export as PNG goes straight to the Save panel and writes a PNG with PNG's saved
+  Transparency and the matte. `lamina export-document` writes PNG or JPEG as before, without the dialog.
 - One layout in code: `DialogLayout` (`Sources/LaminaApp/UI/DialogLayout.swift`) takes the settings, `confirm` and
   `cancel`, and optionally `extras` (column buttons and controls), a `preview` binding, a `status` line ("Applying…"
-  with a spinner), a `title` heading for dialogs shown as sheets (which have no title bar), `defaultTitle` and
-  `placement: .bottom`. `DialogButton` is a column-wide button, `DialogRow` a right-aligned "Label:" row and
+  with a spinner), a `title` heading for dialogs shown as sheets (which have no title bar), `defaultTitle`,
+  `cancelTitle` (New Document's Close) and `placement: .bottom`. `DialogButton` is a column-wide button, `DialogRow` a right-aligned "Label:" row and
   `DialogGroup` a titled group box; `DialogPreviewToggle` is the Preview checkbox, for a dialog that puts it in its
   extras with something under it (Layer Style's swatch). Floating panels (adjustments, filters, Color Range,
   Expand/Contract/Feather, Fill, Load Selection) and window sheets (Stroke, Trim, Canvas Size, Image Size) keep their

@@ -121,4 +121,40 @@ struct ExportFormatTests {
         #expect(imported.image.width == 64 && imported.image.height == 32)
         try expectRedAndClear(imported.image, keepsTransparency: true, "WebP")
     }
+
+    /// Export As… with Transparency off: every format fills the clear half with the matte, written and read back.
+    @Test(arguments: ExportFormat.available)
+    func transparencyOffFillsWithTheMatte(format: ExportFormat) async throws {
+        let options = ExportOptions(format: format, quality: 1, red: 0, green: 0, blue: 1, transparency: false)
+        #expect(options.fillsTransparency)
+        let result = try await ImageExporter.shared.encode(try raster(), options: options)
+        let bytes = try pixels(result.preview)
+        let red = (16 * 64 + 8) * 4, clear = (16 * 64 + 56) * 4
+        #expect(bytes[red] > 200 && bytes[red + 2] < 40, "\(format.title)")
+        #expect(bytes[clear] < 40 && bytes[clear + 1] < 40 && bytes[clear + 2] > 200 && bytes[clear + 3] == 255, "\(format.title)")
+    }
+
+    /// Export As… starts on the format last exported, each format on its own quality and Transparency, and the matte
+    /// is shared; Export JPEG…'s saved quality carries over to JPEG.
+    @Test func exportSettingsCarryOver() {
+        final class Store: ToolDefaultsStore {
+            var values: [String: Any] = [:]
+            func object(forKey defaultName: String) -> Any? { values[defaultName] }
+            func set(_ value: Any?, forKey defaultName: String) { values[defaultName] = value }
+        }
+        let store = Store()
+        #expect(ExportSettings.format(among: [.png, .jpeg], in: store) == .png)
+        #expect(ExportSettings.options(for: .png, in: store) == ExportOptions(format: .png))
+        store.values["jpegExportQuality"] = 0.6
+        #expect(ExportSettings.options(for: .jpeg, in: store).quality == 0.6)
+        ExportSettings.save(ExportOptions(format: .webP, quality: 0.4, red: 0, green: 0.5, blue: 1, transparency: false), in: store)
+        #expect(ExportSettings.format(among: [.png, .jpeg, .webP], in: store) == .webP)
+        #expect(ExportSettings.format(among: [.png, .jpeg], in: store) == .png, "a format this Mac can't write falls back")
+        let webP = ExportSettings.options(for: .webP, in: store)
+        #expect(webP.quality == 0.4 && !webP.transparency && webP.green == 0.5)
+        let png = ExportSettings.options(for: .png, in: store)
+        #expect(png.transparency && png.blue == 1 && png.red == 0, "PNG keeps its own Transparency and takes the matte")
+        #expect(ExportSettings.options(for: .jpeg, in: store).quality == 0.6)
+        #expect(ExportSettings.options(for: .png, in: nil) == ExportOptions(format: .png), "tests never read the app's defaults")
+    }
 }

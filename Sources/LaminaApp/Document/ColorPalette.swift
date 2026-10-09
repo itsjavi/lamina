@@ -266,7 +266,7 @@ enum ColorPickerTarget: Equatable {
     /// Dither's Two Colors: the dark one or the light one.
     case dither(light: Bool)
     case text(draftID: UUID?)
-    /// A dialog's own color, such as Export JPEG's background for transparency. The dialog is told as it changes.
+    /// A dialog's own color, such as Export As's matte. The dialog is told as it changes.
     case dialog(title: String)
     var title: String {
         switch self {

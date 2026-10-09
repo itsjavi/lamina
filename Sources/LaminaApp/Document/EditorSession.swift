@@ -338,7 +338,7 @@ final class EditorSession {
     @ObservationIgnored var dialogColorChange: ((PaletteColor) -> Void)?
     /// The picker holds an undo step open for its color, closed with it (`openDialogColorPicker(undoName:)`).
     @ObservationIgnored var dialogColorStep = false
-    /// A dialog with its own zoomable preview (Export JPEG) is open: the View menu's zoom commands zoom that instead.
+    /// A dialog with its own zoomable preview (Export As) is open: the View menu's zoom commands zoom that instead.
     @ObservationIgnored var previewZoom: ((PreviewZoomCommand) -> Void)?
     /// The text's style before the font menu started previewing faces on it (see `previewFont`).
     @ObservationIgnored var fontPreviewOriginal: LayerTextStyle?

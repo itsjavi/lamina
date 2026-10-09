@@ -115,7 +115,7 @@ struct BrushFlowTests {
     }
 
     @Test func eraseAndMaskPaintingFollowFlow() async throws {
-        func session() -> EditorSession {
+        func session(then tool: NavigationTool = .brush) -> EditorSession {
             let session = EditorSession()
             session.createDocument(width: 80, height: 80)
             session.addBlankLayer()
@@ -123,7 +123,9 @@ struct BrushFlowTests {
             session.brushSettings = BrushSettings(diameter: 200, hardness: 1, red: 1, green: 0, blue: 0)
             session.beginBrush(at: CGPoint(x: 40, y: 40))
             session.finishBrushImmediately()
+            session.selectTool(tool)
             session.brushSettings.diameter = 20
+            session.brushSettings.hardness = 1
             session.brushSettings.flow = 0.5
             return session
         }
@@ -135,8 +137,7 @@ struct BrushFlowTests {
             bitmap.getPixel(&corner, atX: 5, y: 5)
             return (pixel[3], corner[3])
         }
-        let erasing = session()
-        erasing.brushMode = .erase
+        let erasing = session(then: .eraser)
         erasing.beginBrush(at: CGPoint(x: 40, y: 40))
         erasing.finishBrushImmediately()
         let erased = try await alpha(erasing)
@@ -152,7 +153,7 @@ struct BrushFlowTests {
         #expect(abs(masked.center - 128) <= 2 && masked.corner == 255)
     }
 
-    /// Flow belongs to the Brush, as in Photoshop: the other brush tools lay their full tip.
+    /// Flow belongs to the Brush (and Eraser, Dodge and Burn), as in Photoshop: the other brush tools lay their full tip.
     @Test func onlyTheBrushUsesFlow() {
         let session = EditorSession()
         session.createDocument(width: 80, height: 80)
@@ -161,6 +162,10 @@ struct BrushFlowTests {
         session.brushSettings.flow = 0.3
         session.beginBrush(at: CGPoint(x: 30, y: 40))
         #expect(session.brushStroke?.settings.flow == 0.3)
+        session.cancelBrush()
+        session.selectTool(.eraser)
+        session.beginBrush(at: CGPoint(x: 30, y: 40))
+        #expect(session.brushStroke?.settings.flow == 0.3 && session.brushStroke?.settings.erasing == true)
         session.cancelBrush()
         session.selectTool(.spotHealing)
         session.beginBrush(at: CGPoint(x: 30, y: 40))

@@ -53,8 +53,8 @@ extension EditorSession {
     /// `pressure` is a pen's, 0–1; nil for a mouse or trackpad, which presses fully.
     func beginBrush(at point: CGPoint, pressure: CGFloat? = nil) {
         // Spot Healing and Clone Stamp rework image pixels; they have nothing to do on a mask.
-        if tool == .blur, blurMode != .blur { beginWarp(at: point); return }
-        guard tool == .brush || tool == .blur || (tool.isBrushTool && !isMaskSelected) else { return }
+        if tool.warps { beginWarp(at: point, mode: tool == .smudge ? .smudge : .liquify); return }
+        guard tool.usesBrushDynamics || tool == .blur || (tool.isBrushTool && !isMaskSelected) else { return }
         guard canPaint, let layer = activeLayer, let document else { brushError = paintRefusal; return }
         var sourceOffset: CGSize?
         if tool == .cloneStamp {
@@ -68,8 +68,8 @@ extension EditorSession {
         do {
             var settings = brushSettings
             settings.healing = tool == .spotHealing
-            settings.erasing = tool == .brush && brushMode == .erase && !isMaskSelected
-            if tool == .brush, let lightens = brushMode.toneLightens {
+            settings.erasing = tool == .eraser && !isMaskSelected
+            if let lightens = tool.toneLightens {
                 guard !isMaskSelected else {
                     brushError = "Dodge and Burn lighten and darken a layer’s pixels, not its mask. Click the layer’s thumbnail to work on its pixels."
                     return
@@ -80,10 +80,10 @@ extension EditorSession {
                 settings.toning = BrushToning(lightens: lightens, range: toneRange, exposure: toneExposure)
             }
             settings.healingMode = spotHealingMode
-            // Flow and the pressure buttons belong to the Brush; the other brush tools lay their full tip.
-            if tool != .brush { settings.flow = 1; settings.pressureSize = false; settings.pressureOpacity = false }
+            // Flow and the pressure buttons belong to the Brush, Eraser, Dodge and Burn; the other brush tools lay their full tip.
+            if !tool.usesBrushDynamics { settings.flow = 1; settings.pressureSize = false; settings.pressureOpacity = false }
             if isMaskSelected { settings.red = maskPaintWhite ? 1 : 0; settings.green = settings.red; settings.blue = settings.red }
-            let stroke = try makeRasterEdit(for: layer, settings: settings, growsMask: tool == .brush)
+            let stroke = try makeRasterEdit(for: layer, settings: settings, growsMask: tool.usesBrushDynamics)
             if let offset = sourceOffset {
                 guard let sample = cloneSample(document, for: stroke, offset: offset) else { return }
                 cloneOffset = offset
@@ -119,7 +119,7 @@ extension EditorSession {
     /// is in screen points, so it feels the same however far the canvas is zoomed in. Nil while the
     /// string is still slack, which is the whole point: those jitters never reach the stroke.
     private func smoothed(_ point: CGPoint) -> CGPoint? {
-        guard tool == .brush, brushSettings.smoothing > 0, let anchor = brushAnchor else { return point }
+        guard tool.usesBrushDynamics, brushSettings.smoothing > 0, let anchor = brushAnchor else { return point }
         let radius = brushSettings.smoothing / max(0.01, viewport.zoom)
         let delta = CGPoint(x: point.x - anchor.x, y: point.y - anchor.y)
         let distance = hypot(delta.x, delta.y)
@@ -155,7 +155,7 @@ extension EditorSession {
         do {
             // Smoothing leaves the brush short of the pointer; the stroke ends where the hand did.
             if let pointer = brushPointer, let anchor = brushAnchor, pointer != anchor,
-               tool == .brush, brushSettings.smoothing > 0 {
+               tool.usesBrushDynamics, brushSettings.smoothing > 0 {
                 try stroke.append(pointer, pressure: brushPressure)
             }
             try stroke.flush()
@@ -259,7 +259,7 @@ extension EditorSession {
         }
         let value = CGFloat(percent) / 100
         switch tool {
-        case .brush, .spotHealing, .cloneStamp, .blur: brushSettings.opacity = value
+        case _ where tool.isBrushTool: brushSettings.opacity = value
         case .gradient: gradientSettings.opacity = value
         case .paintBucket: bucketSettings.opacity = value
         default: setSelectedLayersOpacity(Double(value))

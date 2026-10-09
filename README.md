@@ -53,7 +53,7 @@ tool, as an MCP server, or by writing a project while you watch it update. Vecto
 - Align and Distribute layers by the pixels they show, to each other, the selection or the canvas, from the Move tool's bar or the Layer menu
 
 ### Selections
-- Rectangle and Ellipse Marquee, Freehand and Polygonal Lasso, and the Magic tool — Wand selects by color, Object traces whatever you click (Tab switches)
+- Rectangular and Elliptical Marquee (M), Lasso and Polygonal Lasso (L), Object Selection, which traces whatever you click, and Magic Wand, which selects by color (W); Shift and the key switches between the tools that share it
 - Select Subject, and Expand, Contract and Feather on any selection
 - Add to and subtract from selections, move the outline, or move and duplicate the pixels inside
 - Edit › Stroke: a line along the selection's outline, inside, centered or outside, in the foreground or background color, on pixels or masks
@@ -61,14 +61,14 @@ tool, as an MCP server, or by writing a project while you watch it update. Vecto
 - Content-Aware Fill, which can also extend an image past its edges
 
 ### Painting and retouching
-- Brush with size, hardness, opacity, flow and smoothing, in Paint, Erase (B and E), Dodge or Burn mode, and Shift for straight lines
-- Dodge and Burn lighten or darken the shadows, midtones or highlights by an exposure
+- Brush (B) and Eraser (E) with size, hardness, opacity, flow and smoothing, and Shift for straight lines
+- Dodge and Burn (O) lighten or darken the shadows, midtones or highlights by an exposure
 - Pen pressure for the Brush's size and opacity, on a graphics tablet
 - Brush settings and colors carry over to new documents and later launches
 - Spot Healing Brush (content-aware)
 - Clone Stamp, aligned or not, sampling one layer or all of them
-- Blur tool, on pixels or masks
-- Gradient tool and Shape tool (rectangles, rounded rectangles, ellipses and lines), which stay editable rather than being rasterized
+- Blur (on pixels or masks) and Smudge (R), and Liquify (Filter › Liquify…, ⇧⌘X) with Done and Cancel
+- Gradient tool, and Rectangle (rounded too), Ellipse and Line tools (U), which stay editable rather than being rasterized
 - Paint Bucket (Shift-G from the Gradient): fills similar colors by tolerance, contiguous or not, from one layer or all of them, anti-aliased, on pixels or masks
 - Type tool (T): inline multiline editing in draggable, resizable paragraph boxes; font, size, color, alignment and spacing in the tool header; transform text and use it as a clipping mask
 - Eyedropper and a full color picker

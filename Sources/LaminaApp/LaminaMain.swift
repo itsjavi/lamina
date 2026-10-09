@@ -337,6 +337,9 @@ struct LaminaMain: App {
                     }
                         .configuredKeyboardShortcut("f").disabled(!session.canRepeatLastFilter)
                     Divider()
+                    // Not a dialog here: it picks the Liquify brush, whose bar ends with Cancel and Done.
+                    Button("Liquify…") { session.beginLiquify() }
+                        .configuredKeyboardShortcut("x", modifiers: [.command, .shift]).disabled(!session.canLiquify)
                     ForEach(FilterKind.allCases.filter { $0 != .contentAwareFill && !$0.isImageAdjustment }, id: \.self) { kind in
                         Button("\(kind.rawValue)…") { session.beginFilter(kind) }
                             .assignableShortcut("Filter › \(kind.rawValue)…")

@@ -83,7 +83,7 @@ struct SelectionTests {
 
     @Test func polygonalCornersCanBeRemovedAndClosed() throws {
         let session = makeSession()
-        session.lassoKind = .polygonal
+        session.selectTool(.polygonalLasso)
         session.beginLasso(at: CGPoint(x: 10, y: 10), mode: .replace)
         session.extendLasso(to: CGPoint(x: 90, y: 10))
         session.extendLasso(to: CGPoint(x: 50, y: 50)) // Misplaced corner.
@@ -319,7 +319,7 @@ struct SelectionTests {
 
     @Test func marqueeDrawsWholePixelRectanglesInAnyDirection() throws {
         let session = makeSession()
-        session.selectTool(.marquee)
+        session.selectTool(.rectangularMarquee)
         marquee(session, from: CGPoint(x: 60.4, y: 70.6), to: CGPoint(x: 20.2, y: 30.3))
         #expect(session.history.undoName == "Rectangular Marquee")
         #expect(session.selection?.path.boundingBoxOfPath == CGRect(x: 20, y: 30, width: 40, height: 41))
@@ -334,22 +334,20 @@ struct SelectionTests {
 
     @Test func marqueeShiftMakesSquaresAndCenteredDragsGrowFromTheAnchor() {
         let session = makeSession()
-        session.selectTool(.marquee)
+        session.selectTool(.rectangularMarquee)
         marquee(session, from: CGPoint(x: 10, y: 10), to: CGPoint(x: 40, y: 20), square: true)
         #expect(session.selection?.path.boundingBoxOfPath == CGRect(x: 10, y: 10, width: 30, height: 30))
         marquee(session, from: CGPoint(x: 50, y: 50), to: CGPoint(x: 60, y: 55), fromCenter: true)
         #expect(session.selection?.path.boundingBoxOfPath == CGRect(x: 40, y: 45, width: 20, height: 10))
         marquee(session, from: CGPoint(x: 50, y: 50), to: CGPoint(x: 45, y: 58), square: true, fromCenter: true)
         #expect(session.selection?.path.boundingBoxOfPath == CGRect(x: 42, y: 42, width: 16, height: 16))
-        // Object selection is the Magic tool's Object mode now, not a tool of its own (EditorSession: "Tab
-        // switches Wand and Object"), so the tool that carries it is `.wand`. This read `.objectSelection`.
-        #expect(NavigationTool.marquee.isSelectionTool && NavigationTool.wand.isSelectionTool && !NavigationTool.brush.isSelectionTool)
+        let selecting: [NavigationTool] = [.rectangularMarquee, .ellipticalMarquee, .lasso, .polygonalLasso, .objectSelection, .magicWand]
+        #expect(NavigationTool.allCases.filter(\.isSelectionTool) == selecting)
     }
 
     @Test func marqueeEllipseSelectsAnOvalInItsBoxAndShiftMakesACircle() throws {
         let session = makeSession()
-        session.selectTool(.marquee)
-        session.marqueeKind = .ellipse
+        session.selectTool(.ellipticalMarquee)
         session.beginLasso(at: CGPoint(x: 10, y: 20), mode: .replace)
         session.dragMarquee(to: CGPoint(x: 70, y: 60), square: false, fromCenter: false)
         session.finishLasso()
@@ -362,14 +360,14 @@ struct SelectionTests {
         session.finishLasso()
         let circle = try #require(session.selection?.path.boundingBoxOfPath)
         #expect(abs(circle.width - circle.height) < 0.5)
-        session.toggleMarqueeKind()
-        #expect(session.marqueeKind == .rectangle)
+        session.pressToolKey("m", shift: true)
+        #expect(session.tool == .rectangularMarquee)
     }
 
     /// Option on the Marquee subtracts; unlike the Transform tool, it must not draw from the center.
     @Test func optionDraggingTheMarqueeSubtractsWithoutDrawingFromTheCenter() throws {
         let session = makeSession()
-        session.selectTool(.marquee)
+        session.selectTool(.rectangularMarquee)
         session.selectAll()
         let size = CGSize(width: 100, height: 100)
         let view = CanvasView(session: session)
@@ -390,37 +388,36 @@ struct SelectionTests {
         #expect(try coverage(session, 30, 30) == 255) // a box grown from its center would have reached here
     }
 
-    /// M chooses the Marquee in whichever shape it was last set to; the shape is switched in the tool bar only
-    /// (`pressMarqueeKey`). M used to cycle Rectangle/Ellipse, and this test asserted that.
-    ///
-    /// It also asserted that holding M down did not keep switching, which is gone rather than moved: the
-    /// `!event.isARepeat` guard in `EditorCanvas` cannot be observed any more. `pressMarqueeKey` is
-    /// `selectTool(.marquee)`, and `selectTool` returns early once that tool is current, so removing the guard
-    /// would change nothing a test could see. An assertion for it would pass whether the guard were there or
-    /// not, which is worse than not having one.
-    @Test func mKeyChoosesTheMarqueeAndKeepsTheShapeLastSet() throws {
+    /// M chooses the marquee last used, Shift-M the other one; pressing M again never switches. Holding Shift-M
+    /// switches once: the key's repeats are ignored.
+    @Test func mKeyChoosesTheMarqueeLastUsedAndShiftMSwitches() throws {
         let session = makeSession()
         let view = CanvasView(session: session)
-        func pressM(repeat isARepeat: Bool = false) throws {
-            view.keyDown(with: try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
-                windowNumber: 0, context: nil, characters: "m", charactersIgnoringModifiers: "m", isARepeat: isARepeat, keyCode: 46)))
+        func pressM(shift: Bool = false, repeat isARepeat: Bool = false) throws {
+            let typed = shift ? "M" : "m"
+            view.keyDown(with: try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: shift ? .shift : [],
+                timestamp: 0, windowNumber: 0, context: nil, characters: typed, charactersIgnoringModifiers: typed,
+                isARepeat: isARepeat, keyCode: 46)))
         }
-        #expect(session.tool == .lasso && session.marqueeKind == .rectangle)
+        #expect(session.tool == .lasso)
         try pressM()
-        #expect(session.tool == .marquee && session.marqueeKind == .rectangle)
+        #expect(session.tool == .rectangularMarquee)
         try pressM()
-        #expect(session.marqueeKind == .rectangle, "pressing M again must not switch the shape")
-        session.marqueeKind = .ellipse
+        #expect(session.tool == .rectangularMarquee, "pressing M again must not switch the marquee")
+        try pressM(shift: true)
+        #expect(session.tool == .ellipticalMarquee)
+        try pressM(shift: true, repeat: true)
+        #expect(session.tool == .ellipticalMarquee, "a held Shift-M switches once")
         session.selectTool(.brush)
         try pressM()
-        #expect(session.tool == .marquee && session.marqueeKind == .ellipse, "the shape stays as last set")
+        #expect(session.tool == .ellipticalMarquee, "M picks the marquee last used")
     }
 
     /// Shift held as a Marquee drag starts adds without squaring the box; letting Shift go and pressing it
     /// again during the drag squares it, as in Photoshop.
     @Test func shiftStartsAnAddAndOnlyAFreshShiftSquaresTheMarquee() throws {
         let session = makeSession()
-        session.selectTool(.marquee)
+        session.selectTool(.rectangularMarquee)
         session.applySelection(CGPath(rect: CGRect(x: 5, y: 5, width: 10, height: 10), transform: nil), mode: .replace, name: "Select")
         let size = CGSize(width: 100, height: 100)
         let view = CanvasView(session: session)
@@ -457,24 +454,30 @@ struct SelectionTests {
         #expect(try coverage(session, 65, 45) == 255 && coverage(session, 10, 10) == 255, "still adding")
     }
 
-    /// L chooses the Lasso, and Freehand/Polygonal is switched in the tool bar only - the same rule as M, and
-    /// the same story about the repeat assertion; see `mKeyChoosesTheMarqueeAndKeepsTheShapeLastSet`.
-    @Test func lKeyChoosesTheLassoAndKeepsTheModeLastSet() throws {
+    /// L chooses the lasso last used and Shift-L the other one, the same rule as M; the Polygonal Lasso draws corners.
+    @Test func lKeyChoosesTheLassoLastUsedAndShiftLSwitches() throws {
         let session = makeSession()
-        session.selectTool(.marquee)
+        session.selectTool(.rectangularMarquee)
         let view = CanvasView(session: session)
-        func pressL(repeat isARepeat: Bool = false) throws {
-            view.keyDown(with: try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
-                windowNumber: 0, context: nil, characters: "l", charactersIgnoringModifiers: "l", isARepeat: isARepeat, keyCode: 37)))
+        func pressL(shift: Bool = false) throws {
+            let typed = shift ? "L" : "l"
+            view.keyDown(with: try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: shift ? .shift : [],
+                timestamp: 0, windowNumber: 0, context: nil, characters: typed, charactersIgnoringModifiers: typed,
+                isARepeat: false, keyCode: 37)))
         }
-        #expect(session.lassoKind == .freehand)
         try pressL()
-        #expect(session.tool == .lasso && session.lassoKind == .freehand)
+        #expect(session.tool == .lasso)
         try pressL()
-        #expect(session.lassoKind == .freehand, "pressing L again must not switch the mode")
-        session.lassoKind = .polygonal
+        #expect(session.tool == .lasso, "pressing L again must not switch the lasso")
+        try pressL(shift: true)
+        #expect(session.tool == .polygonalLasso)
+        session.beginLasso(at: CGPoint(x: 10, y: 10), mode: .replace)
+        #expect(session.lassoDraft?.kind == .polygonal)
+        session.cancelLasso()
         session.selectTool(.brush)
         try pressL()
-        #expect(session.tool == .lasso && session.lassoKind == .polygonal, "the mode stays as last set")
+        #expect(session.tool == .polygonalLasso, "L picks the lasso last used")
+        try pressL(shift: true)
+        #expect(session.tool == .lasso, "Shift-L goes round to the first again")
     }
 }

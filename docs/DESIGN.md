@@ -156,6 +156,10 @@ Every numeric field uses monospaced digits so values don't jitter while scrubbin
 | Hand / Zoom | `hand.raised` / `magnifyingglass` |
 | History panel | `clock.arrow.circlepath` |
 
+Until TASK-55 draws the custom icons, Dodge and Burn show `sun.max` and `flame`, and Move, Type and Hand keep the
+symbols they had; the new Eraser, Elliptical Marquee, Smudge, Rectangle, Ellipse and Line already use the symbols above
+(`ToolIcon` in `Sources/LaminaApp/UI/ToolIcon.swift` picks each tool's icon).
+
 ## Elevation and depth
 
 Chrome is flat: regions sit side by side, separated by `edge` lines. Only transient things float, and they float with
@@ -167,8 +171,18 @@ the Contextual Task Bar and dialogs. Nothing in the chrome uses gradients, glows
 ### Toolbar
 
 One column, top to bottom. A slot shows the last tool used from its group; holding the mouse on a slot or right-clicking
-it opens a flyout listing the group's tools with icon, name and key. Shift plus a tool's key cycles its group. Help tags
-and accessibility labels read "Tool name (Key)". Status: **m-5** (TASK-54 splits the tools, TASK-55 builds the toolbar).
+it opens a flyout listing the group's tools with icon, name and key. A tool's key picks its slot's last-used tool; Shift
+plus the key, with that slot's tool active, picks the next tool in the slot (round to the first), and from any other
+tool picks the slot's last-used one. A held key counts once. Help tags and accessibility labels read "Tool name (Key)".
+Status: the separate tools, their keys and Shift cycling are **shipping** (TASK-54: `NavigationTool` and `ToolSlot` in
+`Sources/LaminaApp/Document/NavigationTool.swift`, with each slot's last tool in `EditorSession.slotTools`); the slot
+column with flyouts is **m-5** (TASK-55). Until then the tool rail lists every tool on its own.
+
+Each tool remembers its settings. Brush and Spot Healing share one tip (size, hardness, opacity); Eraser, Dodge and Burn,
+Blur and Smudge, Clone Stamp and Liquify each keep their own, and settings saved before the split start Eraser, Dodge
+and Burn from the Brush's tip and Liquify from Blur's. Flow, Smoothing and the pressure buttons are shared by Brush,
+Eraser, Dodge and Burn. Each slot's last tool lasts while the document is open; which of Dodge and Burn the Dodge slot
+holds carries over to new documents with the brush settings.
 
 | Slot | Tools, in flyout order | Key |
 | --- | --- | --- |
@@ -199,8 +213,11 @@ and accessibility labels read "Tool name (Key)". Status: **m-5** (TASK-54 splits
 | Colors | Foreground over background swatches, default colors and swap controls | D, X |
 
 Liquify is not a toolbar tool: Filter ▸ Liquify… (⇧⌘X) picks the Liquify brush, with its own bar (brush picker,
-Strength, then Cancel and Done). Tools familiar editors have and Lamina has no task for (Artboard, Frame, Quick
-Selection, Healing Brush, History Brush, Sponge and so on) don't appear.
+Strength, then Cancel and Done). Done (Return) goes back to the tool chosen before and keeps the strokes; Cancel
+(Escape) jumps History back to where Liquify was chosen, so Redo can bring the strokes back, then goes back too.
+Picking any other tool keeps the strokes, as Done does. The menu item is dimmed without a layer's pixels to push (an
+empty layer, a mask targeted). Status: **shipping** (TASK-54). Tools familiar editors have and Lamina has no task for
+(Artboard, Frame, Quick Selection, Healing Brush, History Brush, Sponge and so on) don't appear.
 
 ### Options bars
 
@@ -291,12 +308,12 @@ What changes from the shortcuts Lamina shipped before m-5 (applied by TASK-62; c
 | Edit ▸ Fill… | none | ⇧F5, also ⇧⌫ |
 | Edit ▸ Content-Aware Fill… | ⇧⌫ | none |
 | Color Balance… / Black & White… | none | ⌘B / ⌥⇧⌘B |
-| Camera Raw Filter… / Lens Correction… / Liquify… | none | ⇧⌘A / ⇧⌘R / ⇧⌘X |
+| Camera Raw Filter… / Lens Correction… / Liquify… | none | ⇧⌘A / ⇧⌘R / ⇧⌘X (Liquify… shipped with TASK-54, at the top of the Filter menu until TASK-62 orders it) |
 | Select ▸ Modify ▸ Feather… | none | ⇧F6 |
 | Layer ▸ Hide Layers | none | ⌘, |
 | Edit ▸ Keyboard Shortcuts… | none | ⌥⇧⌘K |
 | Lamina ▸ Settings… | none (no Settings window) | ⌘K (shipping, TASK-51) |
-| Tools | B with Tab cycling modes, R for Smear | E Eraser, O Dodge and Burn, R Blur and Smudge, Shift plus key cycles a slot |
+| Tools (shipped with TASK-54) | B with Tab cycling modes, R for Smear | E Eraser, O Dodge and Burn, R Blur and Smudge, Shift plus key cycles a slot; Tab does nothing on the canvas |
 
 ### Dialogs
 

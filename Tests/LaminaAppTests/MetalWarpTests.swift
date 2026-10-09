@@ -22,8 +22,8 @@ import Testing
                                          count: context.bytesPerRow * context.height))
     }
 
-    @Test(arguments: [BlurToolMode.smudge])
-    func matchesTheCPU(mode: BlurToolMode) throws {
+    @Test(arguments: [WarpMode.smudge])
+    func matchesTheCPU(mode: WarpMode) throws {
         guard GPUCanvasRenderer.shared != nil else { return }
         let image = try photo()
         let layer = ImageLayer(asset: ImportedImage(image: image, thumbnail: image, name: "Photo"), origin: CGPoint(x: 20, y: 10))

@@ -8,7 +8,7 @@ struct ShapeToolTests {
     private func makeSession() -> EditorSession {
         let session = EditorSession()
         session.createDocument(width: 100, height: 80, emptyLayer: true)
-        session.selectTool(.shape)
+        session.selectTool(.rectangle)
         session.foregroundColor = PaletteColor(red: 1, green: 0, blue: 0)
         return session
     }
@@ -54,8 +54,8 @@ struct ShapeToolTests {
 
     @Test func ellipseLeavesItsCornersClearWithShiftCircleAndOptionFromCenter() async throws {
         let session = makeSession()
-        session.toggleShapeKind()
-        #expect(session.shapeKind == .ellipse)
+        session.pressToolKey("u", shift: true)
+        #expect(session.tool == .ellipse)
         drag(session, from: CGPoint(x: 50, y: 40), to: CGPoint(x: 60, y: 45), square: true, fromCenter: true)
         #expect(session.activeLayer?.name == "Ellipse 1")
         #expect(session.activeLayer?.transform.origin == CGPoint(x: 40, y: 30)
@@ -98,9 +98,32 @@ struct ShapeToolTests {
         #expect(pixel(75, 60) == (255, 255))
         #expect(session.document?.layers.count == 3)
 
-        session.toggleShapeKind()
+        session.selectTool(.ellipse)
         session.beginShape(at: CGPoint(x: 5, y: 5))
         #expect(session.shapeDraft?.cornerRadius == 0, "ellipses take no radius")
         session.cancelShape()
+    }
+
+    /// U picks the shape tool last used; Shift-U steps Rectangle, Ellipse, Line and round again. Each draws its own.
+    @Test func uPicksTheShapeLastUsedAndShiftUStepsThroughThem() {
+        let session = makeSession()
+        session.selectTool(.move)
+        session.pressToolKey("u")
+        #expect(session.tool == .rectangle)
+        var drawn: [ShapeKind] = []
+        for _ in 0..<3 {
+            session.beginShape(at: CGPoint(x: 5, y: 5))
+            if let kind = session.shapeDraft?.kind { drawn.append(kind) }
+            session.cancelShape()
+            session.pressToolKey("u", shift: true)
+        }
+        #expect(drawn == [.rectangle, .ellipse, .line] && session.tool == .rectangle)
+        session.pressToolKey("u", shift: true)
+        session.selectTool(.brush)
+        session.pressToolKey("u")
+        #expect(session.tool == .ellipse)
+        session.selectTool(.brush)
+        session.pressToolKey("u", shift: true)
+        #expect(session.tool == .ellipse, "from another slot, Shift-U picks the slot's tool before stepping")
     }
 }

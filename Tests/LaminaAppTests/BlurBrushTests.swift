@@ -18,7 +18,6 @@ struct BlurBrushTests {
         let image = try #require(context.makeImage())
         session.insert(ImportedImage(image: image, thumbnail: image, name: "Edge"))
         session.selectTool(.blur)
-        session.blurMode = .blur
         session.brushSettings.diameter = diameter
         session.brushSettings.hardness = 1
         session.brushSettings.opacity = strength

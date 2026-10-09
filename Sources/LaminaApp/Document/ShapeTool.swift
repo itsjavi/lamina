@@ -38,10 +38,10 @@ extension EditorSession {
     nonisolated static let maxShapePixels = DocumentLimits.maxSurfacePixels
 
     func beginShape(at point: CGPoint) {
-        guard tool == .shape, canEditLayers, point.x.isFinite, point.y.isFinite else { return }
+        guard let kind = tool.shapeKind, canEditLayers, point.x.isFinite, point.y.isFinite else { return }
         let anchor = CGPoint(x: point.x.rounded(), y: point.y.rounded())
-        shapeDraft = ShapeDraft(kind: shapeKind, anchor: anchor, rect: CGRect(origin: anchor, size: .zero),
-                                cornerRadius: shapeKind == .rectangle ? CGFloat(shapeCornerRadius) : 0)
+        shapeDraft = ShapeDraft(kind: kind, anchor: anchor, rect: CGRect(origin: anchor, size: .zero),
+                                cornerRadius: kind == .rectangle ? CGFloat(shapeCornerRadius) : 0)
     }
 
     /// The line being dragged, from where it began to where the pointer is, in document pixels.
@@ -71,13 +71,6 @@ extension EditorSession {
 
     func cancelShape() {
         if shapeDraft != nil { shapeDraft = nil }
-    }
-
-    /// Shift-U (and Tab): the Shape tool steps through Rectangle, Ellipse and Line.
-    func toggleShapeKind() {
-        cancelShape()
-        let kinds = ShapeKind.allCases
-        shapeKind = kinds[((kinds.firstIndex(of: shapeKind) ?? 0) + 1) % kinds.count]
     }
 
     /// Fills the dragged shape with the foreground color on a new layer above the active one,

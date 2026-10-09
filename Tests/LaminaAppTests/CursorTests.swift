@@ -162,7 +162,7 @@ struct CursorTests {
         view.mouseMoved(with: mouse(at: corner, flags: .command, in: window))
         #expect(NSCursor.current === CanvasView.distortCursor, "Cmd over a handle distorts")
 
-        session.selectTool(.marquee)
+        session.selectTool(.rectangularMarquee)
         session.selectAll()
         view.mouseMoved(with: mouse(at: spot(200, 150), flags: .command, in: window))
         #expect(NSCursor.current === CanvasView.movePixelsCursor)

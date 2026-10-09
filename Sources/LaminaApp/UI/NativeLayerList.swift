@@ -817,28 +817,13 @@ final class LayerTableView: NSTableView {
             session?.cancelTransform()
         } else if [36, 76].contains(event.keyCode), session?.transformEdit != nil {
             session?.commitTransform()
-        } else if plain, event.keyCode == 48 {
-            session?.cycleToolMode()
         } else if plain, event.charactersIgnoringModifiers?.lowercased() == "x" {
             session?.swapPaletteColors()
         } else if plain, event.charactersIgnoringModifiers?.lowercased() == "d" {
             session?.resetPaletteColors()
-        } else if plain, event.charactersIgnoringModifiers?.lowercased() == "t" {
-            session?.selectTool(.type)
-        } else if plain, ["a", "v", "h", "z", "b", "e", "g", "l", "m", "w", "j", "s", "u", "r", "i", "c"].contains(event.charactersIgnoringModifiers?.lowercased() ?? "") {
-            let key = event.charactersIgnoringModifiers?.lowercased()
-            if key == "m" { if !event.isARepeat { session?.pressMarqueeKey() } }
-            else if key == "l" { if !event.isARepeat { session?.pressLassoKey() } }
-            else if key == "b" || key == "e" {
-                session?.selectTool(.brush)
-                session?.brushMode = key == "e" ? .erase : .paint
-            }
-            else if key == "w" { if !event.isARepeat { session?.pressWandKey() } }
-            else if key == "g" {
-                if event.modifierFlags.contains(.shift), session?.tool == .gradient || session?.tool == .paintBucket { session?.toggleFillTool() }
-                else { session?.pressGradientKey() }
-            }
-            else { session?.selectTool(key == "a" ? .idle : key == "i" ? .eyedropper : key == "c" ? .crop : key == "r" ? .blur : key == "b" ? .brush : key == "l" ? .lasso : key == "m" ? .marquee : key == "j" ? .spotHealing : key == "s" ? .cloneStamp : key == "u" ? .shape : key == "v" ? .move : key == "h" ? .hand : .zoom) }
+        } else if plain, let key = event.charactersIgnoringModifiers?.lowercased(), EditorSession.isToolKey(key) {
+            // As on the canvas: the slot's last tool, Shift for its next one, a held key only once.
+            if !event.isARepeat { session?.pressToolKey(key, shift: event.modifierFlags.contains(.shift)) }
         } else if plain, let digit = Int(event.charactersIgnoringModifiers ?? ""), session?.usesOpacityKeys == true {
             session?.typeOpacityDigit(digit)
         // With the Move tool the arrows move the layer, as on the canvas, rather than changing the row selection.

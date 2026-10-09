@@ -14,21 +14,10 @@ nonisolated enum ToneRange: String, CaseIterable, Sendable {
     }
 }
 
-/// The brush's Dodge and Burn modes: the stroke lightens or darkens the layer's own pixels rather than painting a
-/// color, as Photoshop's Dodge and Burn tools do. Exposure is 0–1.
+/// Dodge and Burn: the stroke lightens or darkens the layer's own pixels rather than painting a color, as
+/// Photoshop's Dodge and Burn tools do. Exposure is 0–1.
 nonisolated struct BrushToning: Equatable, Sendable {
     var lightens: Bool
     var range: ToneRange = .midtones
     var exposure: CGFloat = 0.5
-}
-
-extension BrushToolMode {
-    /// Dodge lightens and Burn darkens; nil for the modes that don't tone.
-    var toneLightens: Bool? {
-        switch self {
-        case .dodge: return true
-        case .burn: return false
-        case .paint, .erase: return nil
-        }
-    }
 }

@@ -6,7 +6,7 @@ import Testing
 struct DodgeBurnTests {
     /// A 120 × 40 layer: dark (0.2) on the left third, middle gray (0.5) in the middle, light (0.8) on the right, with
     /// its alpha at `alpha`.
-    private func session(alpha: CGFloat = 1) throws -> EditorSession {
+    private func session(alpha: CGFloat = 1, tool: NavigationTool = .dodge) throws -> EditorSession {
         let session = EditorSession()
         session.createDocument(width: 120, height: 40)
         let context = try BrushRaster.context(width: 120, height: 40, mask: false)
@@ -16,9 +16,14 @@ struct DodgeBurnTests {
         }
         let image = try #require(context.makeImage())
         session.insert(ImportedImage(image: image, thumbnail: image, name: "Grays"))
-        session.selectTool(.brush)
-        session.brushSettings = BrushSettings(diameter: 30, hardness: 1)
+        select(tool, in: session)
         return session
+    }
+
+    /// Each tool keeps its own tip, so the tip is set after choosing the tool.
+    private func select(_ tool: NavigationTool, in session: EditorSession) {
+        session.selectTool(tool)
+        session.brushSettings = BrushSettings(diameter: 30, hardness: 1)
     }
 
     /// The layer's straight color and alpha at a pixel, read without color conversion.
@@ -40,8 +45,7 @@ struct DodgeBurnTests {
     @Test func dodgeLightensAndBurnDarkensMostInTheirRange() throws {
         for range in ToneRange.allCases {
             for lightens in [true, false] {
-                let session = try session()
-                session.brushMode = lightens ? .dodge : .burn
+                let session = try session(tool: lightens ? .dodge : .burn)
                 session.toneRange = range
                 session.toneExposure = 1
                 let before = try [20, 60, 100].map { try pixel(session, $0).value }
@@ -62,12 +66,10 @@ struct DodgeBurnTests {
     /// stroke builds on the first, as Photoshop's Dodge and Burn do with the airbrush off.
     @Test func aStrokeStopsAtItsExposureWhileANewStrokeBuildsOnIt() throws {
         let session = try session()
-        session.brushMode = .dodge
         session.toneExposure = 0.3
         stroke(session)
         let once = try pixel(session, 60).value
         let again = try self.session()
-        again.brushMode = .dodge
         again.toneExposure = 0.3
         again.beginBrush(at: CGPoint(x: 5, y: 20))
         for x: CGFloat in [115, 5, 115, 5, 115] { again.continueBrush(at: CGPoint(x: x, y: 20)) }
@@ -81,7 +83,6 @@ struct DodgeBurnTests {
         var moves: [Int] = []
         for (exposure, opacity) in [(1.0, 1.0), (0.5, 1.0), (1.0, 0.5), (0.25, 1.0)] {
             let session = try session()
-            session.brushMode = .dodge
             session.toneExposure = exposure
             session.brushSettings.opacity = opacity
             stroke(session)
@@ -90,8 +91,7 @@ struct DodgeBurnTests {
         #expect(moves[0] > moves[1] && moves[1] > moves[3] && moves[3] > 0)
         #expect(abs(moves[1] - moves[2]) <= 1, "half exposure and half opacity cap the stroke alike")
 
-        let session = try session()
-        session.brushMode = .burn
+        let session = try session(tool: .burn)
         session.toneExposure = 0
         let count = session.history.undoCount
         stroke(session)
@@ -106,8 +106,7 @@ struct DodgeBurnTests {
         context.fill(CGRect(x: 0, y: 0, width: 60, height: 60))
         let image = try #require(context.makeImage())
         session.insert(ImportedImage(image: image, thumbnail: image, name: "White"))
-        session.selectTool(.brush)
-        session.brushMode = .dodge
+        session.selectTool(.dodge)
         session.toneRange = .highlights
         session.toneExposure = 1
         let count = session.history.undoCount
@@ -119,7 +118,6 @@ struct DodgeBurnTests {
 
     @Test func alphaStaysAndTransparentPixelsStayTransparent() throws {
         let session = try session(alpha: 0.5)
-        session.brushMode = .dodge
         session.toneExposure = 1
         let before = try pixel(session, 60)
         stroke(session)
@@ -128,13 +126,12 @@ struct DodgeBurnTests {
         #expect(after.alpha == before.alpha)
 
         // A layer with a transparent hole: Burn keeps it clear.
-        let clear = try self.session()
+        let clear = try self.session(tool: .eraser)
         let layerID = try #require(clear.activeLayerID)
         clear.document?.selection = DocumentSelection(path: CGPath(rect: CGRect(x: 50, y: 0, width: 20, height: 40), transform: nil))
-        clear.brushMode = .erase
         stroke(clear)
         clear.document?.selection = nil
-        clear.brushMode = .burn
+        select(.burn, in: clear)
         clear.toneExposure = 1
         stroke(clear)
         #expect(clear.activeLayerID == layerID)
@@ -144,7 +141,6 @@ struct DodgeBurnTests {
     @Test func theSelectionLimitsItAndEachStrokeUndoesOnItsOwn() throws {
         let session = try session()
         session.document?.selection = DocumentSelection(path: CGPath(rect: CGRect(x: 0, y: 0, width: 80, height: 40), transform: nil))
-        session.brushMode = .dodge
         session.toneExposure = 0.5
         let original = try (pixel(session, 60).value, pixel(session, 100).value)
         stroke(session)
@@ -164,7 +160,6 @@ struct DodgeBurnTests {
     /// The result is ordinary layer pixels: the export shows them as the layer holds them.
     @Test func theExportShowsTheResult() async throws {
         let session = try session()
-        session.brushMode = .dodge
         session.toneExposure = 1
         stroke(session)
         let exported = try await ImageExporter.shared.render(try #require(session.projectSnapshot())).image
@@ -177,7 +172,6 @@ struct DodgeBurnTests {
         let session = try session()
         session.addLayerMask(revealing: false)
         #expect(session.activeLayer?.mask != nil && session.isMaskSelected)
-        session.brushMode = .dodge
         let count = session.history.undoCount
         stroke(session)
         #expect(session.brushError?.contains("mask") == true && session.history.undoCount == count)
@@ -190,18 +184,19 @@ struct DodgeBurnTests {
         #expect(try pixel(session, 60).value > before)
     }
 
-    /// Tab steps the Brush through all four modes, and Dodge and Burn's settings carry over with the rest.
-    @Test func tabReachesTheModesAndTheirSettingsCarryOver() {
+    /// O picks Dodge and Shift-O Burn. Which of the two the slot holds, the range and the exposure carry over to the
+    /// next document with the rest.
+    @Test func oPicksDodgeShiftOBurnAndTheirSettingsCarryOver() {
         let session = EditorSession()
-        session.selectTool(.brush)
-        var seen: [BrushToolMode] = [session.brushMode]
-        for _ in 0..<4 { session.cycleToolMode(); seen.append(session.brushMode) }
-        #expect(seen == [.paint, .erase, .dodge, .burn, .paint])
-        session.brushMode = .burn
+        session.pressToolKey("o")
+        #expect(session.tool == .dodge)
+        session.pressToolKey("o", shift: true)
+        #expect(session.tool == .burn)
         session.toneRange = .shadows
         session.toneExposure = 0.2
         let next = EditorSession()
         next.apply(session.brushDefaults)
-        #expect(next.brushMode == .burn && next.toneRange == .shadows && next.toneExposure == 0.2)
+        next.pressToolKey("o")
+        #expect(next.tool == .burn && next.toneRange == .shadows && next.toneExposure == 0.2)
     }
 }

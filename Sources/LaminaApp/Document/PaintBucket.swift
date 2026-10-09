@@ -121,13 +121,4 @@ extension EditorSession {
         LayerRenderer.draw(mask.asset.image, transform: transform, center: transform.center, in: context)
         return context.makeImage()
     }
-
-    /// G chooses the Gradient or the Paint Bucket, whichever was used last; Shift-G switches between them.
-    func pressGradientKey() {
-        selectTool(lastFillTool)
-    }
-
-    func toggleFillTool() {
-        selectTool(tool == .paintBucket ? .gradient : .paintBucket)
-    }
 }

@@ -89,7 +89,7 @@ final class CanvasView: NSView {
     private var displayedPicking = false
     private var displayedTargeting = false
     private var optionHeld = false
-    private var palettePicking: Bool { session.tool == .eyedropper || (optionHeld && (session.tool == .brush || session.tool == .spotHealing || session.tool == .gradient || session.tool == .paintBucket) && session.brushStroke == nil && gradientDrag == nil) }
+    private var palettePicking: Bool { session.tool == .eyedropper || (optionHeld && (session.tool.usesBrushDynamics || session.tool == .spotHealing || session.tool == .gradient || session.tool == .paintBucket) && session.brushStroke == nil && gradientDrag == nil) }
     private var picking: Bool {
         palettePicking || (session.colorPicker != nil && !session.pickingForDialog) || session.hueSampleMode != nil || session.levels?.sampleMode != nil
             || session.colorRange != nil
@@ -830,10 +830,14 @@ final class CanvasView: NSView {
            session.canMoveSelection(at: session.viewport.documentPoint(from: point, documentSize: document.size)) {
             return flags.contains(.command) ? pixelDragCursor(duplicate: flags.contains(.option)) : Self.moveSelectionCursor
         }
-        if session.tool == .wand, session.wandMode == .wand { return Self.wandCursors[mode] ?? .crosshair }
-        let icon: SelectionIcon = session.tool == .wand ? .objectSelection : session.tool == .marquee
-            ? (session.marqueeKind == .ellipse ? .ellipseMarquee : .rectangleMarquee)
-            : (session.lassoKind == .polygonal ? .polygonalLasso : .freehandLasso)
+        if session.tool == .magicWand { return Self.wandCursors[mode] ?? .crosshair }
+        let icon: SelectionIcon = switch session.tool.lassoKind {
+        case .rectangle: .rectangleMarquee
+        case .ellipse: .ellipseMarquee
+        case .polygonal: .polygonalLasso
+        case .freehand: .freehandLasso
+        case nil: .objectSelection
+        }
         return Self.selectionCursors[icon]?[mode] ?? .crosshair
     }
 
@@ -1840,7 +1844,7 @@ final class CanvasView: NSView {
             Task { await session.paintBucket(at: target) }
         } else if session.tool == .type {
             beginTextGesture(at: point, event: event)
-        } else if session.tool == .shape, let document = session.document {
+        } else if session.tool.shapeKind != nil, let document = session.document {
             session.beginShape(at: snappedCorner(session.viewport.documentPoint(from: point, documentSize: document.size),
                                                  flags: event.modifierFlags))
         } else if session.tool == .crop {
@@ -2088,9 +2092,9 @@ final class CanvasView: NSView {
             selectionDragStart = nil
             let moved = session.selectionMoveOrigin != session.selection
             session.endSelectionMove()
-            if !moved, session.tool == .wand, session.wandMode == .object {
+            if !moved, session.tool == .objectSelection {
                 Task { await session.selectObject(at: start, mode: .replace); synchronizeDisplay(); refreshLassoCursor() }
-            } else if !moved, session.tool == .wand {
+            } else if !moved, session.tool == .magicWand {
                 // The wand's click inside the selection selects afresh from that pixel.
                 Task { await session.magicWand(at: start, mode: .replace); synchronizeDisplay(); refreshLassoCursor() }
             } else if !moved {
@@ -2183,6 +2187,11 @@ final class CanvasView: NSView {
         } else if session.tool == .crop, [36, 76].contains(event.keyCode) {
             cropDrag = nil
             Task { await session.commitCrop() }
+        } else if session.tool == .liquify, event.keyCode == 53 {
+            session.cancelLiquify()
+            synchronizeDisplay()
+        } else if session.tool == .liquify, [36, 76].contains(event.keyCode) {
+            session.finishLiquify()
         } else if event.keyCode == 53, session.guideDrag != nil {
             session.cancelGuideDrag()
             guideDragging = false
@@ -2213,11 +2222,6 @@ final class CanvasView: NSView {
         } else if (event.keyCode == 51 || event.keyCode == 117),
            event.modifierFlags.intersection([.command, .control, .option]).isEmpty {
             session.deleteKeyPressed()
-        } else if event.keyCode == 48, session.textDraft == nil, event.modifierFlags.intersection([.command, .control, .option, .shift]).isEmpty {
-            // Tab switches the current tool's mode (Rectangle/Ellipse, Paint/Erase, and so on).
-            session.cycleToolMode()
-            refreshLassoCursor()
-            updateBrushCursor()
         } else if event.keyCode == 49 {
             panPhysicalKey = physicalKey
             spaceHeld = true
@@ -2227,24 +2231,14 @@ final class CanvasView: NSView {
             switch event.charactersIgnoringModifiers?.lowercased() {
             case "x": session.swapPaletteColors()
             case "d": session.resetPaletteColors()
-            case "b": session.selectTool(.brush); session.brushMode = .paint
-            case "e": session.selectTool(.brush); session.brushMode = .erase
-            case "j": session.selectTool(.spotHealing)
-            case "s": session.selectTool(.cloneStamp)
-            case "t": session.selectTool(.type)
-            case "g":
-                if event.modifierFlags.contains(.shift), session.tool == .gradient || session.tool == .paintBucket { session.toggleFillTool() }
-                else { session.pressGradientKey() }
-            case "u":
-                if event.modifierFlags.contains(.shift), session.tool == .shape { session.toggleShapeKind() }
-                else { session.selectTool(.shape) }
-            case "i": session.selectTool(.eyedropper)
-            // M chooses the Marquee in whichever shape it was last set to; the shape is switched in the tool
-            // bar. Ignoring a repeat keeps holding the key from doing anything odd.
-            case "m": if !event.isARepeat { session.pressMarqueeKey(); refreshLassoCursor() }
-            case "w": if !event.isARepeat { session.pressWandKey(); refreshLassoCursor() }
-            // L chooses the Lasso the same way; Freehand/Polygonal is switched in the tool bar.
-            case "l": if !event.isARepeat { session.pressLassoKey(); refreshLassoCursor() }
+            // A tool's key picks its slot's last tool, and with Shift the slot's next one. Only the first press of a
+            // held key counts, so holding Shift-M doesn't spin through the marquees.
+            case let key? where EditorSession.isToolKey(key):
+                if !event.isARepeat {
+                    session.pressToolKey(key, shift: event.modifierFlags.contains(.shift))
+                    refreshLassoCursor()
+                    updateBrushCursor()
+                }
             case let key? where Int(key) != nil && session.usesOpacityKeys:
                 session.typeOpacityDigit(Int(key) ?? 0)
             case "[" where session.tool.isBrushTool: session.changeBrushSize(increase: false)
@@ -2252,12 +2246,6 @@ final class CanvasView: NSView {
             // Shift turns [ and ] into { and }.
             case "{" where session.tool.isBrushTool: session.changeBrushHardness(increase: false)
             case "}" where session.tool.isBrushTool: session.changeBrushHardness(increase: true)
-            case "a": session.selectTool(.idle)
-            case "r": session.selectTool(.blur)
-            case "c": session.selectTool(.crop)
-            case "v": session.selectTool(.move)
-            case "h": session.selectTool(.hand)
-            case "z": session.selectTool(.zoom)
             default: ignoreKey(event)
             }
         } else { ignoreKey(event) }
@@ -2395,15 +2383,15 @@ final class CanvasView: NSView {
                 Self.moveSelectionCursor.set()
                 return
             }
-            if session.tool == .wand, session.wandMode == .object {
+            if session.tool == .objectSelection {
                 Task { await session.selectObject(at: pixel, mode: mode); synchronizeDisplay(); refreshLassoCursor() }
                 return
             }
-            if session.tool == .wand {
+            if session.tool == .magicWand {
                 Task { await session.magicWand(at: pixel, mode: mode); synchronizeDisplay(); refreshLassoCursor() }
                 return
             }
-            session.beginLasso(at: session.tool == .marquee ? snappedCorner(pixel, flags: event.modifierFlags) : pixel, mode: mode)
+            session.beginLasso(at: session.tool == .rectangularMarquee || session.tool == .ellipticalMarquee ? snappedCorner(pixel, flags: event.modifierFlags) : pixel, mode: mode)
             synchronizeDisplay()
             return
         }

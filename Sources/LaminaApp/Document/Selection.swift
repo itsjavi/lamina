@@ -65,21 +65,12 @@ nonisolated struct SelectionClip: @unchecked Sendable {
     }
 }
 
-/// The Magic tool's modes: Wand selects pixels of a similar color, Object traces the outline of
-/// whatever the click lands on. Tab switches between them, as with the Brush's Paint and Erase.
-nonisolated enum WandMode: String, CaseIterable, Sendable {
-    case wand = "Wand"
-    case object = "Object"
-}
-
+/// The outline a selection tool drags out: the Lasso's and Polygonal Lasso's, and the two marquees'.
 nonisolated enum LassoKind: String, CaseIterable, Sendable {
     case freehand = "Freehand"
     case polygonal = "Polygonal"
-    /// The Marquee's outlines; not offered in the Lasso's Freehand/Polygonal choice.
     case rectangle = "Rectangle"
     case ellipse = "Ellipse"
-    static let lassoChoices: [LassoKind] = [.freehand, .polygonal]
-    static let marqueeChoices: [LassoKind] = [.rectangle, .ellipse]
 }
 
 nonisolated enum SelectionMode: String, CaseIterable, Sendable {
@@ -139,13 +130,13 @@ extension EditorSession {
     }
 
     func beginLasso(at point: CGPoint, mode: SelectionMode) {
-        // Click-selection tools never draw a draft outline.
-        guard tool.isSelectionTool, tool != .wand, canEditSelection, selectionMoveOrigin == nil else { return }
-        if tool == .marquee {
+        // Click-selection tools (Object Selection, Magic Wand) never draw a draft outline.
+        guard let kind = tool.lassoKind, canEditSelection, selectionMoveOrigin == nil else { return }
+        if kind == .rectangle || kind == .ellipse {
             let anchor = CGPoint(x: point.x.rounded(), y: point.y.rounded())
-            lassoDraft = LassoDraft(points: [anchor], cursor: nil, mode: mode, kind: marqueeKind, anchor: anchor)
+            lassoDraft = LassoDraft(points: [anchor], cursor: nil, mode: mode, kind: kind, anchor: anchor)
         } else {
-            lassoDraft = LassoDraft(points: [point], cursor: nil, mode: mode, kind: lassoKind)
+            lassoDraft = LassoDraft(points: [point], cursor: nil, mode: mode, kind: kind)
         }
     }
 
@@ -178,33 +169,6 @@ extension EditorSession {
     }
 
     func cancelLasso() { lassoDraft = nil }
-
-    /// The M key chooses the Marquee in whichever shape it was last set to (switched only in the tool bar). The
-    /// shape stays as last set while this project is open.
-    func pressMarqueeKey() {
-        selectTool(.marquee)
-    }
-
-    func toggleMarqueeKind() {
-        cancelLasso()
-        marqueeKind = marqueeKind == .rectangle ? .ellipse : .rectangle
-    }
-
-    /// W picks the Magic tool; Tab switches its Wand and Object modes.
-    func pressWandKey() {
-        selectTool(.wand)
-    }
-
-    /// The L key chooses the Lasso in whichever mode it was last set to (switched only in the tool bar). The mode
-    /// stays as last set while this project is open.
-    func pressLassoKey() {
-        selectTool(.lasso)
-    }
-
-    func toggleLassoKind() {
-        cancelLasso()
-        lassoKind = lassoKind == .freehand ? .polygonal : .freehand
-    }
 
     /// Closes the outline and combines it with the current selection. A click that
     /// encloses nothing deselects in New mode, as in Photoshop.

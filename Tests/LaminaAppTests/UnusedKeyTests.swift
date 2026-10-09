@@ -19,7 +19,7 @@ struct UnusedKeyTests {
     private func session() -> EditorSession {
         let session = EditorSession()
         session.createDocument(width: 100, height: 80, emptyLayer: true)
-        session.selectTool(.marquee) // No opacity keys, no selection to nudge.
+        session.selectTool(.rectangularMarquee) // No opacity keys, no selection to nudge.
         return session
     }
 
@@ -34,8 +34,9 @@ struct UnusedKeyTests {
         canvas.keyDown(with: key("\u{1b}", code: 53))               // nothing to cancel
         canvas.keyDown(with: key("\u{f703}", code: 124))            // no selection to nudge
         canvas.keyDown(with: key("f", code: 3, .option))
+        canvas.keyDown(with: key("\t", code: 48))                   // Tab no longer switches a tool's mode
         #expect(recorder.keys.isEmpty)
-        #expect(session.tool == .marquee)
+        #expect(session.tool == .rectangularMarquee)
         canvas.keyDown(with: key("k", code: 40, .command))
         #expect(recorder.keys == ["k"], "⌘ combinations still go up the chain")
     }

@@ -6,16 +6,8 @@ struct ShapeControls: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text("Shape").font(ToolHeaderStyle.titleFont)
-            Picker("Shape", selection: Binding(get: { session.shapeKind }, set: { kind in
-                session.cancelShape()
-                session.shapeKind = kind
-            })) {
-                ForEach(ShapeKind.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-            }
-            .pickerStyle(.segmented).labelsHidden().fixedSize()
-            .help("Shift-U (or Tab) steps through Rectangle, Ellipse and Line")
-            if session.shapeKind == .line {
+            Text(session.tool.title).font(ToolHeaderStyle.titleFont)
+            if session.tool == .line {
                 HStack(spacing: 6) {
                     Text("Width").scrubbable(sensitivity: 1, value: $session.shapeLineWidth, range: 1...5000)
                     Slider(value: Binding(get: { min(100, session.shapeLineWidth) },
@@ -30,7 +22,7 @@ struct ShapeControls: View {
                         .unitSuffix("px")
                 }
             }
-            if session.shapeKind == .rectangle {
+            if session.tool == .rectangle {
                 HStack(spacing: 6) {
                     Text("Radius").scrubbable(sensitivity: 1, value: $session.shapeCornerRadius, range: 0...5000)
                     Slider(value: Binding(get: { min(200, session.shapeCornerRadius) },

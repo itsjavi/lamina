@@ -33,8 +33,7 @@ struct NativeResolutionPaintTests {
         let side = CGFloat(source) * scale
         session.document?.layers[index].transform = LayerTransform(origin: CGPoint(x: 100 - side / 2, y: 100 - side / 2),
             size: CGSize(width: side, height: side))
-        session.selectTool(.brush)
-        session.brushMode = .erase
+        session.selectTool(.eraser)
         session.brushSettings = BrushSettings(diameter: 40, hardness: 1, red: 0, green: 0, blue: 0)
         return session
     }
@@ -107,8 +106,7 @@ struct NativeResolutionPaintTests {
             return rep
         }
         _ = try snapshot()
-        session.selectTool(.brush)
-        session.brushMode = .erase
+        session.selectTool(.eraser)
         session.brushSettings = BrushSettings(diameter: 20, hardness: 1, red: 0, green: 0, blue: 0)
         session.beginBrush(at: CGPoint(x: 200, y: 200))
         #expect(session.finishBrushImmediately())
@@ -200,7 +198,6 @@ struct NativeResolutionPaintTests {
     /// Blur softens the layer's own pixels and leaves them at their own resolution.
     @Test func blurKeepsTheLayersResolution() async throws {
         let session = try checkerSession()
-        session.blurMode = .blur
         session.selectTool(.blur)
         session.brushSettings = BrushSettings(diameter: 20, hardness: 1, red: 0, green: 0, blue: 0)
         session.beginBrush(at: CGPoint(x: 100, y: 100))

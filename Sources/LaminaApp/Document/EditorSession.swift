@@ -88,18 +88,6 @@ struct CanvasDocument: Equatable {
     }
 }
 
-enum NavigationTool: String, CaseIterable {
-    case move, marquee, lasso, wand, crop, brush, spotHealing, cloneStamp, blur, gradient, paintBucket, shape, type, eyedropper, hand, zoom
-    /// No tool (A): nothing in the tool rail is selected and canvas clicks do nothing.
-    case idle
-    /// Tools that paint with the brush tip, sharing its size, hardness, opacity, and keys.
-    var isBrushTool: Bool { self == .brush || self == .spotHealing || self == .cloneStamp || self == .blur }
-    /// Tools that draw and edit selections, sharing modifiers, moving, and nudging.
-    var isSelectionTool: Bool { self == .marquee || self == .lasso || self == .wand }
-    var symbol: String { self == .type ? "textformat" : self == .eyedropper ? "eyedropper" : self == .marquee ? "rectangle.dashed" : self == .lasso ? "lasso" : self == .wand ? "wand.and.stars" : self == .brush ? "paintbrush.pointed" : self == .spotHealing ? "bandage" : self == .cloneStamp ? "seal" : self == .blur ? "drop" : self == .gradient ? "square.bottomhalf.filled" : self == .paintBucket ? "drop.halffull" : self == .shape ? "square.on.circle" : self == .crop ? "crop" : self == .move ? "arrow.up.left.and.arrow.down.right" : self == .hand ? "hand.draw" : "magnifyingglass" }
-    var label: String { self == .type ? "Type (T)" : self == .eyedropper ? "Eyedropper (I)" : self == .marquee ? "Marquee (M)" : self == .lasso ? "Lasso (L)" : self == .wand ? "Magic (W) · Tab switches Wand and Object" : self == .brush ? "Brush (B) · Eraser (E)" : self == .spotHealing ? "Spot Healing Brush (J)" : self == .cloneStamp ? "Clone Stamp (S) · Option-click sets the source" : self == .blur ? "Smear (R)" : self == .gradient ? "Gradient (G) · Shift-G switches to the Paint Bucket" : self == .paintBucket ? "Paint Bucket (G) · Shift-G switches to the Gradient" : self == .shape ? "Shape (U) · Shift-U switches Rectangle/Ellipse" : self == .crop ? "Crop (C)" : self == .move ? "Move / Transform (V)" : self == .hand ? "Hand (H)" : "Zoom (Z)" }
-}
-
 @Observable
 final class EditorSession {
     var skipsInitialClipboardCanvasSize = false
@@ -177,6 +165,11 @@ final class EditorSession {
     }
     var viewport = CanvasViewport()
     var tool: NavigationTool = .move
+    /// The tool each toolbar slot last had (`tool(in:)`), while this document is open. The Dodge slot's starts as the
+    /// last document left it (`BrushDefaults.burns`).
+    var slotTools: [ToolSlot: NavigationTool] = [:] { didSet { if slotTools[.dodge] != oldValue[.dodge] { saveBrushDefaults() } } }
+    /// Liquify's way back: the tool chosen before it, and how many History steps were applied then.
+    @ObservationIgnored var liquifyEntry: (tool: NavigationTool, position: Int)?
     var collapsedGroupIDs: Set<UUID> = []
     var cropRect: CGRect?
     var cropRatioChoice = "Free"
@@ -213,64 +206,61 @@ final class EditorSession {
     @ObservationIgnored var transformDuplicate: (copies: [UUID], source: Set<UUID>, primary: UUID?)?
     var brushSettings = BrushSettings() { didSet { refreshGradient(); saveBrushDefaults() } }
     var spotHealingMode: SpotHealingMode = .contentAware
-    var blurMode: BlurToolMode = .liquify
-    /// The Brush's modes: Paint lays down the foreground color, Erase clears pixels away (B and E), and Dodge and Burn
-    /// lighten and darken the pixels under the stroke.
-    var brushMode: BrushToolMode = .paint { didSet { saveBrushDefaults() } }
-    /// The brush's Dodge and Burn: which tones they work on, and how strongly (0–1).
+    /// Dodge and Burn: which tones they work on, and how strongly (0–1).
     var toneRange: ToneRange = .midtones { didSet { saveBrushDefaults() } }
     var toneExposure: CGFloat = 0.5 { didSet { saveBrushDefaults() } }
-    /// The tool rail's icon, which follows the mode a tool is in.
-    func symbol(for tool: NavigationTool) -> String {
-        tool == .brush && brushMode == .erase ? "eraser" : tool.symbol
-    }
-    /// The Magic tool's two modes: Wand selects by color, Object traces the object under the pointer (Tab).
-    var wandMode: WandMode = .wand
     /// Clone Stamp: the source Option-click set (document pixels), its options, and — once a
     /// stroke has started — the offset from brush to source that aligned strokes keep.
     var cloneSource: CGPoint?
     var cloneSettings = CloneSettings()
-    /// The brush tip (size, hardness, opacity) of the side not in use: Clone Stamp keeps its own,
-    /// soft by default, while Brush and Spot Healing share theirs.
-    /// The tips of the brush families not in use: Clone Stamp and Smear each keep their own size, hardness and
-    /// opacity (both starting soft); the other brushes share one.
-    @ObservationIgnored var parkedBrushTips: [Int: (diameter: CGFloat, hardness: CGFloat, opacity: CGFloat)] = [1: (40, 0, 1), 2: (40, 0, 1)] {
+    /// The tips of the brush families not in use (`BrushTipFamily`): each keeps its own size, hardness and opacity.
+    @ObservationIgnored var parkedBrushTips: [BrushTipFamily: BrushDefaults.Tip] = Dictionary(uniqueKeysWithValues:
+        BrushTipFamily.allCases.filter { $0 != .brush }.map { ($0, BrushDefaults()[family: $0]) }) {
         didSet { saveBrushDefaults() }
     }
-    private static func tipFamily(_ tool: NavigationTool) -> Int { tool == .cloneStamp ? 1 : tool == .blur ? 2 : 0 }
-    /// The family whose tip `brushSettings` holds. Switching tools swaps the tip in before the tool itself changes.
-    @ObservationIgnored private var activeTipFamily = 0
+    /// The family whose tip `brushSettings` holds with `tool`: the Brush's for the tools that paint no tip.
+    private static func tipFamily(_ tool: NavigationTool) -> BrushTipFamily {
+        switch tool {
+        case .cloneStamp: .clone
+        case .blur, .smudge: .smear
+        case .eraser: .eraser
+        case .dodge, .burn: .tone
+        case .liquify: .liquify
+        default: .brush
+        }
+    }
+    /// Switching tools swaps the tip in before the tool itself changes.
+    @ObservationIgnored private var activeTipFamily = BrushTipFamily.brush
     /// What was last written to `ToolDefaults`, so only changes are.
     @ObservationIgnored private var savedBrushDefaults = BrushDefaults()
-    /// The tips, mode and colors as this document has them, to hand on to the next one.
+    private var activeTip: BrushDefaults.Tip {
+        BrushDefaults.Tip(diameter: brushSettings.diameter, hardness: brushSettings.hardness, opacity: brushSettings.opacity)
+    }
+    /// The tips, Dodge or Burn, and colors as this document has them, to hand on to the next one.
     var brushDefaults: BrushDefaults {
         var result = BrushDefaults()
-        for family in result.tips.indices {
-            if family == activeTipFamily {
-                result.tips[family] = BrushDefaults.Tip(diameter: brushSettings.diameter, hardness: brushSettings.hardness, opacity: brushSettings.opacity)
-            } else if let parked = parkedBrushTips[family] {
-                result.tips[family] = BrushDefaults.Tip(diameter: parked.diameter, hardness: parked.hardness, opacity: parked.opacity)
-            }
+        for family in BrushTipFamily.allCases {
+            if family == activeTipFamily { result[family: family] = activeTip }
+            else if let parked = parkedBrushTips[family] { result[family: family] = parked }
         }
         result.smoothing = brushSettings.smoothing
         result.flow = brushSettings.flow
         result.pressureSize = brushSettings.pressureSize
         result.pressureOpacity = brushSettings.pressureOpacity
-        result.mode = brushMode
+        result.burns = tool(in: .dodge) == .burn
         result.toneRange = toneRange
         result.toneExposure = toneExposure
         result.foreground = foregroundColor
         result.background = backgroundColor
         return result
     }
-    /// A new document starting with the tips, mode and colors the last one left.
+    /// A new document starting with the tips, Dodge or Burn, and colors the last one left.
     func apply(_ defaults: BrushDefaults) {
-        for family in defaults.tips.indices where family != activeTipFamily {
-            let tip = defaults.tips[family]
-            parkedBrushTips[family] = (tip.diameter, tip.hardness, tip.opacity)
+        for family in BrushTipFamily.allCases where family != activeTipFamily {
+            parkedBrushTips[family] = defaults[family: family]
         }
         var settings = brushSettings
-        let tip = defaults.tips[activeTipFamily]
+        let tip = defaults[family: activeTipFamily]
         settings.diameter = tip.diameter
         settings.hardness = tip.hardness
         settings.opacity = tip.opacity
@@ -282,7 +272,7 @@ final class EditorSession {
         settings.green = defaults.foreground.green
         settings.blue = defaults.foreground.blue
         brushSettings = settings
-        brushMode = defaults.mode
+        slotTools[.dodge] = defaults.burns ? .burn : .dodge
         toneRange = defaults.toneRange
         toneExposure = defaults.toneExposure
         backgroundColor = defaults.background
@@ -299,16 +289,13 @@ final class EditorSession {
     var gradientSettings = GradientSettings() { didSet { refreshGradient() } }
     var gradientEdit: GradientEdit?
     var lassoDraft: LassoDraft?
-    var lassoKind = LassoKind.freehand
-    var marqueeKind = LassoKind.rectangle
     var textDraft: TextDraft? { didSet { if oldValue != nil && textDraft == nil { resumeFileRequests() } } }
     var textDefaults = LayerTextStyle()
-    var shapeKind = ShapeKind.rectangle
-    /// Corner radius in pixels for rectangles the Shape tool draws; 0 keeps the corners square.
+    /// Corner radius in pixels for rectangles the Rectangle tool draws; 0 keeps the corners square.
     var shapeCornerRadius: Double = 0
     /// A Line shape's thickness in document pixels.
     var shapeLineWidth: Double = 4
-    /// The shape being dragged out with the Shape tool, before it becomes a layer.
+    /// The shape being dragged out with a shape tool, before it becomes a layer.
     var shapeDraft: ShapeDraft?
     var selectionModeChoice = SelectionMode.replace
     /// Mode implied by the Shift/Option keys currently held, nil when neither is.
@@ -348,8 +335,6 @@ final class EditorSession {
     var strokeOptions = StrokeOptions()
     var wandSettings = WandSettings()
     var bucketSettings = BucketSettings()
-    /// The Gradient or the Paint Bucket, whichever was chosen last: what G picks.
-    var lastFillTool = NavigationTool.gradient
     var objectSelectionSettings = ObjectSelectionSettings()
     var showsPixelGrid = ToolDefaults.bool("pixelGrid", true) { didSet { ToolDefaults.set(showsPixelGrid, "pixelGrid") } }
     /// Layout grid (View > Show > Grid). Off until turned on; independent of the 800% pixel grid.
@@ -440,9 +425,10 @@ final class EditorSession {
         if tool != value, !finishText() { return }
         guard !isProjectBusy, brushStroke == nil, warpStroke == nil, levels == nil else { return }
         if tool != value { commitTransform(); cancelCrop(); resolveGradient(); cancelLasso(); cancelShape() }
-        let from = Self.tipFamily(tool), to = Self.tipFamily(value)
-        if from != to, let parked = parkedBrushTips[to] {
-            parkedBrushTips[from] = (brushSettings.diameter, brushSettings.hardness, brushSettings.opacity)
+        // From the tip in use rather than the current tool's: ⌘T moves to the Move tool without coming through here.
+        let to = Self.tipFamily(value)
+        if activeTipFamily != to, let parked = parkedBrushTips[to] {
+            parkedBrushTips[activeTipFamily] = activeTip
             activeTipFamily = to
             var settings = brushSettings
             settings.diameter = parked.diameter
@@ -450,8 +436,11 @@ final class EditorSession {
             settings.opacity = parked.opacity
             brushSettings = settings
         }
+        // Liquify remembers where it was chosen from, for Done and Cancel; any other way out keeps its strokes.
+        if value == .liquify, tool != .liquify { liquifyEntry = (tool, history.position) }
+        if value != .liquify { liquifyEntry = nil }
         tool = value
-        if value == .gradient || value == .paintBucket { lastFillTool = value }
+        if let slot = value.slot, slotTools[slot] != value { slotTools[slot] = value }
         if value.isBrushTool { _ = MetalBrushCoverage.shared }
         if value == .crop, cropRect == nil, let document {
             cropRatioChoice = "Free"
@@ -463,28 +452,6 @@ final class EditorSession {
             } else {
                 cropRect = canvas
             }
-        }
-    }
-    /// Tab steps the current tool through its own modes — the setting sitting at the left of its tool bar. Tools
-    /// without modes (Move, Crop, Type, Eyedropper, Hand, Zoom) ignore it.
-    func cycleToolMode() {
-        guard !isProjectBusy, brushStroke == nil, warpStroke == nil else { return }
-        func next<T: CaseIterable & Equatable>(_ value: T) -> T where T.AllCases.Index == Int {
-            let all = Array(T.allCases)
-            let index = all.firstIndex(of: value) ?? 0
-            return all[(index + 1) % all.count]
-        }
-        switch tool {
-        case .marquee: toggleMarqueeKind()
-        case .wand: wandMode = next(wandMode)
-        case .lasso: toggleLassoKind()
-        case .shape: toggleShapeKind()
-        case .brush: brushMode = next(brushMode)
-        case .blur: blurMode = next(blurMode)
-        case .spotHealing: spotHealingMode = next(spotHealingMode)
-        case .cloneStamp: cloneSettings.sampleAllLayers.toggle()
-        case .gradient: gradientSettings.shape = next(gradientSettings.shape)
-        default: break
         }
     }
 

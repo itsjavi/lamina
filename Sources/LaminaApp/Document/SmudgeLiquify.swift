@@ -1,18 +1,10 @@
 import AppKit
 import LaminaCore
 
-/// The Blur tool's modes. Smudge and Liquify push the active layer's pixels around under the brush.
-/// The Brush tool's modes.
-nonisolated enum BrushToolMode: String, CaseIterable, Sendable {
-    case paint = "Paint"
-    case erase = "Erase"
-    case dodge = "Dodge"
-    case burn = "Burn"
-}
-
-nonisolated enum BlurToolMode: String, CaseIterable, Sendable {
+/// How a warp stroke moves the active layer's pixels under the brush: Liquify pushes them along, Smudge drags their
+/// color with it. Named as the stroke's History step.
+nonisolated enum WarpMode: String, CaseIterable, Sendable {
     case liquify = "Liquify"
-    case blur = "Blur"
     case smudge = "Smudge"
 }
 
@@ -21,7 +13,7 @@ nonisolated enum BlurToolMode: String, CaseIterable, Sendable {
 /// is painted into the layer's own pixels along the stroke's path (see `EditorSession.finishWarp`).
 final class WarpStroke {
     let layer: ImageLayer
-    let mode: BlurToolMode
+    let mode: WarpMode
     let diameter: CGFloat
     let hardness: CGFloat
     let strength: CGFloat
@@ -48,7 +40,7 @@ final class WarpStroke {
     private var carried: [Float] = []
     private var scratch: [Float] = []
 
-    init(layer: ImageLayer, image: CGImage, transform: LayerTransform, canvas: CGSize, mode: BlurToolMode, settings: BrushSettings,
+    init(layer: ImageLayer, image: CGImage, transform: LayerTransform, canvas: CGSize, mode: WarpMode, settings: BrushSettings,
          useGPU: Bool = true) throws {
         self.layer = layer
         self.mode = mode
@@ -200,7 +192,7 @@ final class WarpStroke {
 }
 
 extension EditorSession {
-    func beginWarp(at point: CGPoint) {
+    func beginWarp(at point: CGPoint, mode: WarpMode) {
         guard canPaint, !isMaskSelected, let layer = activeLayer, let image = layer.asset?.image, let document else {
             brushError = isMaskSelected ? "Smudge and Liquify work on a layer's pixels, not its mask." : paintRefusal
             return
@@ -208,7 +200,7 @@ extension EditorSession {
         finishOpacityEdit()
         do {
             let stroke = try WarpStroke(layer: layer, image: image, transform: displayedTransform(for: layer),
-                                        canvas: document.size, mode: blurMode, settings: brushSettings)
+                                        canvas: document.size, mode: mode, settings: brushSettings)
             stroke.append(point)
             warpStroke = stroke
             lastBrushPoint = (point, layer.id, false)

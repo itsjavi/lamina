@@ -142,22 +142,27 @@ struct ShortcutDefinition: Identifiable {
             entry("Move Layer Down", "[", 1, menu: true), entry("Merge Layers", "e", 1, menu: true),
             entry("Show Grid", "'", 1, menu: true), entry("Show Guides", ";", 1, menu: true),
             entry("Show Rulers", "r", 1, menu: true), entry("Snap", ";", 9, menu: true),
-            entry("Lock Guides", ";", 3, menu: true), entry("Settings", "k", 1, menu: true)
+            entry("Lock Guides", ";", 3, menu: true), entry("Settings", "k", 1, menu: true),
+            entry("Liquify", "x", 9, menu: true)
         ]
         for (title, key) in [("Select tool", "a"), ("Move / Transform tool", "v"), ("Hand tool", "h"),
             ("Zoom tool", "z"), ("Brush tool", "b"), ("Eraser", "e"), ("Spot Healing", "j"),
             ("Clone Stamp", "s"), ("Type tool", "t"), ("Gradient / Paint Bucket", "g"), ("Shape tool", "u"),
-            ("Eyedropper tool", "i"), ("Marquee / cycle shape", "m"), ("Magic", "w"),
-            ("Lasso / cycle mode", "l"), ("Blur / Smudge / Liquify", "r"), ("Crop tool", "c"),
-            ("Swap foreground/background", "x"), ("Reset colors", "d"), ("Cycle tool mode", "\t"),
+            ("Eyedropper tool", "i"), ("Rectangular / Elliptical Marquee", "m"), ("Object Selection / Magic Wand", "w"),
+            ("Lasso / Polygonal Lasso", "l"), ("Blur / Smudge", "r"), ("Dodge / Burn", "o"), ("Crop tool", "c"),
+            ("Swap foreground/background", "x"), ("Reset colors", "d"),
             ("Temporary Hand tool (hold)", " "), ("Delete selection / layer / effect / lasso point", "\u{7f}"),
             ("Apply current canvas operation", "\r"), ("Cancel current canvas operation", "\u{1b}"),
             ("Decrease brush size", "["), ("Increase brush size", "]")] {
             result.append(entry(title, key))
         }
         result += [entry("Decrease brush hardness", "[", 8), entry("Increase brush hardness", "]", 8),
-                   entry("Previous blend mode", "-", 8), entry("Next blend mode", "=", 8),
-                   entry("Cycle shape kind", "u", 8), entry("Switch Gradient / Paint Bucket", "g", 8)]
+                   entry("Previous blend mode", "-", 8), entry("Next blend mode", "=", 8)]
+        // Shift and the key of a slot with several tools: the slot's next tool (`EditorSession.pressToolKey`).
+        for (title, key) in [("Next marquee tool", "m"), ("Next lasso tool", "l"), ("Next Object Selection / Magic Wand", "w"),
+            ("Next Gradient / Paint Bucket", "g"), ("Next Blur / Smudge", "r"), ("Next Dodge / Burn", "o"), ("Next shape tool", "u")] {
+            result.append(entry(title, key, 8))
+        }
         for digit in 0...9 { result.append(entry("Opacity digit \(digit) (type two for exact %)", String(digit))) }
         for (direction, key) in [("Left", "\u{f702}"), ("Right", "\u{f703}"), ("Up", "\u{f700}"), ("Down", "\u{f701}")] {
             result += [entry("Nudge \(direction) 1 px", key), entry("Nudge \(direction) 10 px", key, 8),
@@ -186,6 +191,15 @@ final class ShortcutSettings {
         let chord: ShortcutChord?
         init(from decoder: Decoder) throws { chord = try? ShortcutChord(from: decoder) }
     }
+    /// Entries renamed since earlier versions saved them (the tools split apart): a key set for the old name carries over.
+    static let renamedIDs = [
+        "Canvas & Layers:Marquee / cycle shape": "Canvas & Layers:Rectangular / Elliptical Marquee",
+        "Canvas & Layers:Magic": "Canvas & Layers:Object Selection / Magic Wand",
+        "Canvas & Layers:Lasso / cycle mode": "Canvas & Layers:Lasso / Polygonal Lasso",
+        "Canvas & Layers:Blur / Smudge / Liquify": "Canvas & Layers:Blur / Smudge",
+        "Canvas & Layers:Cycle shape kind": "Canvas & Layers:Next shape tool",
+        "Canvas & Layers:Switch Gradient / Paint Bucket": "Canvas & Layers:Next Gradient / Paint Bucket",
+    ]
     private let defaults: UserDefaults
     /// `defaults` is the app's own everywhere but tests, which use a throwaway suite.
     init(defaults: UserDefaults = .standard) {
@@ -196,8 +210,10 @@ final class ShortcutSettings {
         // command that has since gone, or one a newer rule or a new default now refuses, drops alone rather than
         // taking every other saved shortcut with it.
         let known = Set(ShortcutDefinition.all.map(\.id))
+        let chords = Dictionary(saved.compactMapValues(\.chord).map { (Self.renamedIDs[$0.key] ?? $0.key, $0.value) },
+                                uniquingKeysWith: { kept, _ in kept })
         var accepted: [String: ShortcutChord] = [:]
-        for (id, chord) in saved.compactMapValues(\.chord).sorted(by: { $0.key < $1.key }) where known.contains(id) {
+        for (id, chord) in chords.sorted(by: { $0.key < $1.key }) where known.contains(id) {
             var trial = accepted
             trial[id] = chord
             if Self.problem(in: trial) == nil { accepted = trial }

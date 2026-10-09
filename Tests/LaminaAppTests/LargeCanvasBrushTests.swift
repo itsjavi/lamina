@@ -6,7 +6,7 @@ import Testing
 /// Blur, Smudge and Liquify at the largest brush on a big canvas.
 @MainActor
 struct LargeCanvasBrushTests {
-    private func session(side: Int) throws -> EditorSession {
+    private func session(side: Int, tool: NavigationTool = .blur) throws -> EditorSession {
         let session = EditorSession()
         session.createDocument(width: side, height: side)
         let context = try BrushRaster.context(width: side, height: side, mask: false)
@@ -16,7 +16,7 @@ struct LargeCanvasBrushTests {
         }
         let image = try #require(context.makeImage())
         session.insert(ImportedImage(image: image, thumbnail: image, name: "Bands"))
-        session.selectTool(.blur)
+        session.selectTool(tool)
         session.brushSettings.diameter = 2000
         session.brushSettings.hardness = 0.5
         return session
@@ -30,22 +30,20 @@ struct LargeCanvasBrushTests {
     }
 
     /// Committing a Smudge or Liquify lays a tip a little wider than the brush, which at the largest Size was refused.
-    @Test(arguments: [BlurToolMode.liquify, .smudge, .blur])
-    func largestBrushCommits(mode: BlurToolMode) throws {
+    @Test(arguments: [NavigationTool.liquify, .smudge, .blur])
+    func largestBrushCommits(tool: NavigationTool) throws {
         let side = 5000
-        let session = try session(side: side)
-        session.blurMode = mode
+        let session = try session(side: side, tool: tool)
         session.brushSettings.blurRadius = 20
         let before = session.activeLayer?.asset?.image
         stroke(session, side: side)
-        #expect(session.brushError == nil, "\(mode.rawValue): \(session.brushError ?? "")")
-        #expect(session.activeLayer?.asset?.image !== before, "\(mode.rawValue) left the layer unchanged")
+        #expect(session.brushError == nil, "\(tool.title): \(session.brushError ?? "")")
+        #expect(session.activeLayer?.asset?.image !== before, "\(tool.title) left the layer unchanged")
     }
 
     /// Blur softens a piece at a time; each piece is exactly that part of the layer blurred as a whole.
     @Test func blurPiecesMatchTheWhole() throws {
         let session = try session(side: 600)
-        session.blurMode = .blur
         session.brushSettings.blurRadius = 12
         let layer = try #require(session.activeLayer)
         let stroke = try session.makeRasterEdit(for: layer, settings: session.brushSettings)

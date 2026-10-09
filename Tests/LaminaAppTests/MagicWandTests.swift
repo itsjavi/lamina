@@ -95,7 +95,7 @@ struct MagicWandTests {
         let halves = try image(width: 20, height: 10) { x, _ in x < 10 ? red : blue }
         session.insert(ImportedImage(image: halves, thumbnail: halves, name: "Halves"))
         session.addBlankLayer()
-        session.selectTool(.wand)
+        session.selectTool(.magicWand)
         let left = block(columns: 0..<10, rows: 0..<10, width: 20)
         func selected() throws -> Set<Int> { try pixels(session.selection?.path, width: 20, height: 10) }
         // The blank active layer is transparent everywhere, so the whole canvas matches.
@@ -120,7 +120,7 @@ struct MagicWandTests {
         session.createDocument(width: 20, height: 10)
         let halves = try image(width: 20, height: 10) { x, _ in x < 10 ? red : blue }
         session.insert(ImportedImage(image: halves, thumbnail: halves, name: "Halves"))
-        session.selectTool(.wand)
+        session.selectTool(.magicWand)
         session.wandSettings.sampleAllLayers = true
         session.selectAll()
         let view = CanvasView(session: session)

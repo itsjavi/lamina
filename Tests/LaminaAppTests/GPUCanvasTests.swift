@@ -214,8 +214,7 @@ import LaminaCore
     @Test func matchesWhileSmudging() throws {
         guard GPUCanvasRenderer.shared != nil else { return }
         let session = try paintable(masked: true)
-        session.tool = .blur
-        session.blurMode = .smudge
+        session.tool = .smudge
         stroke(session)
         #expect(session.warpStroke != nil)
         session.zoom(to: 1)
@@ -408,7 +407,7 @@ import LaminaCore
     @Test func matchesWhileDrawingAShape() throws {
         guard GPUCanvasRenderer.shared != nil else { return }
         let session = try paintable()
-        session.selectTool(.shape)
+        session.selectTool(.rectangle)
         session.beginShape(at: CGPoint(x: 120, y: 90))
         session.dragShape(to: CGPoint(x: 380, y: 300), square: false, fromCenter: false)
         #expect(session.shapeDraft != nil)

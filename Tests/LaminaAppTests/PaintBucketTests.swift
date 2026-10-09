@@ -218,17 +218,17 @@ struct PaintBucketTests {
     @Test func gPicksTheLastFillToolAndShiftGSwitches() {
         let session = makeSession()
         session.selectTool(.gradient)
-        session.toggleFillTool()
+        session.pressToolKey("g", shift: true)
         #expect(session.tool == .paintBucket)
         session.typeOpacityDigit(5)
         #expect(session.bucketSettings.opacity == 0.5)
         session.selectTool(.move)
-        session.pressGradientKey()
+        session.pressToolKey("g")
         #expect(session.tool == .paintBucket)
-        session.toggleFillTool()
+        session.pressToolKey("g", shift: true)
         #expect(session.tool == .gradient)
         session.selectTool(.move)
-        session.pressGradientKey()
+        session.pressToolKey("g")
         #expect(session.tool == .gradient)
     }
 }

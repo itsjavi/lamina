@@ -126,7 +126,7 @@ struct CanvasRotationTests {
         let image = try #require(pixels.makeImage())
         session.insert(ImportedImage(image: image, thumbnail: image, name: "Pixels"), centeredAt: CGPoint(x: 150, y: 80))
         let pixel = try #require(session.activeLayerID)
-        session.selectTool(.shape)
+        session.selectTool(.rectangle)
         session.foregroundColor = PaletteColor(red: 1, green: 0, blue: 0)
         session.beginShape(at: CGPoint(x: 10, y: 10))
         session.dragShape(to: CGPoint(x: 60, y: 40), square: false, fromCenter: false)

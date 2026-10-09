@@ -189,5 +189,8 @@ struct DockResizeEdge: View {
                     .onEnded { _ in start = nil })
                 .help(axis == .horizontal ? "Drag to resize the dock" : "Drag to resize the panels")
         }
+        // The 8 pt grab area overhangs the line on both sides; above its neighbors, the region after it (the Layers
+        // tab row, the dock) doesn't take the clicks on its half.
+        .zIndex(1)
     }
 }

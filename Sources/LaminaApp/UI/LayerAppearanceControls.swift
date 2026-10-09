@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// The Layers panel's top row, as familiar editors lay it out: the blend mode menu, as wide as the row allows, then
-/// "Opacity:" and its field, whose chevron pops up a slider. Dragging the label scrubs the opacity too.
+/// The Layers panel's top rows, as familiar editors lay them out: the blend mode menu, as wide as the row allows, then
+/// "Opacity:" and its field, whose chevron pops up a slider. Dragging the label scrubs the opacity too. Under them,
+/// "Fill:", in progress (TASK-83).
 struct LayerAppearanceControls: View {
     @Bindable var session: EditorSession
     let layerID: UUID?
@@ -10,6 +11,17 @@ struct LayerAppearanceControls: View {
     @State private var showsSlider = false
     @FocusState private var focused: Bool
     var body: some View {
+        VStack(alignment: .trailing, spacing: 4) {
+            opacityRow
+            FillOpacityPlaceholder(session: session).disabled(!session.canEditOpacity)
+        }
+        .font(.system(size: 12)).monospacedDigit()
+        .padding(.horizontal, 8).padding(.vertical, 6)
+        .onAppear { sync() }
+        .onChange(of: session.activeLayer?.opacity) { _, _ in if !focused { sync() } }
+        .onDisappear { session.finishOpacityEdit() }
+    }
+    private var opacityRow: some View {
         HStack(spacing: 6) {
             BlendModePicker(session: session)
                 .frame(maxWidth: .infinity)
@@ -48,11 +60,6 @@ struct LayerAppearanceControls: View {
             }
             .disabled(!session.canEditOpacity)
         }
-        .font(.system(size: 12)).monospacedDigit()
-        .padding(.horizontal, 8).padding(.vertical, 6)
-        .onAppear { sync() }
-        .onChange(of: session.activeLayer?.opacity) { _, _ in if !focused { sync() } }
-        .onDisappear { session.finishOpacityEdit() }
     }
     /// Up and Down nudge the opacity by one percent, or ten with Shift.
     private func step(_ percent: Double) {

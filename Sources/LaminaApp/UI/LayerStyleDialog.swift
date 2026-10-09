@@ -9,8 +9,8 @@ struct LayerStyleDialog: View {
 
     static let listWidth: CGFloat = 170
     static let pageWidth: CGFloat = 372
-    /// Tall enough for the longest page, so the dialog keeps its size as pages change.
-    static let height: CGFloat = 232
+    /// Tall enough for the longest page (Drop Shadow, Inner Shadow), so the dialog keeps its size as pages change.
+    static let height: CGFloat = 292
     private static let labelWidth: CGFloat = 82
 
     var body: some View {
@@ -108,14 +108,18 @@ struct LayerStyleDialog: View {
                         session.changeLayerStyle { $0.effects.stroke?.size = value }
                     }
                     DialogRow("Position:", labelWidth: Self.labelWidth) {
-                        Picker("Position", selection: Binding(get: { stroke.inside }, set: { inside in
-                            session.changeLayerStyle { $0.effects.stroke?.inside = inside }
+                        // Center is in progress (TASK-85): choosing it shows the message and keeps the position.
+                        Picker("Position", selection: Binding(get: { stroke.inside ? 1 : 0 }, set: { position in
+                            if position == 2 { session.showInProgress(.centerStroke); return }
+                            session.changeLayerStyle { $0.effects.stroke?.inside = position == 1 }
                         })) {
-                            Text("Outside").tag(false)
-                            Text("Inside").tag(true)
+                            Text("Outside").tag(0)
+                            Text("Inside").tag(1)
+                            Text("Center").tag(2)
                         }
                         .labelsHidden().fixedSize()
                     }
+                    effectBlendMode
                     percent("Opacity:", stroke.opacity) { value in session.changeLayerStyle { $0.effects.stroke?.opacity = value } }
                     colorRow(kind)
                 }
@@ -123,11 +127,13 @@ struct LayerStyleDialog: View {
         case .innerShadow:
             if let shadow = effects.innerShadow {
                 DialogGroup("Structure") {
+                    effectBlendMode
                     percent("Opacity:", shadow.opacity) { value in session.changeLayerStyle { $0.effects.innerShadow?.opacity = value } }
                     angle(shadow.angle) { value in session.changeLayerStyle { $0.effects.innerShadow?.angle = value } }
                     pixels("Distance:", shadow.distance, slider: 0...50, limit: 5000) { value in
                         session.changeLayerStyle { $0.effects.innerShadow?.distance = value }
                     }
+                    planned(.choke)
                     pixels("Size:", shadow.blur, slider: 0...100, limit: 500) { value in
                         session.changeLayerStyle { $0.effects.innerShadow?.blur = value }
                     }
@@ -137,10 +143,12 @@ struct LayerStyleDialog: View {
         case .innerGlow:
             if let glow = effects.innerGlow {
                 DialogGroup("Structure") {
+                    effectBlendMode
                     percent("Opacity:", glow.opacity) { value in session.changeLayerStyle { $0.effects.innerGlow?.opacity = value } }
                     colorRow(kind)
                 }
                 DialogGroup("Elements") {
+                    planned(.choke)
                     pixels("Size:", glow.size, slider: 0...100, limit: 500) { value in
                         session.changeLayerStyle { $0.effects.innerGlow?.size = value }
                     }
@@ -149,6 +157,7 @@ struct LayerStyleDialog: View {
         case .colorOverlay:
             if let overlay = effects.colorOverlay {
                 DialogGroup("Color") {
+                    effectBlendMode
                     colorRow(kind)
                     percent("Opacity:", overlay.opacity) { value in session.changeLayerStyle { $0.effects.colorOverlay?.opacity = value } }
                 }
@@ -156,10 +165,12 @@ struct LayerStyleDialog: View {
         case .outerGlow:
             if let glow = effects.outerGlow {
                 DialogGroup("Structure") {
+                    effectBlendMode
                     percent("Opacity:", glow.opacity) { value in session.changeLayerStyle { $0.effects.outerGlow?.opacity = value } }
                     colorRow(kind)
                 }
                 DialogGroup("Elements") {
+                    planned(.spread)
                     pixels("Size:", glow.size, slider: 0...100, limit: 500) { value in
                         session.changeLayerStyle { $0.effects.outerGlow?.size = value }
                     }
@@ -168,11 +179,13 @@ struct LayerStyleDialog: View {
         case .shadow:
             if let shadow = effects.shadow {
                 DialogGroup("Structure") {
+                    effectBlendMode
                     percent("Opacity:", shadow.opacity) { value in session.changeLayerStyle { $0.effects.shadow?.opacity = value } }
                     angle(shadow.angle) { value in session.changeLayerStyle { $0.effects.shadow?.angle = value } }
                     pixels("Distance:", shadow.distance, slider: 0...100, limit: 5000) { value in
                         session.changeLayerStyle { $0.effects.shadow?.distance = value }
                     }
+                    planned(.spread)
                     pixels("Size:", shadow.blur, slider: 0...100, limit: 500) { value in
                         session.changeLayerStyle { $0.effects.shadow?.blur = value }
                     }
@@ -183,6 +196,28 @@ struct LayerStyleDialog: View {
     }
 
     // MARK: - Rows
+
+    /// An effect's Blend Mode, in progress (TASK-85). It reads Normal, how effects blend today; choosing another mode
+    /// shows the message.
+    private var effectBlendMode: some View {
+        DialogRow("Blend Mode:", labelWidth: Self.labelWidth) {
+            Picker("Blend Mode", selection: Binding(get: { LayerBlendMode.normal },
+                                                    set: { _ in session.showInProgress(.effectBlendMode) })) {
+                ForEach(LayerBlendMode.groups.indices, id: \.self) { group in
+                    if group > 0 { Divider() }
+                    ForEach(LayerBlendMode.groups[group], id: \.self) { Text($0.rawValue).tag($0) }
+                }
+            }
+            .labelsHidden().fixedSize()
+        }
+        .help(PlannedFeature.effectBlendMode.helpTag)
+    }
+
+    /// Spread or Choke, in progress (TASK-85), at 0%, what effects do today; any change shows the message.
+    private func planned(_ feature: PlannedFeature) -> some View {
+        slider("\(feature.name):", 0, slider: 0...100, limit: 0...100, unit: "%") { _ in session.showInProgress(feature) }
+            .help(feature.helpTag)
+    }
 
     /// A 0–1 setting shown as a percentage.
     private func percent(_ label: String, _ value: Double, set: @escaping (Double) -> Void) -> some View {

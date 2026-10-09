@@ -2269,6 +2269,9 @@ final class CanvasView: NSView {
             // Shift turns [ and ] into { and }.
             case "{" where session.tool.isBrushTool: session.changeBrushHardness(increase: false)
             case "}" where session.tool.isBrushTool: session.changeBrushHardness(increase: true)
+            // Screen modes and hiding the panels, in progress (TASK-78). Shift-Tab arrives as backtab.
+            case "f" where !event.isARepeat: session.pressPlannedKey("f", shift: event.modifierFlags.contains(.shift))
+            case "\t" where !event.isARepeat, "\u{19}" where !event.isARepeat: session.pressPlannedKey("\t")
             default: ignoreKey(event)
             }
         } else { ignoreKey(event) }

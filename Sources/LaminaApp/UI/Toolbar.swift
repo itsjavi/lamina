@@ -10,6 +10,7 @@ struct ToolbarColumn: View {
         // Scrolls only when the window is too short for every slot, rather than pushing the bars above and below away.
         IndicatorlessScrollView {
             VStack(spacing: 1) {
+                TwoColumnToolbarPlaceholder(session: session)
                 ForEach(ToolSlot.allCases, id: \.self) { slot in
                     if slot.startsGroup {
                         ColorRole.separator.color.frame(width: 22, height: 1).padding(.vertical, 4)

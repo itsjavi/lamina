@@ -48,19 +48,19 @@ struct KeyboardShortcutTests {
 
     @Test func overridesForTitlesThatNoLongerExistAreIgnored() {
         let defaults = UserDefaults(suiteName: "KeyboardShortcutTests-\(UUID().uuidString)")!
-        let saved = ["Menus:Gone Command": ShortcutChord("k", 1), "Menus:Undo": ShortcutChord("y", 1)]
+        let saved = ["Menus:Gone Command": ShortcutChord("k", 1), "Menus:Undo": ShortcutChord("y", 7)]
         defaults.set(try! JSONEncoder().encode(saved), forKey: "keyboardShortcuts.v1")
         let settings = ShortcutSettings(defaults: defaults)
-        #expect(settings.menu("z", modifiers: .command) == ShortcutChord("y", 1))
+        #expect(settings.menu("z", modifiers: .command) == ShortcutChord("y", 7))
     }
 
     /// A saved value that can't be decoded at all (damaged, or edited by hand) drops alone too.
     @Test func anUndecodableOverrideDropsAloneOnLoad() {
         let defaults = UserDefaults(suiteName: "KeyboardShortcutTests-\(UUID().uuidString)")!
-        let saved = #"{"Menus:Undo": {"key": "y", "modifiers": 1}, "Menus:Redo": {"key": 5}, "Menus:Save": "⌘S"}"#
+        let saved = #"{"Menus:Undo": {"key": "y", "modifiers": 7}, "Menus:Redo": {"key": 5}, "Menus:Save": "⌘S"}"#
         defaults.set(Data(saved.utf8), forKey: "keyboardShortcuts.v1")
         let settings = ShortcutSettings(defaults: defaults)
-        #expect(settings.menu("z", modifiers: .command) == ShortcutChord("y", 1), "the readable one is kept")
+        #expect(settings.menu("z", modifiers: .command) == ShortcutChord("y", 7), "the readable one is kept")
         #expect(settings.menu("z", modifiers: [.command, .shift]) == ShortcutChord("z", 9))
         #expect(settings.menu("s", modifiers: .command) == ShortcutChord("s", 1))
     }
@@ -109,10 +109,9 @@ struct KeyboardShortcutTests {
             "Export As": ShortcutChord("w", 11), "Free Transform": ShortcutChord("t", 1), "Settings": ShortcutChord("k", 1),
         ]
         for (title, chord) in expected { #expect(menuDefault(title) == chord, "\(title)") }
-        // The keys they gave up belong to no menu command now: ⌘F (Photoshop's Search), ⌥⌘A (All Layers).
-        for freed in [ShortcutChord("f", 1), ShortcutChord("a", 3)] {
-            #expect(!ShortcutDefinition.all.contains { $0.original == freed }, "\(freed.label)")
-        }
+        // The keys they gave up: ⌘F went to Photoshop's Edit ▸ Search (in progress, TASK-79), ⌥⌘A (All Layers) to nothing.
+        #expect(ShortcutDefinition.all.filter { $0.original == ShortcutChord("f", 1) }.map(\.title) == ["Search"])
+        #expect(!ShortcutDefinition.all.contains { $0.original == ShortcutChord("a", 3) }, "⌥⌘A")
         // Commands that ship without a key now.
         let more = ShortcutDefinition.all.filter { $0.group == ShortcutDefinition.moreGroup }
         for title in ["File › Export › Quick Export as PNG", "Select › Subject", "Edit › Content-Aware Fill…"] {
@@ -190,13 +189,13 @@ struct KeyboardShortcutTests {
         let more = ShortcutDefinition.moreGroup
         let saved = ["\(more):View › Snap": ShortcutChord("s", 5), "Menus:Snap": ShortcutChord("s", 7),
                      // ⇧⌘E, Export PNG's old default saved as a choice of its own, is Merge Visible's now.
-                     "Menus:Export PNG": ShortcutChord("e", 9), "Menus:Undo": ShortcutChord("y", 1)]
+                     "Menus:Export PNG": ShortcutChord("e", 9), "Menus:Undo": ShortcutChord("y", 7)]
         defaults.set(try! JSONEncoder().encode(saved), forKey: "keyboardShortcuts.v1")
         let settings = ShortcutSettings(defaults: defaults)
         #expect(settings.menu(";", modifiers: [.command, .shift]) == ShortcutChord("s", 7))
         #expect(settings.assigned("File › Export › Quick Export as PNG").isNone)
         #expect(settings.menu("e", modifiers: [.command, .shift]) == ShortcutChord("e", 9), "Merge Visible keeps ⇧⌘E")
-        #expect(settings.menu("z", modifiers: .command) == ShortcutChord("y", 1))
+        #expect(settings.menu("z", modifiers: .command) == ShortcutChord("y", 7))
     }
 
     /// TASK-65: Export JPEG… is gone, its ⌥⇧⌘S free; a key someone gave it moves to Export As…, unless Export As… has
@@ -294,10 +293,10 @@ struct KeyboardShortcutTests {
     /// new default now takes) is dropped on its own; the person's other shortcuts survive the update.
     @Test func anOverrideTheRulesNowRefuseDropsAloneOnLoad() throws {
         let defaults = UserDefaults(suiteName: "KeyboardShortcutTests-\(UUID().uuidString)")!
-        let saved = ["Menus:Curves": ShortcutChord("k", 0), "Menus:Undo": ShortcutChord("y", 1)]
+        let saved = ["Menus:Curves": ShortcutChord("k", 0), "Menus:Undo": ShortcutChord("y", 7)]
         defaults.set(try JSONEncoder().encode(saved), forKey: "keyboardShortcuts.v1")
         let settings = ShortcutSettings(defaults: defaults)
-        #expect(settings.menu("z", modifiers: .command) == ShortcutChord("y", 1), "the valid override survives")
+        #expect(settings.menu("z", modifiers: .command) == ShortcutChord("y", 7), "the valid override survives")
         #expect(settings.menu("m", modifiers: .command) == ShortcutChord("m", 1), "the refused one falls back to its default")
     }
 

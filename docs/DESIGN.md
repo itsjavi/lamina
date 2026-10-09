@@ -158,10 +158,10 @@ Every numeric field uses monospaced digits so values don't jitter while scrubbin
 | Rectangular / Elliptical Marquee | `rectangle.dashed` / `circle.dashed` |
 | Lasso / Polygonal Lasso | `lasso` / custom polygonal loop |
 | Object Selection / Magic Wand | custom dashed box with pointer / `wand.and.stars` |
-| Crop | `crop` |
+| Crop / Perspective Crop (in progress) | `crop` / `perspective` |
 | Eyedropper | `eyedropper` |
 | Spot Healing Brush | `bandage` |
-| Brush | `paintbrush.pointed` |
+| Brush / Pencil (in progress) | `paintbrush.pointed` / `pencil` |
 | Clone Stamp | custom stamp |
 | Eraser | `eraser` |
 | Gradient / Paint Bucket | custom filled square / custom bucket |
@@ -176,6 +176,7 @@ Every numeric field uses monospaced digits so values don't jitter while scrubbin
 | Polygon / Star (in progress) | `hexagon.fill` / `star.fill` |
 | Stroke options / path operations (shape bars, in progress) | `lineweight` / `square.on.square` |
 | History panel | `clock.arrow.circlepath` |
+| One column or two (toolbar's top, in progress) | `chevron.right.2` |
 
 Status: **shipping** (TASK-55). `ToolIcon` (`Sources/LaminaApp/UI/ToolIcon.swift`) is the one tool → icon mapping:
 `ToolIcon.symbol(for:)` gives each symbol, and the custom icons are SwiftUI drawings beside it (`DodgeToolIcon`,
@@ -205,6 +206,8 @@ flyout order, P shows the Pen's message, and Shift-cycling passes through them (
 
 The column (`ToolbarColumn`, `Sources/LaminaApp/UI/Toolbar.swift`) is 44 pt wide on `chrome`, 6 pt from the top:
 
+- First, Photoshop's double arrow (`chevron.right.2`, 9 pt semibold in `icon`, a 32 × 22 target) that switches the
+  toolbar between one column and two: in progress (TASK-86, `TwoColumnToolbarPlaceholder`).
 - One 32 × 30 slot per `ToolSlot`, 1 pt apart, with a 22 × 1 pt `separator` line (4 pt above and below) where the
   table below has a separator (`ToolSlot.startsGroup`). A slot shows `EditorSession.shownItem(in:)`: the active tool
   when it's the slot's, else the slot's last-used tool, else (Pen, Path Selection) its first planned item. The active
@@ -242,12 +245,12 @@ holds carries over to new documents with the brush settings.
 | Lasso | Lasso Tool, Polygonal Lasso Tool | L |
 | Object selection | Object Selection Tool, Magic Wand Tool | W |
 | *separator* | | |
-| Crop | Crop Tool | C |
+| Crop | Crop Tool, Perspective Crop Tool (in progress, TASK-82) | C |
 | *separator* | | |
 | Eyedropper | Eyedropper Tool | I |
 | *separator* | | |
 | Spot healing | Spot Healing Brush Tool | J |
-| Brush | Brush Tool, Mixer Brush Tool (in progress, TASK-47), Palette Knife Tool (in progress, TASK-50) | B |
+| Brush | Brush Tool, Pencil Tool (in progress, TASK-81), Mixer Brush Tool (in progress, TASK-47), Palette Knife Tool (in progress, TASK-50) | B |
 | Clone | Clone Stamp Tool | S |
 | Eraser | Eraser Tool | E |
 | Gradient | Gradient Tool, Paint Bucket Tool | G |
@@ -397,7 +400,8 @@ are **shipping**.
   and gives its height to the other; with every dock panel closed only the icon column stays and the canvas takes the
   dock's width. Renaming a layer opens Layers again; adding an adjustment layer, double-clicking one (its thumbnail)
   and Layer ▸ Layer Content Options… open Properties and bring it to the front.
-- Window lists Adjustments, History, Layers and Properties alphabetically, as familiar editors do. A panel is checked
+- Window lists Adjustments, History, Layers, Navigator (in progress, TASK-80) and Properties alphabetically, as
+  familiar editors do. A panel is checked
   while it is on screen (open and in front of its group); choosing a checked panel closes it, choosing any other opens
   it and brings it to the front. Window ▸ Workspace ▸ Essentials (Default) is the only workspace and always checked;
   Reset Essentials restores the default width and split, opens every dock panel with Properties in front, and closes
@@ -473,7 +477,9 @@ are **shipping**.
   - The top row (6 pt above and below, 8 pt at the sides): the blend mode pop-up, as wide as the row leaves it
     (grouped as the Layer Style dialog's), then "Opacity:" (dragging it scrubs) and a 48 pt percent field ("100%";
     Return or leaving it applies, Up and Down step 1%, Shift 10%) whose chevron pops up a 0–100% slider. The blend
-    mode is off for groups and multiple selections, Opacity for multiple selections. A `separator` line under it.
+    mode is off for groups and multiple selections, Opacity for multiple selections. Under it, 4 pt down and
+    right-aligned under Opacity as in Photoshop, "Fill:" and its 48 pt field reading 100% with a chevron: in progress
+    (TASK-83, `FillOpacityPlaceholder`), dimmed with Opacity. A `separator` line under them.
   - The list. Each layer is a one-line 32 pt row: a 26 pt eye column (12 pt `eye` / `eye.slash` in `icon`, a
     `separator` line at its right; dragging down the eyes shows or hides each), then, stepped in 14 pt per group level
     (and 14 pt more for a clipped layer, whose name starts "↳ "): a group's disclosure triangle (8 pt chevron) and
@@ -531,14 +537,14 @@ one in Keyboard Shortcuts (More Menu Commands), as every menu item does.
 
 - **Lamina:** About Lamina · Check for Updates… │ Settings… ⌘K │ Services ▸ │ Hide Lamina ⌃⌘H · Hide Others ⌥⌘H · Show All │ Quit Lamina ⌘Q
 - **File:** New… ⌘N · New from Clipboard ⌥⌘N · Open… ⌘O · Open Recent ▸ (recent projects │ Clear Recent File List) │ Close ⌘W │ Save ⌘S · Save As… ⇧⌘S · Save a Copy… ⌥⌘S (in progress: layered Photoshop files, TASK-27) │ Export ▸ (Quick Export as PNG │ Export As… ⌥⇧⌘W) │ Place Embedded…
-- **Edit:** Undo ⌘Z · Redo ⇧⌘Z │ Cut ⌘X · Copy ⌘C · Copy Merged ⇧⌘C · Paste ⌘V · Clear │ Fill… ⇧F5 · Stroke… · Content-Aware Fill… │ Free Transform ⌘T · Transform ▸ (Distort │ Flip Horizontal · Flip Vertical) │ Keyboard Shortcuts… ⌥⇧⌘K
-- **Image:** Adjustments ▸ (Levels… ⌘L · Curves… ⌘M · Exposure… │ Hue/Saturation… ⌘U · Color Balance… ⌘B · Black & White… ⌥⇧⌘B │ Invert ⌘I · Gradient Map… │ Grain…) │ Image Size… ⌥⌘I · Canvas Size… ⌥⌘C · Image Rotation ▸ (180° · 90° Clockwise · 90° Counter Clockwise │ Flip Canvas Horizontal · Flip Canvas Vertical) · Trim…
+- **Edit:** Undo ⌘Z · Redo ⇧⌘Z │ Cut ⌘X · Copy ⌘C · Copy Merged ⇧⌘C · Paste ⌘V · Clear │ Search ⌘F (in progress, TASK-79) │ Fill… ⇧F5 · Stroke… · Content-Aware Fill… │ Free Transform ⌘T · Transform ▸ (Distort │ Flip Horizontal · Flip Vertical) │ Keyboard Shortcuts… ⌥⇧⌘K · Toolbar… (in progress, TASK-87)
+- **Image:** Mode ▸ (RGB Color ✓ │ 8 Bits/Channel ✓ · 16 Bits/Channel · 32 Bits/Channel; the last two in progress, TASK-90) │ Adjustments ▸ (Levels… ⌘L · Curves… ⌘M · Exposure… │ Hue/Saturation… ⌘U · Color Balance… ⌘B · Black & White… ⌥⇧⌘B · Color Lookup… (in progress, TASK-84) │ Invert ⌘I · Gradient Map… │ Grain…) │ Image Size… ⌥⌘I · Canvas Size… ⌥⌘C · Image Rotation ▸ (180° · 90° Clockwise · 90° Counter Clockwise │ Flip Canvas Horizontal · Flip Canvas Vertical) · Trim…
 - **Layer:** New ▸ (Layer… ⇧⌘N │ Group… · Group from Layers… │ Layer Via Copy ⌘J) · Duplicate Layer… · Delete ▸ Layer │ Rename Layer… · Layer Style ▸ (Blending Options… │ Stroke… · Inner Shadow… · Inner Glow… · Color Overlay… · Outer Glow… · Drop Shadow… │ Copy Layer Style · Paste Layer Style · Clear Layer Style) │ New Adjustment Layer ▸ (Grain… │ Levels… · Curves… · Exposure… │ Hue/Saturation… · Color Balance… · Black & White… │ Invert · Gradient Map… │ Gaussian Blur… · Motion Blur… · Add Noise…) · Layer Content Options… │ Layer Mask ▸ (Reveal All · Hide All · Reveal Selection · Hide Selection │ Delete · Apply) · Create Clipping Mask ⌥⌘G · Remove Background… │ Rasterize (in progress, TASK-32) · Convert to Editable Vectors (in progress, TASK-35) │ Group Layers ⌘G · Ungroup Layers ⇧⌘G · Hide Layers ⌘, · Hide All Other Layers │ Arrange ▸ (Bring Forward ⌘] · Send Backward ⌘[ │ Move Out of Group) · Combine Shapes ▸ (in progress, TASK-34) · Release to Layers (in progress, TASK-34) │ Align ▸ (Top Edges · Vertical Centers · Bottom Edges │ Left Edges · Horizontal Centers · Right Edges) · Distribute ▸ (Vertical Centers · Horizontal Centers │ Horizontally · Vertically) │ Merge Down ⌘E (Merge Layers with several selected) · Merge Visible ⇧⌘E · Flatten Image
 - **Type:** Panels ▸ (Character · Paragraph), both opening Properties
 - **Select:** All ⌘A · Deselect ⌘D · Inverse ⇧⌘I │ Color Range… · Subject │ Modify ▸ (Expand… · Contract… · Feather… ⇧F6) │ Load Selection…
 - **Filter:** Last Filter ⌃⌘F │ Camera Raw Filter… ⇧⌘A · Lens Correction… ⇧⌘R · Liquify… ⇧⌘X │ Blur ▸ (Gaussian Blur… · Motion Blur…) · Noise ▸ Add Noise… · Pixelate ▸ Dither… · Render ▸ Vignette… · Sharpen ▸ (Unsharp Mask… │ Tonal Contrast…) · Stylize ▸ Bloom / Glow… · Other ▸ High Pass…
-- **View:** Zoom In ⌘+ · Zoom Out ⌘− · Fit on Screen ⌘0 · 100% ⌘1 │ Extras ⌘H · Show ▸ (Grid ⌘' · Guides ⌘; · Pixel Grid) │ Rulers ⌘R │ Snap ⇧⌘; · Snap To ▸ (Guides · Grid · Layers · Document Bounds) │ Guides ▸ (Lock Guides ⌥⌘; · Clear Guides) │ Grid Settings… │ Enter Full Screen (Exit Full Screen while in it; no default key, since ⌃⌘F is Last Filter)
-- **Window:** Minimize · Zoom (then the system's tiling items and Bring All to Front) │ Workspace ▸ (Essentials (Default) │ Reset Essentials) │ Adjustments · History · Layers · Properties │ Contextual Task Bar (in progress, TASK-67) │ open documents
+- **View:** Proof Setup ▸ Custom… · Proof Colors ⌘Y · Gamut Warning ⇧⌘Y (in progress, TASK-89) │ Zoom In ⌘+ · Zoom Out ⌘− · Fit on Screen ⌘0 · 100% ⌘1 │ Screen Mode ▸ (Standard Screen Mode ✓ · Full Screen Mode With Menu Bar · Full Screen Mode; the last two in progress, TASK-78) │ Extras ⌘H · Show ▸ (Grid ⌘' · Guides ⌘; · Pixel Grid) │ Rulers ⌘R │ Snap ⇧⌘; · Snap To ▸ (Guides · Grid · Layers · Document Bounds) │ Guides ▸ (Lock Guides ⌥⌘; · Clear Guides) │ Grid Settings… │ Enter Full Screen (Exit Full Screen while in it; no default key, since ⌃⌘F is Last Filter)
+- **Window:** Minimize · Zoom (then the system's tiling items and Bring All to Front) │ Workspace ▸ (Essentials (Default) │ Reset Essentials) │ Adjustments · History · Layers · Navigator (in progress, TASK-80) · Properties │ Contextual Task Bar (in progress, TASK-67) │ open documents
 - **Help:** Search
 
 How the menus behave where the names alone don't say:
@@ -607,7 +613,9 @@ named). Keyboard Shortcuts lists every one; function keys show as F1 to F12, and
 | Window ▸ Minimize | ⌘M (the system's) | none: ⌘M is Image ▸ Adjustments ▸ Curves… |
 | Lamina ▸ Settings… | none (no Settings window) | ⌘K (shipping, TASK-51) |
 | File ▸ Save a Copy… / Pen Tool | none | ⌥⌘S / P (shipping as placeholders, TASK-53) |
-| Tools (shipped with TASK-54) | B with Tab cycling modes, R for Smear | E Eraser, O Dodge and Burn, R Blur and Smudge, Shift plus key cycles a slot; Tab does nothing on the canvas |
+| Tools (shipped with TASK-54) | B with Tab cycling modes, R for Smear | E Eraser, O Dodge and Burn, R Blur and Smudge, Shift plus key cycles a slot |
+| Edit ▸ Search / View ▸ Proof Colors / View ▸ Gamut Warning (placeholders, TASK-79 and TASK-89) | none | ⌘F / ⌘Y / ⇧⌘Y |
+| Screen modes and hiding the panels (placeholders on the canvas, TASK-78) | Tab did nothing on the canvas | F and Shift-F (the next and previous screen mode) and Tab and Shift-Tab (Hide Panels) show their in-progress message; not in Keyboard Shortcuts until they ship |
 
 ### Dialogs
 
@@ -707,10 +715,15 @@ named). Keyboard Shortcuts lists every one; function keys show as F1 to F12, and
   Inner Glow, Color Overlay, Outer Glow and Drop Shadow, each with a checkbox; the selected row is `selection`. In the
   middle the page's title and its settings in titled groups:
   - Blending Options: General Blending with Blend Mode (grouped as the Layers panel's menu) and Opacity, the layer's own.
-  - Stroke: Structure with Size, Position (Outside, Inside), Opacity and Color.
-  - Inner Shadow and Drop Shadow: Structure with Opacity, Angle, Distance, Size (the blur) and Color.
-  - Inner Glow and Outer Glow: Structure with Opacity and Color, then Elements with Size.
-  - Color Overlay: Color with Color and Opacity.
+  - Stroke: Structure with Size, Position (Outside, Inside, and Center in progress), Blend Mode, Opacity and Color.
+  - Inner Shadow and Drop Shadow: Structure with Blend Mode, Opacity, Angle, Distance, Choke (Inner Shadow) or Spread
+    (Drop Shadow), Size (the blur) and Color.
+  - Inner Glow and Outer Glow: Structure with Blend Mode, Opacity and Color, then Elements with Choke (Inner Glow) or
+    Spread (Outer Glow) and Size.
+  - Color Overlay: Color with Blend Mode, Color and Opacity.
+
+  Each effect's Blend Mode (reading Normal, how effects blend today), Spread and Choke (at 0%) and Stroke's Center
+  position are in progress (TASK-85): changing them shows the message and keeps the effect as it is.
 
   Sliders pair with a field and a unit column (%, px, °); a typed value past the slider's end is kept. Angle is a
   28 pt dial (drag to point it at the light) and a field, -180° to 180°. Color is an `edge`-bordered well that opens
@@ -755,6 +768,19 @@ on the next click and is announced to VoiceOver. A placeholder looks like a ship
 | Convert to Editable Vectors | Layer | TASK-35 |
 | Combine Shapes ▸ (Unite Shapes, Subtract Front Shape, Unite Shapes at Overlap, Subtract Shapes at Overlap), Release to Layers | Layer | TASK-34 |
 | Contextual Task Bar | Window | TASK-67 |
+| Full Screen Mode With Menu Bar, Full Screen Mode | View ▸ Screen Mode; F and Shift-F on the canvas | TASK-78 |
+| Hide Panels | Tab and Shift-Tab on the canvas | TASK-78 |
+| Search | Edit, ⌘F | TASK-79 |
+| Navigator | Window | TASK-80 |
+| Pencil Tool | Brush flyout | TASK-81 |
+| Perspective Crop Tool | Crop flyout | TASK-82 |
+| Fill Opacity | Layers panel, "Fill:" under Opacity | TASK-83 |
+| Color Lookup | Image ▸ Adjustments | TASK-84 |
+| Effect Blend Mode, Spread, Choke, Center Stroke | Layer Style's effect pages | TASK-85 |
+| Two-Column Toolbar | the double arrow at the toolbar's top | TASK-86 |
+| Customize Toolbar | Edit ▸ Toolbar… | TASK-87 |
+| Proof Setup, Proof Colors, Gamut Warning | View: Proof Setup ▸ Custom…, Proof Colors ⌘Y, Gamut Warning ⇧⌘Y | TASK-89 |
+| 16 Bits/Channel, 32 Bits/Channel | Image ▸ Mode | TASK-90 |
 
 How it works (`Sources/LaminaApp/Document/PlannedFeature.swift`):
 

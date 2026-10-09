@@ -13,6 +13,18 @@ enum PlannedFeature: String, CaseIterable, Identifiable {
     case rasterize, convertToEditableVectors
     case uniteShapes, subtractFrontShape, uniteShapesAtOverlap, subtractShapesAtOverlap, releaseToLayers
     case contextualTaskBar
+    case fullScreenModeWithMenuBar, fullScreenMode, hidePanels
+    case search
+    case navigator
+    case pencilTool
+    case perspectiveCropTool
+    case fillOpacity
+    case colorLookup
+    case effectBlendMode, spread, choke, centerStroke
+    case twoColumnToolbar
+    case customizeToolbar
+    case proofSetup, proofColors, gamutWarning
+    case sixteenBitsPerChannel, thirtyTwoBitsPerChannel
 
     /// Where its control lives.
     enum Home: Equatable {
@@ -22,6 +34,10 @@ enum PlannedFeature: String, CaseIterable, Identifiable {
         case menu(String)
         /// A control in these tools' options bars.
         case optionsBar([NavigationTool])
+        /// A control in this panel or dialog ("Layers", "Layer Style", "Toolbar").
+        case panel(String)
+        /// A key on the canvas, as Keyboard Shortcuts would name it ("Tab").
+        case key(String)
     }
 
     var id: Self { self }
@@ -52,6 +68,26 @@ enum PlannedFeature: String, CaseIterable, Identifiable {
         case .subtractShapesAtOverlap: "Subtract Shapes at Overlap"
         case .releaseToLayers: "Release to Layers"
         case .contextualTaskBar: "Contextual Task Bar"
+        case .fullScreenModeWithMenuBar: "Full Screen Mode With Menu Bar"
+        case .fullScreenMode: "Full Screen Mode"
+        case .hidePanels: "Hide Panels"
+        case .search: "Search"
+        case .navigator: "Navigator"
+        case .pencilTool: "Pencil Tool"
+        case .perspectiveCropTool: "Perspective Crop Tool"
+        case .fillOpacity: "Fill Opacity"
+        case .colorLookup: "Color Lookup"
+        case .effectBlendMode: "Effect Blend Mode"
+        case .spread: "Spread"
+        case .choke: "Choke"
+        case .centerStroke: "Center Stroke"
+        case .twoColumnToolbar: "Two-Column Toolbar"
+        case .customizeToolbar: "Customize Toolbar"
+        case .proofSetup: "Proof Setup"
+        case .proofColors: "Proof Colors"
+        case .gamutWarning: "Gamut Warning"
+        case .sixteenBitsPerChannel: "16 Bits/Channel"
+        case .thirtyTwoBitsPerChannel: "32 Bits/Channel"
         }
     }
 
@@ -68,13 +104,25 @@ enum PlannedFeature: String, CaseIterable, Identifiable {
         case .saveACopy: "TASK-27"
         case .convertToEditableVectors: "TASK-35"
         case .contextualTaskBar: "TASK-67"
+        case .fullScreenModeWithMenuBar, .fullScreenMode, .hidePanels: "TASK-78"
+        case .search: "TASK-79"
+        case .navigator: "TASK-80"
+        case .pencilTool: "TASK-81"
+        case .perspectiveCropTool: "TASK-82"
+        case .fillOpacity: "TASK-83"
+        case .colorLookup: "TASK-84"
+        case .effectBlendMode, .spread, .choke, .centerStroke: "TASK-85"
+        case .twoColumnToolbar: "TASK-86"
+        case .customizeToolbar: "TASK-87"
+        case .proofSetup, .proofColors, .gamutWarning: "TASK-89"
+        case .sixteenBitsPerChannel, .thirtyTwoBitsPerChannel: "TASK-90"
         }
     }
 
     var home: Home {
         switch self {
         case .penTool, .pathSelectionTool, .directSelectionTool, .mixerBrushTool, .paletteKnifeTool, .polygonTool,
-             .starTool: .toolbar
+             .starTool, .pencilTool, .perspectiveCropTool: .toolbar
         case .flatBristle, .roundBristle, .fanBristle, .dryBrush: .optionsBar([.brush])
         case .shapeStroke, .strokeOptions, .pathOperations: .optionsBar([.rectangle, .ellipse, .line])
         case .saveACopy: .menu("File › Save a Copy…")
@@ -84,13 +132,26 @@ enum PlannedFeature: String, CaseIterable, Identifiable {
             .menu("Layer › Combine Shapes › \(name)")
         case .releaseToLayers: .menu("Layer › Release to Layers")
         case .contextualTaskBar: .menu("Window › Contextual Task Bar")
+        case .fullScreenModeWithMenuBar, .fullScreenMode: .menu("View › Screen Mode › \(name)")
+        case .hidePanels: .key("Tab")
+        case .search: .menu("Edit › Search")
+        case .navigator: .menu("Window › Navigator")
+        case .fillOpacity: .panel("Layers")
+        case .colorLookup: .menu("Image › Adjustments › Color Lookup…")
+        case .effectBlendMode, .spread, .choke, .centerStroke: .panel("Layer Style")
+        case .twoColumnToolbar: .panel("Toolbar")
+        case .customizeToolbar: .menu("Edit › Toolbar…")
+        case .proofSetup: .menu("View › Proof Setup › Custom…")
+        case .proofColors, .gamutWarning: .menu("View › \(name)")
+        case .sixteenBitsPerChannel, .thirtyTwoBitsPerChannel: .menu("Image › Mode › \(name)")
         }
     }
 
     /// The toolbar slot a planned tool sits in, nil for the rest.
     var slot: ToolSlot? { ToolSlot.allCases.first { $0.items.contains(.planned(self)) } }
-    /// As a menu item or control names it: "Save a Copy…" for the menu, the name for the rest.
-    var title: String { self == .saveACopy ? "Save a Copy…" : name }
+    /// As a menu item or control names it: the menu's last word for a menu item ("Save a Copy…", "Custom…"), the name
+    /// for the rest.
+    var title: String { menuPath?.components(separatedBy: " › ").last ?? name }
     /// Accessibility label: "Pen Tool (P)" for a tool with a key, the name for the rest.
     var label: String { name + (slot?.key.map { " (\($0.uppercased()))" } ?? "") }
     /// Help tag: what a shipping control's says, then "In progress".
@@ -101,8 +162,17 @@ enum PlannedFeature: String, CaseIterable, Identifiable {
     static let bristlePresets: [PlannedFeature] = [.flatBristle, .roundBristle, .fanBristle, .dryBrush]
     /// Layer ▸ Combine Shapes ▸, in menu order.
     static let combineShapes: [PlannedFeature] = [.uniteShapes, .subtractFrontShape, .uniteShapesAtOverlap, .subtractShapesAtOverlap]
-    /// Menu items without a default key, which Keyboard Shortcuts lets people give one (Save a Copy… ships with ⌥⌘S).
-    static var assignableMenuCommands: [String] { allCases.filter { $0 != .saveACopy }.compactMap(\.menuPath) }
+    /// Layer Style's planned settings, in the order its pages show them.
+    static let layerStyleOptions: [PlannedFeature] = [.effectBlendMode, .spread, .choke, .centerStroke]
+    /// Menu items that ship with a key, by the title Keyboard Shortcuts lists them under: Save a Copy… ⌥⌘S, Search ⌘F,
+    /// Proof Colors ⌘Y, Gamut Warning ⇧⌘Y.
+    static let defaultKeyTitles: [PlannedFeature: String] = [
+        .saveACopy: "Save a Copy", .search: "Search", .proofColors: "Proof Colors", .gamutWarning: "Gamut Warning",
+    ]
+    /// Menu items without a default key, which Keyboard Shortcuts lets people give one.
+    static var assignableMenuCommands: [String] {
+        allCases.filter { defaultKeyTitles[$0] == nil }.compactMap(\.menuPath)
+    }
     /// Its menu path, for a menu item.
     var menuPath: String? {
         guard case .menu(let path) = home else { return nil }
@@ -146,6 +216,18 @@ extension EditorSession {
             try? await Task.sleep(for: duration)
             if self?.inProgressNotice?.id == notice.id { self?.inProgressNotice = nil }
         }
+    }
+
+    /// Planned features' keys on the canvas: F steps to the next screen mode and Shift-F to the previous one, Tab and
+    /// Shift-Tab hide the panels (TASK-78). False for any other key.
+    @discardableResult
+    func pressPlannedKey(_ key: String, shift: Bool = false) -> Bool {
+        switch key {
+        case "f": showInProgress(shift ? .fullScreenMode : .fullScreenModeWithMenuBar)
+        case "\t": showInProgress(.hidePanels)
+        default: return false
+        }
+        return true
     }
 
     /// The next click takes the message away (`InProgressNoticeView`).

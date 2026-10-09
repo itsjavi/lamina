@@ -98,6 +98,7 @@ struct ShortcutDefinition: Identifiable {
             "Edit › Clear", "Edit › Stroke…", "Edit › Content-Aware Fill…",
             "Edit › Transform › Distort", "Edit › Transform › Flip Horizontal", "Edit › Transform › Flip Vertical",
             "Image › Adjustments › Exposure…", "Image › Adjustments › Gradient Map…", "Image › Adjustments › Grain…",
+            "Image › Mode › RGB Color", "Image › Mode › 8 Bits/Channel",
             "Image › Image Rotation › Flip Canvas Horizontal", "Image › Image Rotation › Flip Canvas Vertical", "Image › Trim…",
             "Layer › New › Group…", "Layer › New › Group from Layers…", "Layer › Duplicate Layer…", "Layer › Delete › Layer",
             "Layer › Rename Layer…",
@@ -111,7 +112,7 @@ struct ShortcutDefinition: Identifiable {
             "Type › Panels › Character", "Type › Panels › Paragraph",
             "Select › Color Range…", "Select › Subject", "Select › Modify › Expand…", "Select › Modify › Contract…",
             "Select › Load Selection…",
-            "View › Show › Pixel Grid",
+            "View › Screen Mode › Standard Screen Mode", "View › Show › Pixel Grid",
             "View › Snap To › Guides", "View › Snap To › Grid", "View › Snap To › Layers", "View › Snap To › Document Bounds",
             "View › Guides › Clear Guides", "View › Grid Settings…", "View › Enter Full Screen",
             "Window › Minimize", "Window › Zoom",
@@ -141,7 +142,8 @@ struct ShortcutDefinition: Identifiable {
             entry("Export As", "w", 11, menu: true),
             entry("Undo", "z", 1, menu: true), entry("Redo", "z", 9, menu: true),
             entry("Cut", "x", 1, menu: true), entry("Copy", "c", 1, menu: true), entry("Copy Merged", "c", 9, menu: true),
-            entry("Paste", "v", 1, menu: true), entry("Fill", ShortcutChord.functionKey(5), 8, menu: true),
+            entry("Paste", "v", 1, menu: true), entry("Search", "f", 1, menu: true),
+            entry("Fill", ShortcutChord.functionKey(5), 8, menu: true),
             entry("Free Transform", "t", 1, menu: true), entry("Keyboard Shortcuts", "k", 11, menu: true),
             entry("Levels", "l", 1, menu: true), entry("Curves", "m", 1, menu: true), entry("Hue/Saturation", "u", 1, menu: true),
             entry("Color Balance", "b", 1, menu: true), entry("Black & White", "b", 11, menu: true),
@@ -156,6 +158,7 @@ struct ShortcutDefinition: Identifiable {
             entry("Inverse Selection", "i", 9, menu: true), entry("Feather", ShortcutChord.functionKey(6), 8, menu: true),
             entry("Last Filter", "f", 5, menu: true), entry("Camera Raw Filter", "a", 9, menu: true),
             entry("Lens Correction", "r", 9, menu: true), entry("Liquify", "x", 9, menu: true),
+            entry("Proof Colors", "y", 1, menu: true), entry("Gamut Warning", "y", 9, menu: true),
             entry("Zoom In", "=", 1, menu: true), entry("Zoom Out", "-", 1, menu: true),
             entry("Fit on Screen", "0", 1, menu: true), entry("100%", "1", 1, menu: true),
             entry("Extras", "h", 1, menu: true), entry("Show Grid", "'", 1, menu: true), entry("Show Guides", ";", 1, menu: true),
@@ -182,7 +185,7 @@ struct ShortcutDefinition: Identifiable {
         // Shift and the key of a slot with several tools: the slot's next tool (`EditorSession.pressToolKey`).
         for (title, key) in [("Next marquee tool", "m"), ("Next lasso tool", "l"), ("Next Object Selection / Magic Wand", "w"),
             ("Next Gradient / Paint Bucket", "g"), ("Next Blur / Smudge", "r"), ("Next Dodge / Burn", "o"), ("Next shape tool", "u"),
-            ("Next brush tool", "b")] {
+            ("Next brush tool", "b"), ("Next crop tool", "c")] {
             result.append(entry(title, key, 8))
         }
         for digit in 0...9 { result.append(entry("Opacity digit \(digit) (type two for exact %)", String(digit))) }

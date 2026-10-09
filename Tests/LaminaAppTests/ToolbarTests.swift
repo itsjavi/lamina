@@ -106,8 +106,8 @@ struct ToolbarTests {
         #expect(rows.last?.isShown == true)
 
         let brush = ToolFlyout.rows(session: session, slot: .brush)
-        #expect(brush.map(\.item.name) == ["Brush Tool", "Mixer Brush Tool", "Palette Knife Tool"])
-        #expect(brush.map(\.isShown) == [true, false, false], "the slot's last-used tool, while another slot's is active")
+        #expect(brush.map(\.item.name) == ["Brush Tool", "Pencil Tool", "Mixer Brush Tool", "Palette Knife Tool"])
+        #expect(brush.map(\.isShown) == [true, false, false, false], "the slot's last-used tool, while another slot's is active")
         let path = ToolFlyout.rows(session: session, slot: .pathSelection)
         #expect(path.map(\.item.name) == ["Path Selection Tool", "Direct Selection Tool"])
         #expect(path.allSatisfy { $0.key == nil }, "no key until TASK-28 ships")

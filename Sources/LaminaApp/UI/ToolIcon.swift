@@ -65,6 +65,8 @@ struct ToolIcon: View {
             case .pathSelectionTool: "cursorarrow"
             case .directSelectionTool: "point.topleft.down.to.point.bottomright.curvepath"
             case .mixerBrushTool: "paintbrush"
+            case .pencilTool: "pencil"
+            case .perspectiveCropTool: "perspective"
             case .polygonTool: "hexagon.fill"
             case .starTool: "star.fill"
             default: nil

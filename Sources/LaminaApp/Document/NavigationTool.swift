@@ -142,7 +142,8 @@ enum ToolSlot: CaseIterable {
     /// What its flyout lists, in order: its tools and the planned ones (docs/DESIGN.md, Toolbar).
     var items: [SlotItem] {
         switch self {
-        case .brush: [.tool(.brush), .planned(.mixerBrushTool), .planned(.paletteKnifeTool)]
+        case .crop: [.tool(.crop), .planned(.perspectiveCropTool)]
+        case .brush: [.tool(.brush), .planned(.pencilTool), .planned(.mixerBrushTool), .planned(.paletteKnifeTool)]
         case .pen: [.planned(.penTool)]
         case .pathSelection: [.planned(.pathSelectionTool), .planned(.directSelectionTool)]
         case .shapes: [.tool(.rectangle), .tool(.ellipse), .planned(.polygonTool), .planned(.starTool), .tool(.line)]

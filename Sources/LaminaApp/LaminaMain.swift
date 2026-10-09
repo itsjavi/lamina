@@ -149,8 +149,8 @@ private struct FileMenuCommands: Commands {
     }
 }
 
-/// Edit: Undo · Redo │ Cut · Copy · Copy Merged · Paste · Clear │ Fill… · Stroke… · Content-Aware Fill… │
-/// Free Transform · Transform │ Keyboard Shortcuts….
+/// Edit: Undo · Redo │ Cut · Copy · Copy Merged · Paste · Clear │ Search │ Fill… · Stroke… · Content-Aware Fill… │
+/// Free Transform · Transform │ Keyboard Shortcuts… · Toolbar….
 private struct EditMenuCommands: Commands {
     let applicationDelegate: LaminaApplicationDelegate
     let session: EditorSession
@@ -211,6 +211,8 @@ private struct EditMenuCommands: Commands {
         }
         CommandGroup(after: .pasteboard) {
             Divider()
+            PlannedMenuItem(feature: .search, session: session).configuredKeyboardShortcut("f")
+            Divider()
             // Also ⇧⌫; ⌥⌫ and ⌘⌫ fill straight away with the foreground and background colors (`CanvasView`).
             Button("Fill…") { session.beginFill() }
                 .configuredKeyboardShortcut(KeyEquivalent(Character(ShortcutChord.functionKey(5))), modifiers: .shift)
@@ -240,11 +242,12 @@ private struct EditMenuCommands: Commands {
             Divider()
             Button("Keyboard Shortcuts…") { ShortcutSettings.shared.show() }
                 .configuredKeyboardShortcut("k", modifiers: [.command, .option, .shift])
+            PlannedMenuItem(feature: .customizeToolbar, session: session)
         }
     }
 }
 
-/// Image: Adjustments │ Image Size… · Canvas Size… · Image Rotation · Trim….
+/// Image: Mode │ Adjustments │ Image Size… · Canvas Size… · Image Rotation · Trim….
 private struct ImageMenuCommands: Commands {
     let applicationDelegate: LaminaApplicationDelegate
     let session: EditorSession
@@ -252,6 +255,15 @@ private struct ImageMenuCommands: Commands {
 
     var body: some Commands {
         CommandMenu("Image") {
+            // Lamina works in RGB at 8 bits per channel; 16 and 32 bits are planned (TASK-90).
+            Menu("Mode") {
+                Toggle("RGB Color", isOn: .constant(true)).assignableShortcut("Image › Mode › RGB Color")
+                Divider()
+                Toggle("8 Bits/Channel", isOn: .constant(true)).assignableShortcut("Image › Mode › 8 Bits/Channel")
+                PlannedMenuItem(feature: .sixteenBitsPerChannel, session: session)
+                PlannedMenuItem(feature: .thirtyTwoBitsPerChannel, session: session)
+            }
+            Divider()
             Menu("Adjustments") {
                 Button("Levels…") { session.beginLevels() }
                     .configuredKeyboardShortcut("l").disabled(cannotAdjust)
@@ -266,6 +278,7 @@ private struct ImageMenuCommands: Commands {
                     .configuredKeyboardShortcut("b").disabled(cannotAdjust)
                 Button("Black & White…") { session.beginFilter(.blackWhite) }
                     .configuredKeyboardShortcut("b", modifiers: [.command, .option, .shift]).disabled(cannotAdjust)
+                PlannedMenuItem(feature: .colorLookup, session: session)
                 Divider()
                 // A targeted mask inverts too.
                 Button("Invert") { Task { await session.invertPixels() } }
@@ -561,8 +574,8 @@ private struct FilterMenuCommands: Commands {
     }
 }
 
-/// View: zoom │ Extras · Show │ Rulers │ Snap · Snap To │ Guides │ Grid Settings…. Made as a menu of its own, after
-/// Filter; the system's View menu, emptied, goes away.
+/// View: proofing │ zoom │ Screen Mode │ Extras · Show │ Rulers │ Snap · Snap To │ Guides │ Grid Settings…. Made as a
+/// menu of its own, after Filter; the system's View menu, emptied, goes away.
 private struct ViewMenuCommands: Commands {
     let applicationDelegate: LaminaApplicationDelegate
     let session: EditorSession
@@ -572,6 +585,10 @@ private struct ViewMenuCommands: Commands {
         CommandGroup(replacing: .toolbar) {}
         CommandGroup(replacing: .sidebar) {}
         CommandMenu("View") {
+            Menu("Proof Setup") { PlannedMenuItem(feature: .proofSetup, session: session) }
+            PlannedMenuItem(feature: .proofColors, session: session).configuredKeyboardShortcut("y")
+            PlannedMenuItem(feature: .gamutWarning, session: session).configuredKeyboardShortcut("y", modifiers: [.command, .shift])
+            Divider()
             // With a dialog's preview open (Export As), these zoom that preview rather than the canvas.
             Button("Zoom In") {
                 guard !(NSApp.keyWindow?.firstResponder is NSText) else { return }
@@ -589,6 +606,14 @@ private struct ViewMenuCommands: Commands {
             Button("100%") {
                 if let preview = session.previewZoom { preview(.actual) } else { session.zoom(to: 1) }
             }.configuredKeyboardShortcut("1").disabled(noDocument)
+            Divider()
+            // Standard is the only mode until TASK-78; F and Shift-F on the canvas say so too (`pressPlannedKey`).
+            Menu("Screen Mode") {
+                Toggle("Standard Screen Mode", isOn: .constant(true))
+                    .assignableShortcut("View › Screen Mode › Standard Screen Mode")
+                PlannedMenuItem(feature: .fullScreenModeWithMenuBar, session: session)
+                PlannedMenuItem(feature: .fullScreenMode, session: session)
+            }
             Divider()
             // Hides the grid, guides, pixel grid and selection edges together, each keeping its own setting.
             Toggle("Extras", isOn: Binding(get: { session.showsExtras }, set: { session.showsExtras = $0 }))

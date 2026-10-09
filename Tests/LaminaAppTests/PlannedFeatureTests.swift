@@ -53,28 +53,41 @@ struct PlannedFeatureTests {
         #expect(PlannedFeature.pathSelectionTool.label == "Path Selection Tool", "no key while A is No Tool")
     }
 
-    /// Every entry has a way in: a toolbar slot, a menu item Keyboard Shortcuts knows, or an options-bar control.
+    /// Every entry has a way in: a toolbar slot, a menu item Keyboard Shortcuts knows, an options-bar, panel or
+    /// dialog control, or a key on the canvas.
     @Test func everyPlannedFeatureIsReachableFromTheInterface() {
         let inSlots = ToolSlot.allCases.flatMap(\.items).compactMap { item -> PlannedFeature? in
             if case .planned(let feature) = item { feature } else { nil }
         }
-        #expect(inSlots == [.mixerBrushTool, .paletteKnifeTool, .penTool, .pathSelectionTool, .directSelectionTool,
-                            .polygonTool, .starTool], "toolbar order")
+        #expect(inSlots == [.perspectiveCropTool, .pencilTool, .mixerBrushTool, .paletteKnifeTool, .penTool,
+                            .pathSelectionTool, .directSelectionTool, .polygonTool, .starTool], "toolbar order")
         let optionsBar = PlannedFeature.bristlePresets + [.shapeStroke, .strokeOptions, .pathOperations]
+        let panels: [String: [PlannedFeature]] = ["Layers": [.fillOpacity], "Layer Style": PlannedFeature.layerStyleOptions,
+                                                  "Toolbar": [.twoColumnToolbar]]
+        let menu = ShortcutDefinition.all.filter { $0.isMenu || $0.group == ShortcutDefinition.moreGroup }
         for feature in PlannedFeature.allCases {
             switch feature.home {
             case .toolbar:
                 #expect(inSlots.contains(feature), "\(feature)")
             case .menu(let path):
-                let menu = ShortcutDefinition.all.filter { $0.isMenu || $0.group == ShortcutDefinition.moreGroup }
-                #expect(menu.contains { $0.title == path || ($0.title == "Save a Copy" && path == "File › Save a Copy…") },
-                        "\(path) is a menu item Keyboard Shortcuts lists")
+                let title = PlannedFeature.defaultKeyTitles[feature] ?? path
+                #expect(menu.contains { $0.title == title }, "\(path) is a menu item Keyboard Shortcuts lists")
             case .optionsBar(let tools):
                 #expect(!tools.isEmpty && optionsBar.contains(feature), "\(feature)")
+            case .panel(let name):
+                #expect(panels[name]?.contains(feature) == true, "\(feature) is a control in \(name)")
+            case .key(let key):
+                let session = EditorSession()
+                session.announceInProgress = { _ in }
+                #expect(key == "Tab" && session.pressPlannedKey("\t") && session.inProgressNotice?.feature == feature)
             }
         }
-        #expect(ShortcutDefinition.all.contains { $0.title == "Save a Copy" && $0.original == ShortcutChord("s", 3) },
-                "Save a Copy… is ⌥⌘S")
+        let defaults: [String: ShortcutChord] = ["Save a Copy": ShortcutChord("s", 3), "Search": ShortcutChord("f", 1),
+                                                 "Proof Colors": ShortcutChord("y", 1), "Gamut Warning": ShortcutChord("y", 9)]
+        for (title, chord) in defaults {
+            #expect(ShortcutDefinition.all.contains { $0.title == title && $0.isMenu && $0.original == chord }, "\(title)")
+        }
+        #expect(Set(PlannedFeature.defaultKeyTitles.values) == Set(defaults.keys))
         #expect(ShortcutDefinition.all.contains { $0.title == "Pen tool" && $0.original == ShortcutChord("p") })
     }
 
@@ -96,6 +109,8 @@ struct PlannedFeatureTests {
         session.pressToolKey("p")
         #expect(session.inProgressNotice?.feature == .penTool && session.tool == .brush)
         session.pressToolKey("b", shift: true)
+        #expect(session.inProgressNotice?.feature == .pencilTool)
+        session.pressToolKey("b", shift: true)
         #expect(session.inProgressNotice?.feature == .mixerBrushTool)
         session.pressToolKey("b", shift: true)
         #expect(session.inProgressNotice?.feature == .paletteKnifeTool)
@@ -103,8 +118,15 @@ struct PlannedFeatureTests {
         session.pressToolKey("b", shift: true)
         #expect(session.tool == .brush && session.inProgressNotice == nil, "and round to the Brush")
         #expect(session.tool(in: .brush) == .brush && session.tool(in: .shapes) == .ellipse && session.tool(in: .pen) == nil)
+        #expect(session.pressPlannedKey("f") && session.inProgressNotice?.feature == .fullScreenModeWithMenuBar)
+        #expect(session.pressPlannedKey("f", shift: true) && session.inProgressNotice?.feature == .fullScreenMode)
+        #expect(session.pressPlannedKey("\t") && session.inProgressNotice?.feature == .hidePanels)
+        #expect(!session.pressPlannedKey("q"), "other keys aren't planned ones")
+        #expect(State(session) == before, "F and Tab change nothing")
         #expect(announced() == PlannedFeature.allCases.map(\.message) + ["Pen Tool is in progress",
-                "Mixer Brush Tool is in progress", "Palette Knife Tool is in progress"], "VoiceOver hears each one")
+                "Pencil Tool is in progress", "Mixer Brush Tool is in progress", "Palette Knife Tool is in progress",
+                "Full Screen Mode With Menu Bar is in progress", "Full Screen Mode is in progress",
+                "Hide Panels is in progress"], "VoiceOver hears each one")
     }
 
     /// One message at a time: a new one replaces the one showing. It goes after a few seconds, or on the next click,

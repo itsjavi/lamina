@@ -81,3 +81,52 @@ struct ShapeStrokePlaceholders: View {
         .accessibilityLabel(PlannedFeature.pathOperations.name)
     }
 }
+
+/// "Fill:" under Opacity in the Layers panel (TASK-83). Its field reads 100%, the fill every layer has today; taking
+/// focus shows the message and hands focus back to the canvas.
+struct FillOpacityPlaceholder: View {
+    let session: EditorSession
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        let feature = PlannedFeature.fillOpacity
+        HStack(spacing: 4) {
+            Text("Fill:").foregroundStyle(.secondary)
+            HStack(spacing: 0) {
+                TextField("Fill", text: .constant("100%"))
+                    .textFieldStyle(.roundedBorder).frame(width: 48).focused($focused)
+                    .multilineTextAlignment(.trailing)
+                    .onChange(of: focused) { _, isFocused in
+                        guard isFocused else { return }
+                        focused = false
+                        session.showInProgress(feature)
+                        session.canvasFocusRequest += 1
+                    }
+                Button { session.showInProgress(feature) } label: {
+                    Image(systemName: "chevron.down").font(.system(size: 8, weight: .semibold))
+                        .frame(width: 14, height: 22).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain).foregroundStyle(ColorRole.icon.color)
+                .accessibilityLabel("Fill slider")
+            }
+        }
+        .help(feature.helpTag)
+    }
+}
+
+/// The double arrow at the top of the toolbar that switches it between one column and two (TASK-86).
+struct TwoColumnToolbarPlaceholder: View {
+    let session: EditorSession
+
+    var body: some View {
+        let feature = PlannedFeature.twoColumnToolbar
+        Button { session.showInProgress(feature) } label: {
+            Image(systemName: "chevron.right.2").font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(ColorRole.icon.color)
+                .frame(width: 32, height: 22).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(feature.helpTag)
+        .accessibilityLabel(feature.name)
+    }
+}

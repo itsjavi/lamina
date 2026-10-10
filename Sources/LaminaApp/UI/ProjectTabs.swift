@@ -69,7 +69,10 @@ struct ProjectTabStrip: View {
 
     /// Each pill's width at `availableWidth`: its label's natural width, narrowed when the tabs are crowded.
     private func widths(availableWidth: CGFloat) -> [UUID: CGFloat] {
-        let natural = Dictionary(uniqueKeysWithValues: workspace.tabs.map { ($0.id, projectTabPillWidth($0, active: workspace.selectedID == $0.id)) })
+        let closable = !workspace.isOnlyWelcome
+        let natural = Dictionary(uniqueKeysWithValues: workspace.tabs.map {
+            ($0.id, projectTabPillWidth($0, active: workspace.selectedID == $0.id, closable: closable))
+        })
         return projectTabFittedWidths(natural, minimum: projectTabMinimumPillWidth, availableWidth: availableWidth)
     }
     private func overflow(availableWidth: CGFloat) -> ProjectTabOverflow {
@@ -138,7 +141,8 @@ struct ProjectTabStrip: View {
     @ViewBuilder private func tabView(for slot: ProjectTabSlot, contentWidth: CGFloat) -> some View {
         if let tab = workspace.tabs.first(where: { $0.id == slot.id }) {
             let isDragged = reorder?.id == slot.id
-            ProjectTabButton(workspace: workspace, tab: tab, labelWidth: slot.width - projectTabPillChrome) { handleReorder(tab.id, $0) }
+            let chrome = projectTabPillChrome(closable: !workspace.isOnlyWelcome)
+            ProjectTabButton(workspace: workspace, tab: tab, labelWidth: slot.width - chrome) { handleReorder(tab.id, $0) }
                 .frame(width: slot.width, height: 28)
                 .offset(x: renderX(for: slot, contentWidth: contentWidth), y: 3)
                 .zIndex(isDragged ? 1 : 0)
@@ -227,13 +231,13 @@ private func projectTabLabelWidth(_ tab: ProjectTab, active: Bool) -> CGFloat {
     return min(320, max(35, ceil(titleWidth) + dotWidth))
 }
 
-/// 11 px leading, 8 px trailing, 16 px close button, 5 px after close.
-private let projectTabPillChrome: CGFloat = 40
+/// 11 px leading, 8 px trailing, 16 px close button, 5 px after close; the welcome tab, with no close button, 11 px either side.
+private func projectTabPillChrome(closable: Bool) -> CGFloat { closable ? 40 : 22 }
 /// How narrow a crowded tab gets before tabs move into the overflow menu instead.
 private let projectTabMinimumPillWidth: CGFloat = 140
 
-private func projectTabPillWidth(_ tab: ProjectTab, active: Bool) -> CGFloat {
-    projectTabLabelWidth(tab, active: active) + projectTabPillChrome
+private func projectTabPillWidth(_ tab: ProjectTab, active: Bool, closable: Bool) -> CGFloat {
+    projectTabLabelWidth(tab, active: active) + projectTabPillChrome(closable: closable)
 }
 
 /// Sized the same way the tab pills are: text measured at the same weight, plus the chevron and padding.
@@ -351,6 +355,8 @@ private struct ProjectTabButton: View {
     let onReorder: (TabDragPhase) -> Void
     @State private var targeted = false
     private var active: Bool { workspace.selectedID == tab.id }
+    /// The welcome tab on its own has nothing to close (`ProjectWorkspace.isOnlyWelcome`).
+    private var closable: Bool { !workspace.isOnlyWelcome }
     var body: some View {
         HStack(spacing: 0) {
             Button { workspace.select(tab.id) } label: {
@@ -362,7 +368,7 @@ private struct ProjectTabButton: View {
                         .lineLimit(1).truncationMode(.middle)
                 }
                 .frame(width: max(0, labelWidth), alignment: .leading)
-                .padding(.leading, 11).padding(.trailing, 8)
+                .padding(.leading, 11).padding(.trailing, closable ? 8 : 11)
                 .frame(height: 28)
                 .contentShape(Rectangle())
             }
@@ -374,13 +380,15 @@ private struct ProjectTabButton: View {
             .simultaneousGesture(DragGesture(minimumDistance: 3, coordinateSpace: .global)
                 .onChanged { onReorder(.changed($0.translation.width)) }
                 .onEnded { onReorder(.ended($0.translation.width)) })
-            Button { Task { await workspace.close(tab.id) } } label: {
-                Image(systemName: "xmark").font(.system(size: 9, weight: .semibold)).foregroundStyle(.secondary)
-                    .frame(width: 16, height: 28)
-                    .padding(.trailing, 5)
-                    .contentShape(Rectangle())
-            }.buttonStyle(.plain).help("Close \(tab.title)").disabled(!workspace.canSwitch)
-                .accessibilityLabel("Close \(tab.title)")
+            if closable {
+                Button { Task { await workspace.close(tab.id) } } label: {
+                    Image(systemName: "xmark").font(.system(size: 9, weight: .semibold)).foregroundStyle(.secondary)
+                        .frame(width: 16, height: 28)
+                        .padding(.trailing, 5)
+                        .contentShape(Rectangle())
+                }.buttonStyle(.plain).help("Close \(tab.title)").disabled(!workspace.canSwitch)
+                    .accessibilityLabel("Close \(tab.title)")
+            }
         }
         .frame(height: 28)
         .background(targeted ? Color.accentColor.opacity(0.3) : active ? ColorRole.control.color : Color.clear, in: Capsule())

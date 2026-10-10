@@ -93,6 +93,28 @@ import LaminaCore
         #expect(workspace.tabs.count == 1 && workspace.current.session.document == nil)
     }
 
+    /// Closing every tab leaves New Document's welcome named Untitled, numbering from 2 again; it used to come back as
+    /// Untitled 2, then 3 (upstream issue #231). The welcome on its own has nothing to close.
+    @Test func closingEveryTabStartsOverAtUntitled() async {
+        let workspace = ProjectWorkspace()
+        let welcome = workspace.current
+        #expect(welcome.title == "Untitled" && workspace.isOnlyWelcome)
+        await workspace.close(welcome.id)
+        #expect(workspace.current === welcome, "the welcome on its own can't be closed")
+        for round in 1...2 {
+            workspace.current.session.createDocument(width: 100, height: 100)
+            #expect(!workspace.isOnlyWelcome, "a document's tab can be closed")
+            let second = workspace.addTab(reuseEmpty: false)
+            let third = workspace.addTab(reuseEmpty: false)
+            #expect([second.title, third.title] == ["Untitled 2", "Untitled 3"], "round \(round)")
+            #expect(!workspace.isOnlyWelcome, "an empty tab beside others can be closed")
+            for tab in workspace.tabs { workspace.removeTab(tab.id) }
+            #expect(workspace.tabs.count == 1 && workspace.current.session.document == nil, "closing the last tab leaves the welcome")
+            #expect(workspace.current.title == "Untitled" && workspace.nextTabName == "Untitled 2")
+            #expect(workspace.isOnlyWelcome)
+        }
+    }
+
     @Test func crossProjectCopyRemapsIdentityAndHasIndependentUndo() async throws {
         let workspace = ProjectWorkspace()
         let first = workspace.current

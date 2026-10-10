@@ -124,7 +124,7 @@ private struct FileMenuCommands: Commands {
                 if let window = projects.window {
                     Task { await projects.close(window) }
                 }
-            }.configuredKeyboardShortcut("w").disabled(!projects.canStart)
+            }.configuredKeyboardShortcut("w").disabled(!projects.canStart || applicationDelegate.workspace.isOnlyWelcome)
         }
         CommandGroup(replacing: .saveItem) {
             Button("Save") { Task { await projects.save() } }

@@ -102,7 +102,7 @@ final class ProjectWorkspace {
         return true
     }
     func close(_ id: UUID) async {
-        guard canSwitch, let tab = tabs.first(where: { $0.id == id }) else { return }
+        guard canSwitch, !isOnlyWelcome, let tab = tabs.first(where: { $0.id == id }) else { return }
         isManaging = true
         defer { isManaging = false }
         tab.controller.window = window
@@ -112,8 +112,18 @@ final class ProjectWorkspace {
     func removeTab(_ id: UUID) {
         guard let index = tabs.firstIndex(where: { $0.id == id }) else { return }
         tabs.remove(at: index)
-        if tabs.isEmpty { _ = addTab(reuseEmpty: false) }
+        if tabs.isEmpty { startOver() }
         else if selectedID == id { selectedID = tabs[min(index, tabs.count-1)].id }
+    }
+    /// A sole empty tab is New Document's welcome, with nothing to close: it shows no close button and File › Close is
+    /// dimmed, as Photoshop dims Close with no document open.
+    var isOnlyWelcome: Bool { tabs.count == 1 && tabs[0].session.document == nil }
+    /// With the last tab closed, an empty one takes its place as the welcome, named Untitled, and numbering starts again.
+    private func startOver() {
+        let tab = ProjectTab(name: "Untitled")
+        nextNumber = 2
+        tab.controller.workspace = self; tab.controller.window = window
+        tabs = [tab]; selectedID = tab.id
     }
     /// The order Quit (and closing the window) asks about unsaved projects: the tab on screen first,
     /// then the rest left to right, so it never jumps to another project before the one you're viewing.
@@ -152,7 +162,7 @@ final class ProjectWorkspace {
     }
     func closeWindow(_ window: NSWindow) async {
         guard await confirmQuit() else { return }
-        tabs.removeAll(); _ = addTab(reuseEmpty: false)
+        startOver()
         window.close()
     }
 

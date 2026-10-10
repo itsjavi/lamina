@@ -109,7 +109,7 @@ struct FontMenuPicker: NSViewRepresentable {
     @Environment(\.isEnabled) private var isEnabled
 
     static func familyItems() -> [Item] {
-        NSFontManager.shared.availableFontFamilies.map { Item(title: $0, value: $0, face: .family($0)) }
+        FontFaces.families.map { Item(title: $0, value: $0, face: .family($0)) }
     }
 
     static func styleItems(family: String) -> [Item] {
@@ -129,7 +129,7 @@ struct FontMenuPicker: NSViewRepresentable {
         button.target = context.coordinator
         button.action = #selector(Coordinator.choose(_:))
         button.menu?.delegate = context.coordinator
-        if !reloads { StyledName.prepare(families: NSFontManager.shared.availableFontFamilies) }
+        if !reloads { StyledName.prepare() }
         context.coordinator.button = button
         return button
     }
@@ -253,11 +253,12 @@ struct FontMenuPicker: NSViewRepresentable {
         return styled.length == 0 ? nil : styled
     }
 
-    /// Every family's name in its regular face, made in the background.
-    static func prepare(families: [String]) {
+    /// Every family's name in its regular face (`FontFaces.families`, read there too), made in the background.
+    static func prepare() {
         guard !preparing, made.isEmpty else { return }
         preparing = true
         Task.detached(priority: .utility) {
+            let families = FontFaces.families
             let result = Made(names: Dictionary(families.map { (Face.family($0), styled($0, in: .family($0))) },
                                                 uniquingKeysWith: { first, _ in first }))
             await MainActor.run { made.merge(result.names) { current, _ in current } }

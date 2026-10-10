@@ -337,10 +337,12 @@ Pattern until Lamina has patterns), and All Layers is a checkbox where the bar h
 
 The Type bar (`TypeControls`, **shipping**, TASK-57) splits the face into two pop-ups (`FontMenuPicker`, each name set in
 its own face, trying faces on the text while open): the family, which keeps the style when changed (`FontFaces`), and
-that family's styles. Letters in several faces show (Multiple). The size field takes `textformat.size` as its label;
-the alignments are icon buttons, then the color swatch and the Character panel button (`character.textbox`), which
-brings Properties to the front. Cancel ⊘ and Commit ✓ show while text is being edited (Escape and ⌘Return on the
-canvas); the bar has no Edit Text button, since a click on the text edits it.
+that family's styles. The family menu here and Properties ▸ Character's list every installed family, the ones macOS
+leaves out of its own font list too (Rockwell, Seravek, Iowan Old Style…; `FontFaces.families`), in the system's order.
+Letters in several faces show (Multiple). The size field takes `textformat.size` as its label; the alignments are icon
+buttons, then the color swatch and the Character panel button (`character.textbox`), which brings Properties to the
+front. Cancel ⊘ and Commit ✓ show while text is being edited (Escape and ⌘Return on the canvas); the bar has no Edit
+Text button, since a click on the text edits it.
 
 The Zoom bar's Zoom In and Zoom Out say what a click does (Zoom In at launch; Option-click does the other, and the
 pointer shows which). Scrubby Zoom (on by default, remembered as `scrubbyZoom`) zooms smoothly while dragging, right

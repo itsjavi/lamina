@@ -117,6 +117,37 @@ struct ParagraphProperties: View {
 enum FontFaces {
     struct Style { let name: String; let style: String }
 
+    /// Every installed family, in the system's order: what both family menus list. macOS leaves some families it installs
+    /// out of its own list (`availableFontFamilies`; on macOS 27 Rockwell, Seravek, Iowan Old Style, Athelas, Courier,
+    /// Times and over a hundred more), though their faces draw when named and `availableMembers(ofFontFamily:)` lists
+    /// them, so the system's font folders are read for them too. Families named with a leading period are the system's
+    /// own, left out as macOS leaves them out. Reading the folders takes a moment: `prepareFamilies` starts it in the
+    /// background when a family menu appears.
+    nonisolated static let families: [String] = {
+        let listed = Set((CTFontManagerCopyAvailableFontFamilyNames() as? [String]) ?? [])
+        var hidden = Set<String>()
+        for folder in ["/System/Library/Fonts", "/System/Library/Fonts/Supplemental"] {
+            let files = (try? FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: folder), includingPropertiesForKeys: nil)) ?? []
+            for file in files {
+                for descriptor in (CTFontManagerCreateFontDescriptorsFromURL(file as CFURL) as? [CTFontDescriptor]) ?? [] {
+                    if let family = CTFontDescriptorCopyAttribute(descriptor, kCTFontFamilyNameAttribute) as? String,
+                       !family.hasPrefix("."), !listed.contains(family) { hidden.insert(family) }
+                }
+            }
+        }
+        // Only families whose faces can be named: a file macOS doesn't make available would offer nothing to choose.
+        let named = Set([kCTFontFamilyNameAttribute as String]) as CFSet
+        let available = hidden.filter { family in
+            let descriptor = CTFontDescriptorCreateWithAttributes([kCTFontFamilyNameAttribute: family] as CFDictionary)
+            return (CTFontDescriptorCreateMatchingFontDescriptors(descriptor, named) as? [CTFontDescriptor])?.isEmpty == false
+        }
+        return listed.union(available).sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+    }()
+    /// Reads `families` in the background, ahead of a family menu opening.
+    static func prepareFamilies() {
+        Task.detached(priority: .utility) { _ = families }
+    }
+
     /// The family a face (a PostScript name) belongs to; nil for an empty or unknown name.
     static func family(of face: String) -> String? {
         guard !face.isEmpty else { return nil }
@@ -157,6 +188,7 @@ struct FontFamilyPopUp: NSViewRepresentable {
         button.action = #selector(Coordinator.chose(_:))
         button.menu?.delegate = context.coordinator
         context.coordinator.button = button
+        FontFaces.prepareFamilies()
         return button
     }
 
@@ -195,7 +227,7 @@ struct FontFamilyPopUp: NSViewRepresentable {
         func menuNeedsUpdate(_ menu: NSMenu) {
             guard !loaded, let button else { return }
             button.removeAllItems()
-            button.addItems(withTitles: NSFontManager.shared.availableFontFamilies)
+            button.addItems(withTitles: FontFaces.families)
             if let family { button.selectItem(withTitle: family) }
             loaded = true
         }

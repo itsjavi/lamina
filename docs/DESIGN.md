@@ -680,6 +680,15 @@ named). Keyboard Shortcuts lists every one; function keys show as F1 to F12, and
   the quality and Transparency it was last exported with (Export JPEG…'s saved quality carries over), the matte shared
   by all; Cancel saves nothing. Quick Export as PNG goes straight to the Save panel and writes a PNG with PNG's saved
   Transparency and the matte. `lamina export-document` writes PNG or JPEG as before, without the dialog.
+- Develop RAW (`RawDevelopSheet`, developing in `IO/RawImporter.swift`) is the sheet a camera RAW file opens on, from
+  Open…, Place Embedded… or a drop, one file at a time: the title Develop “name.dng”, a 560 × 340 pt preview on
+  `pasteboard` (developed at up to 800 px while the sliders move, with a small spinner while it renders), then
+  Exposure (−3 to +3 EV), Temperature (2,000 to 12,000 K), Tint (−150 to +150) and Boost (0 to 1), each a 300 pt
+  slider with its value after it, starting on the camera's own white balance. Reset (dimmed while the settings are as
+  shot) at the bottom left, Cancel then Import at the bottom right; Return imports, Escape cancels. Import keeps the
+  sheet up, its sliders and buttons dimmed and Importing… with a spinner on a `regularMaterial` panel over the
+  preview, until the full frame is developed and its layer is in; Cancel closes it at once (**shipping**, TASK-70).
+  The frame is developed at 16 bits and rounded to 8 with noise of about one step, so smooth skies don't band.
 - One layout in code: `DialogLayout` (`Sources/LaminaApp/UI/DialogLayout.swift`) takes the settings, `confirm` and
   `cancel`, and optionally `extras` (column buttons and controls), a `preview` binding, a `status` line ("Applying…"
   with a spinner), a `title` heading for dialogs shown as sheets (which have no title bar), `defaultTitle`,

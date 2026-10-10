@@ -70,10 +70,18 @@ extension EditorSession {
         else { blendPreview = nil }
         refreshCanvasPreview?()
     }
-    var canEditAppearance: Bool { canEditLayers && selectedLayerIDs.count == 1 && activeLayer?.isGroup == false && !activeAppearanceLocked }
+    var canEditAppearance: Bool { canEditLayers && appearanceLooksEditable }
+    /// How the blend mode pop-up looks (see `layersLookEditable`).
+    var appearanceLooksEditable: Bool {
+        layersLookEditable && selectedLayerIDs.count == 1 && activeLayer?.isGroup == false && !activeAppearanceLocked
+    }
     /// A folder takes an opacity of its own, which dims everything inside it (see LayerOpacity);
     /// blending still belongs to each layer, so the rest of the appearance controls stay off for folders.
-    var canEditOpacity: Bool { canEditLayers && selectedLayerIDs.count == 1 && activeLayer != nil && !activeAppearanceLocked }
+    var canEditOpacity: Bool { canEditLayers && opacityLooksEditable }
+    /// How Opacity looks (see `layersLookEditable`).
+    var opacityLooksEditable: Bool {
+        layersLookEditable && selectedLayerIDs.count == 1 && activeLayer != nil && !activeAppearanceLocked
+    }
     func beginOpacityEdit() {
         guard canEditOpacity, opacityEditLayerID == nil, let id = activeLayerID else { return }
         beginEdit("Layer Opacity")

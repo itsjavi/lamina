@@ -467,7 +467,9 @@ are **shipping**.
   (5 pt corners), with a help tag naming the adjustment; columns are at least 62 pt, so four fit a row at 292 pt and
   three at 240, and the grid reflows as the dock is resized. A click does what Layer ▸ New Adjustment Layer does (one
   undo step; the new layer goes above the active one and is selected) and brings Properties to the front. The grid
-  is dimmed under the menu's rule: no document, or layers can't be edited right now.
+  is dimmed as the Layers panel is (below): without a document, or while something that lasts is in the way, never
+  for a click, a stroke or a Move drag; a click adds nothing while layers can't be edited, as the menu item would be
+  dimmed.
 
   | Adjustment | Symbol | Adjustment | Symbol |
   | --- | --- | --- | --- |
@@ -540,6 +542,12 @@ are **shipping**.
     Gradient Map… │ Gaussian Blur… · Motion Blur… · Add Noise…, which also brings Properties forward), Create a new
     group (`folder`: an empty group above the active layer; Group Layers ⌘G groups the selection), Create a new
     layer (`plus.square`, ⇧⌘N), Delete (`trash`: the selected effect, the targeted mask, or the selected layers).
+  - The panel (top rows, eyes, triangles, footer) dims only for what lasts: a dialog (Layer Style, Fill…, Lock
+    Layers…, an adjustment or filter, Color Range, New Document, Feather and the other selection amounts), a pending
+    Free Transform, crop or gradient, a value the transform fields hold, a type layer or a layer's name being edited,
+    an import, and work long enough to show as busy. A click, a brush stroke, a Move drag, moving pixels and a
+    moment's work leave it as it is and reload no row; its changes are still refused until they end
+    (`EditorSession.layersLookEditable` for the look, `canEditLayers` for the actions).
   - New groups are named "Group 1", "Group 2"…; "group" is the word everywhere the interface names one (the row's
     menu reads Move Out of Group, and alerts, help tags and VoiceOver labels say group).
   - Code: `UI/LayersPanel.swift` (panel, footer, `adjustmentMenu`), `UI/LayerAppearanceControls.swift` (top row),

@@ -13,7 +13,7 @@ struct LayerMaskMenu: View {
             .help(session.selection == nil ? "Add layer mask (Option-click for a black mask)"
                   : "Add layer mask revealing the selection (Option-click to hide it)")
             .accessibilityLabel("Add layer mask")
-            .disabled(!session.canEditMask || session.activeLayer?.mask != nil)
+            .disabled(!session.maskLooksEditable || session.activeLayer?.mask != nil)
     }
 }
 

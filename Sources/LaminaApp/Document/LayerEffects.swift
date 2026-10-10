@@ -9,7 +9,11 @@ struct LayerEffectSelection: Equatable {
 }
 
 extension EditorSession {
-    var canEditEffects: Bool { canEditLayers && activeLayer?.isGroup == false && activeLayer?.asset != nil && !activeAppearanceLocked }
+    var canEditEffects: Bool { canEditLayers && effectsLookEditable }
+    /// How the Layers panel's fx menu looks (see `layersLookEditable`).
+    var effectsLookEditable: Bool {
+        layersLookEditable && activeLayer?.isGroup == false && activeLayer?.asset != nil && !activeAppearanceLocked
+    }
     var activeEffects: LayerEffects { activeLayer?.effects ?? LayerEffects() }
     var selectedEffect: LayerEffectSelection? {
         guard let effectSelection, effectSelection.layerID == activeLayerID,

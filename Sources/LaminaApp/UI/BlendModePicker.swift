@@ -26,7 +26,7 @@ struct BlendModePicker: NSViewRepresentable {
         return button
     }
     func updateNSView(_ button: NSPopUpButton, context: Context) {
-        button.isEnabled = session.canEditAppearance
+        button.isEnabled = session.appearanceLooksEditable
         if !context.coordinator.tracking {
             button.selectItem(withTitle: (session.activeLayer?.blendMode ?? .normal).rawValue)
         }

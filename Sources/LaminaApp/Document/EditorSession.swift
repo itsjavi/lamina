@@ -772,9 +772,21 @@ final class EditorSession {
 
     func endEdit() { history.end(document: document, selection: activeLayerID) }
     var activeLayer: ImageLayer? { document?.layers.first { $0.id == activeLayerID } }
+    /// How the Layers panel and the Adjustments grid look: dimmed for what lasts (a dialog, a pending Free Transform,
+    /// crop or gradient, a value the transform fields hold, a type layer or a name being edited, work long enough to
+    /// show as busy), but not for what lasts only while the mouse button is down (a stroke, a Move drag, moving
+    /// pixels) or for a moment's work, which dimmed them and reloaded every layer row at both ends. `canEditLayers`
+    /// still refuses layer changes through all of it; the panels' actions check it themselves.
+    var layersLookEditable: Bool {
+        selectionAmountOperation == nil && commandDialog == nil && colorRange == nil && textDraft == nil && document != nil
+            && !showsBusy && !isImporting && !showsNewDocument && !showsImporter && renamingLayerID == nil
+            && transformEdit?.persistent != true && transformEdit?.fromFields != true && cropRect == nil
+            && gradientEdit == nil && hueSaturation == nil && levels == nil && filterEdit == nil && layerStyle == nil
+    }
+    /// `layersLookEditable`, and nothing under way: no stroke, drag or transform, and no work at all, however short.
     var canEditLayers: Bool {
-        _ = showsBusy
-        return selectionAmountOperation == nil && commandDialog == nil && colorRange == nil && textDraft == nil && document != nil && brushStroke == nil && warpStroke == nil && !isProjectBusy && !isImporting && !showsNewDocument && !showsImporter && renamingLayerID == nil && transformEdit == nil && cropRect == nil && gradientEdit == nil && pixelMove == nil && hueSaturation == nil && levels == nil && filterEdit == nil && layerStyle == nil
+        layersLookEditable && brushStroke == nil && warpStroke == nil && pixelMove == nil && transformEdit == nil
+            && !isProjectBusy
     }
 
     func addBlankLayer() {

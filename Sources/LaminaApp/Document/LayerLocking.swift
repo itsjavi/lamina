@@ -85,7 +85,9 @@ extension EditorSession {
     }
 
     /// The Lock buttons and Layer ▸ Lock Layers…: on when every selected layer has the lock itself.
-    var canChangeLocks: Bool { canEditLayers && !selectedLayerIDs.isEmpty }
+    var canChangeLocks: Bool { canEditLayers && locksLookChangeable }
+    /// How the Lock buttons look (see `layersLookEditable`).
+    var locksLookChangeable: Bool { layersLookEditable && !selectedLayerIDs.isEmpty }
     func isLocked(_ lock: LayerLock) -> Bool {
         guard let document, !selectedLayerIDs.isEmpty else { return false }
         return document.layers.filter { selectedLayerIDs.contains($0.id) }.allSatisfy { lock.isOn(in: $0.locks) }

@@ -33,7 +33,7 @@ struct AdjustmentsPanel: View {
             }
         }
         .background(ColorRole.panel.color)
-        .disabled(!Self.canAdd(session))
+        .disabled(!session.layersLookEditable)
     }
 
     private func grid(_ kinds: [AdjustmentKind]) -> some View {

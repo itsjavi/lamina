@@ -50,13 +50,14 @@ struct LayersPanel: View {
             }
                 .layersFooterMenu()
                 .help("Add a layer style").accessibilityLabel("Add a layer style")
-                .accessibilityIdentifier("layerEffects").disabled(!session.canOpenLayerStyle)
+                .accessibilityIdentifier("layerEffects").disabled(!session.effectsLookEditable)
             LayerMaskMenu(session: session)
             Menu {
                 ForEach(Self.adjustmentMenu.indices, id: \.self) { group in
                     if group > 0 { Divider() }
                     ForEach(Self.adjustmentMenu[group], id: \.self) { kind in
                         Button(kind.rawValue + (kind.isEditable ? "…" : "")) {
+                            guard AdjustmentsPanel.canAdd(session) else { return }
                             session.addAdjustment(kind)
                             session.showProperties()
                         }
@@ -65,15 +66,15 @@ struct LayersPanel: View {
             } label: { LayersFooterIcon(symbol: "circle.lefthalf.filled") }
                 .layersFooterMenu()
                 .help("Create new fill or adjustment layer").accessibilityLabel("Create new fill or adjustment layer")
-                .accessibilityIdentifier("addAdjustmentLayer").disabled(!AdjustmentsPanel.canAdd(session))
+                .accessibilityIdentifier("addAdjustmentLayer").disabled(!session.layersLookEditable)
             PropertiesFooterButton(title: "Create a new group", symbol: "folder") { session.addGroup() }
-                .accessibilityIdentifier("addGroup").disabled(!session.canEditLayers || session.document == nil)
+                .accessibilityIdentifier("addGroup").disabled(!session.layersLookEditable)
             PropertiesFooterButton(title: "Create a new layer (⇧⌘N)", symbol: "plus.square") { session.addBlankLayer() }
                 .accessibilityLabel("Create a new layer")
-                .accessibilityIdentifier("addBlankLayer").disabled(!session.canEditLayers || session.document == nil)
+                .accessibilityIdentifier("addBlankLayer").disabled(!session.layersLookEditable)
             PropertiesFooterButton(title: deleteTitle, symbol: "trash") { session.deleteLayerOrMask() }
                 .accessibilityIdentifier("deleteLayer")
-                .disabled(!session.canEditLayers || session.activeLayer == nil)
+                .disabled(!session.layersLookEditable || session.activeLayer == nil)
         }
     }
 }

@@ -16,7 +16,7 @@ struct LayerAppearanceControls: View {
             HStack(spacing: 4) {
                 LayerLockButtons(session: session)
                 Spacer(minLength: 4)
-                FillOpacityPlaceholder(session: session).disabled(!session.canEditOpacity)
+                FillOpacityPlaceholder(session: session).disabled(!session.opacityLooksEditable)
             }
         }
         .font(.system(size: 12)).monospacedDigit()
@@ -29,7 +29,7 @@ struct LayerAppearanceControls: View {
         HStack(spacing: 6) {
             BlendModePicker(session: session)
                 .frame(maxWidth: .infinity)
-                .disabled(!session.canEditAppearance)
+                .disabled(!session.appearanceLooksEditable)
             HStack(spacing: 4) {
                 Text("Opacity:").foregroundStyle(.secondary)
                     .scrubbable(sensitivity: 1,
@@ -62,7 +62,7 @@ struct LayerAppearanceControls: View {
                     }
                 }
             }
-            .disabled(!session.canEditOpacity)
+            .disabled(!session.opacityLooksEditable)
         }
     }
     /// Up and Down nudge the opacity by one percent, or ten with Shift.
@@ -100,10 +100,10 @@ struct LayerLockButtons: View {
                 } icon: {
                     // An explicit color stops SwiftUI dimming a disabled button, so dim it here.
                     Image(systemName: lock.symbol).font(.system(size: 12))
-                        .foregroundStyle(session.canChangeLocks ? ColorRole.icon.color : ColorRole.tertiaryText.color)
+                        .foregroundStyle(session.locksLookChangeable ? ColorRole.icon.color : ColorRole.tertiaryText.color)
                 }
             }
         }
-        .disabled(!session.canChangeLocks)
+        .disabled(!session.locksLookChangeable)
     }
 }

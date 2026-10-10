@@ -20,9 +20,15 @@ struct LayersPanelTests {
     }
 
     private func list(_ session: EditorSession) -> (LayerTableView, NativeLayerList.Coordinator, NSWindow) {
-        let coordinator = NativeLayerList.Coordinator(session: session)
         let table = LayerTableView()
         table.session = session
+        let (coordinator, window) = list(session, in: table)
+        return (table, coordinator, window)
+    }
+
+    /// The list drawn by `table`, in a 292 × 400 pt window.
+    private func list(_ session: EditorSession, in table: NSTableView) -> (NativeLayerList.Coordinator, NSWindow) {
+        let coordinator = NativeLayerList.Coordinator(session: session)
         table.headerView = nil
         table.style = .plain
         table.intercellSpacing = .zero
@@ -36,7 +42,20 @@ struct LayersPanelTests {
         let window = NSWindow(contentRect: scroll.frame, styleMask: [.titled], backing: .buffered, defer: false)
         window.contentView = scroll
         coordinator.update(table)
-        return (table, coordinator, window)
+        return (coordinator, window)
+    }
+
+    /// Counts the rows the list reloads.
+    private final class ReloadCountingTable: NSTableView {
+        var reloadedRows = IndexSet()
+        override func reloadData() {
+            reloadedRows.formUnion(IndexSet(integersIn: 0..<max(numberOfRows, 1)))
+            super.reloadData()
+        }
+        override func reloadData(forRowIndexes rowIndexes: IndexSet, columnIndexes: IndexSet) {
+            reloadedRows.formUnion(rowIndexes)
+            super.reloadData(forRowIndexes: rowIndexes, columnIndexes: columnIndexes)
+        }
     }
 
     private func descendants(_ view: NSView) -> [NSView] { view.subviews + view.subviews.flatMap { descendants($0) } }
@@ -218,6 +237,84 @@ struct LayersPanelTests {
         window.contentView = scroll
         coordinator.update(table)
         #expect(table.visibleRect.height > 0 && table.visibleRect.contains(table.rect(ofRow: 0)))
+    }
+
+    @Test func aStrokeOrAMoveDragLeavesThePanelsUndimmedWhileTheirEditsWait() async throws {
+        let session = try sessionWithSquare()
+        let square = try #require(session.activeLayerID)
+        session.addBlankLayer()
+        session.selectLayer(square)
+        let table = ReloadCountingTable()
+        let (coordinator, _) = list(session, in: table)
+        let squareRow = try #require(session.layerRows.firstIndex { $0.layer.id == square })
+        // Everything the Layers panel and the Adjustments grid draw enabled or dimmed.
+        func looksEditable() -> Bool {
+            session.layersLookEditable && session.appearanceLooksEditable && session.opacityLooksEditable
+                && session.effectsLookEditable && session.maskLooksEditable && session.locksLookChangeable
+        }
+        #expect(looksEditable() && session.canEditLayers)
+
+        // A brush stroke under way: the panels look as they did, and no row reloads as it starts…
+        session.selectTool(.brush)
+        session.beginBrush(at: CGPoint(x: 20, y: 20))
+        #expect(session.brushStroke != nil)
+        #expect(looksEditable() && !session.canEditLayers)
+        table.reloadedRows = []
+        coordinator.update(table)
+        #expect(table.reloadedRows.isEmpty)
+        #expect(try button("Hide Square", in: table, row: squareRow).isEnabled)
+        // …but every change the panels offer waits for it.
+        let layers = session.document?.layers
+        let steps = session.history.undoCount
+        session.toggleLayerVisibility(square)
+        session.addBlankLayer()
+        session.addGroup()
+        session.addAdjustment(.invert)
+        session.addMask()
+        session.setLock(.all, on: true)
+        session.setLayerOpacity(0.5)
+        session.setLayerBlendMode(.multiply)
+        session.openLayerStyle()
+        session.deleteLayerOrMask()
+        #expect(session.history.undoCount == steps && session.layerStyle == nil)
+        #expect(session.document?.layers.map(\.id) == layers?.map(\.id))
+        let unchanged = try #require(session.activeLayer)
+        #expect(unchanged.isVisible && unchanged.opacity == 1 && unchanged.blendMode == .normal && unchanged.mask == nil
+                && unchanged.locks.isEmpty)
+        // As it ends, only the painted row may reload, for its new thumbnail.
+        await session.finishBrush()
+        #expect(session.history.undoCount == steps + 1, "the stroke itself")
+        coordinator.update(table)
+        #expect(table.reloadedRows.isSubset(of: [squareRow]))
+
+        // A Move drag (or a click with the Move tool) and a moment's work the same.
+        session.selectTool(.move)
+        session.beginTransform(persistent: false)
+        #expect(session.transformEdit != nil && looksEditable() && !session.canEditLayers)
+        table.reloadedRows = []
+        coordinator.update(table)
+        #expect(table.reloadedRows.isEmpty)
+        session.commitTransform()
+        session.isProjectBusy = true
+        #expect(looksEditable() && !session.canEditLayers)
+        session.isProjectBusy = false
+
+        // What lasts still dims them: long work, a pending Free Transform, a dialog.
+        // Polled rather than timed once: the suite runs in parallel, so a fixed window is flaky on a loaded machine.
+        session.isProjectBusy = true
+        for _ in 0..<100 where !session.showsBusy { try await Task.sleep(for: .milliseconds(50)) }
+        #expect(session.showsBusy && !session.layersLookEditable)
+        session.isProjectBusy = false
+        session.beginTransform()
+        #expect(session.transformEdit?.persistent == true && !session.layersLookEditable)
+        session.cancelTransform()
+        session.beginLockLayers()
+        #expect(session.commandDialog != nil && !session.layersLookEditable)
+        session.finishLockLayers(nil)
+        session.openLayerStyle()
+        #expect(session.layerStyle != nil && !session.layersLookEditable)
+        session.finishLayerStyle(commit: false)
+        #expect(looksEditable() && session.canEditLayers)
     }
 
     @Test func newFillOrAdjustmentLayerListsTheLayerMenusOrder() {

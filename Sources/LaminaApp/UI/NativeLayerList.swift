@@ -80,7 +80,7 @@ struct NativeLayerList: NSViewRepresentable {
             oldCollapsed = session.collapsedGroupIDs
             let oldCollapsedEffects = collapsedEffects
             collapsedEffects = session.collapsedEffectLayerIDs
-            let enabled = session.canEditLayers
+            let enabled = session.layersLookEditable
             synchronizing = true
             defer { synchronizing = false }
             let old = rows
@@ -1434,7 +1434,7 @@ private final class LayerEffectRow: NSView, NSDraggingSource {
         eye.imagePosition = .imageOnly
         eye.contentTintColor = ColorRole.icon.nsColor
         eye.target = self; eye.action = #selector(toggle)
-        eye.isEnabled = session.canEditLayers
+        eye.isEnabled = session.layersLookEditable
         eye.setAccessibilityLabel((enabled ? "Hide " : "Show ") + kind.rawValue)
         label.font = .systemFont(ofSize: 11)
         label.textColor = enabled ? ColorRole.secondaryText.nsColor : ColorRole.tertiaryText.nsColor

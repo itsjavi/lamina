@@ -129,6 +129,77 @@ struct LayersPanelTests {
         #expect(!menu.items.contains { $0.title.localizedCaseInsensitiveContains("folder") })
     }
 
+    /// Twenty layers over two collapsed groups, Other and Title, each holding one layer; Title's is Headline. The list
+    /// (400 pt high) shows twelve rows and part of a thirteenth.
+    private func sessionWithCollapsedGroups() throws -> (EditorSession, title: UUID, other: UUID, headline: UUID) {
+        let session = EditorSession()
+        session.createDocument(width: 100, height: 100)
+        session.addGroup()
+        let title = try #require(session.activeLayerID)
+        session.addBlankLayer()
+        let headline = try #require(session.activeLayerID)
+        session.selectLayer(nil)
+        session.addGroup()
+        let other = try #require(session.activeLayerID)
+        session.addBlankLayer()
+        session.selectLayer(nil)
+        for _ in 0..<20 { session.addBlankLayer() }
+        session.collapsedGroupIDs = [title, other]
+        return (session, title, other, headline)
+    }
+
+    @Test func aLayerPickedOutsideTheListOpensItsGroupsAndScrollsIntoView() throws {
+        let (session, _, other, headline) = try sessionWithCollapsedGroups()
+        let (table, coordinator, _) = list(session)
+        #expect(table.numberOfRows == 22, "twenty layers and the two groups, folded")
+        #expect(table.visibleRect.minY == 0)
+        // Picked on the canvas (Auto-Select, Command-click) or by `lamina select-layer`.
+        session.selectLayerTarget(headline, mask: false)
+        #expect(session.collapsedGroupIDs == [other], "only the groups around it open")
+        coordinator.update(table)
+        let row = try #require(session.layerRows.firstIndex { $0.layer.id == headline })
+        #expect(row == 22)
+        #expect(table.selectedRowIndexes == [row])
+        #expect(table.visibleRect.contains(table.rect(ofRow: row)), "scrolled into view")
+
+        // Scrolled away by hand, it stays where it was put through later updates.
+        table.scroll(.zero)
+        session.renameLayer(headline, to: "Headline")
+        coordinator.update(table)
+        #expect(table.visibleRect.minY == 0)
+
+        // A Command-Shift-click on the canvas adds a layer in a folded group the same way.
+        session.collapsedGroupIDs = [other]
+        coordinator.update(table)
+        let inOther = try #require(session.document?.layers.first { $0.parentID == other }?.id)
+        session.extendSelection(with: inOther)
+        #expect(session.collapsedGroupIDs.isEmpty && session.selectedLayerIDs == [headline, inOther])
+        coordinator.update(table)
+        let otherRow = try #require(session.layerRows.firstIndex { $0.layer.id == inOther })
+        #expect(table.visibleRect.contains(table.rect(ofRow: otherRow)))
+    }
+
+    @Test func pickingInTheListNeitherScrollsItNorOpensGroups() throws {
+        let (session, title, other, _) = try sessionWithCollapsedGroups()
+        let (table, coordinator, _) = list(session)
+        // Row 12 shows only its top half.
+        #expect(table.visibleRect.intersects(table.rect(ofRow: 12)) && !table.visibleRect.contains(table.rect(ofRow: 12)))
+        table.selectRowIndexes([12], byExtendingSelection: false)
+        #expect(session.activeLayerID == session.layerRows[12].layer.id, "the list's own selection")
+        coordinator.update(table)
+        #expect(table.visibleRect.minY == 0, "the list doesn't move under the pointer")
+        #expect(session.collapsedGroupIDs == [title, other])
+
+        // A group picked in the list stays folded.
+        let titleRow = try #require(session.layerRows.firstIndex { $0.layer.id == title })
+        table.scrollRowToVisible(titleRow)
+        let scrolled = table.visibleRect.minY
+        table.selectRowIndexes([titleRow], byExtendingSelection: false)
+        coordinator.update(table)
+        #expect(session.activeLayerID == title && session.collapsedGroupIDs == [title, other])
+        #expect(table.visibleRect.minY == scrolled)
+    }
+
     @Test func newFillOrAdjustmentLayerListsTheLayerMenusOrder() {
         #expect(LayersPanel.adjustmentMenu.flatMap { $0 } == [.grain, .levels, .curves, .exposure, .hsv, .colorBalance,
                                                              .blackWhite, .invert, .gradientMap,

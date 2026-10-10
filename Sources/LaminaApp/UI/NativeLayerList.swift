@@ -55,12 +55,24 @@ struct NativeLayerList: NSViewRepresentable {
         private var collapsedEffects: Set<UUID> = []
         private var editingEnabled = false
         private var synchronizing = false
+        /// The active layer as the list last showed it (see `update`).
+        private var shownActiveLayerID: UUID?
         init(session: EditorSession) { self.session = session }
 
         func update(_ table: NSTableView) {
             let entries = session.layerRows
             let byID = Dictionary(uniqueKeysWithValues: (session.document?.layers ?? []).map { ($0.id, $0) })
             let next = entries.compactMap { byID[$0.layer.id] }
+            // A layer made active since the last update whose row was out of sight — picked on the canvas or by a
+            // command, perhaps inside a group that has just opened — is scrolled into view. Whatever is picked in the
+            // list itself was in sight, so the list never moves under the pointer, and a later update never undoes a
+            // scroll the person made.
+            var revealed: UUID?
+            if shownActiveLayerID != session.activeLayerID, let id = session.activeLayerID {
+                let shown = table.rows(in: table.visibleRect)
+                if rows.firstIndex(where: { $0.id == id }).map({ !NSLocationInRange($0, shown) }) ?? true { revealed = id }
+            }
+            shownActiveLayerID = session.activeLayerID
             let previousDetails = rowDetails
             rowDetails = Dictionary(uniqueKeysWithValues: entries.map { ($0.layer.id, $0) })
             let expansionChanged = oldCollapsed != session.collapsedGroupIDs
@@ -94,6 +106,7 @@ struct NativeLayerList: NSViewRepresentable {
             }
             let indices = IndexSet(next.indices.filter { session.selectedEffect == nil && session.selectedLayerIDs.contains(next[$0].id) })
             if table.selectedRowIndexes != indices { table.selectRowIndexes(indices, byExtendingSelection: false) }
+            if let revealed, let row = next.firstIndex(where: { $0.id == revealed }) { table.scrollRowToVisible(row) }
             // Border-only updates: selecting a target never rebuilds thumbnails or canvas pixels.
             let visible = table.rows(in: table.visibleRect)
             if visible.location != NSNotFound {

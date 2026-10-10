@@ -104,6 +104,18 @@ extension EditorSession {
         if valid != selectedLayerIDs { commitTransform(); resolveGradient() }
         activeLayerID = primary.flatMap { valid.contains($0) ? $0 : nil } ?? valid.first
         selectedLayerIDs = valid
+        revealActiveLayer()
+    }
+
+    /// Opens the groups around the active layer, as Photoshop does, so a layer picked on the canvas or by a command
+    /// shows in the Layers panel (which then scrolls to it). A layer picked in the panel is already showing, so
+    /// nothing opens.
+    func revealActiveLayer() {
+        guard !collapsedGroupIDs.isEmpty, let activeLayerID, let layers = document?.layers else { return }
+        let parents = Dictionary(uniqueKeysWithValues: layers.map { ($0.id, $0.parentID) })
+        var ancestors = Set<UUID>(), parent = parents[activeLayerID] ?? nil
+        while let id = parent, ancestors.insert(id).inserted { parent = parents[id] ?? nil }
+        if !collapsedGroupIDs.isDisjoint(with: ancestors) { collapsedGroupIDs.subtract(ancestors) }
     }
 
     /// Cmd-Shift-click on the canvas: adds a layer to the selection, or takes it out again when it is already in it.

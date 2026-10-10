@@ -527,6 +527,10 @@ are **shipping**.
     it, Option copies), double-clicking a name renames it in place, Option-clicking the bottom 8 pt of a row creates
     or releases a clipping mask, Command-clicking a thumbnail loads it as a selection, Option-clicking a mask
     thumbnail shows the mask alone, Shift-clicking it disables or enables it; right-clicking opens the layer's menu.
+  - A layer made active from outside the list (picked on the canvas by Auto-Select or a Command-click, by a command
+    or by `lamina`) opens the groups around it, and its row scrolls into view when it was out of sight, as in
+    Photoshop. What is picked in the list itself is already in sight: the list doesn't scroll and no group opens
+    (`EditorSession.revealActiveLayer`).
   - The footer (the Properties footer's: 30 pt, 15 pt icons in 26 × 24 pt targets, right-aligned, help tags as
     labels), left to right: Add a layer style (an italic serif "fx"; menu: Blending Options… │ Stroke… · Inner
     Shadow… · Inner Glow… · Color Overlay… · Outer Glow… · Drop Shadow…, each opening the Layer Style dialog on its

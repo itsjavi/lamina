@@ -4,7 +4,9 @@ import Testing
 
 /// The Camera Raw kernels run on every core and read opaque pixels from a table, but must give exactly the pixels
 /// they gave before: these hashes were recorded from the single-threaded kernels, in this package's build (CPixels
-/// at -O3), with color noise reduction already reading defined values for clear pixels.
+/// at -O3), with color noise reduction already reading defined values for clear pixels. Light (and its two clipping
+/// views) and detail were recorded again when Shadows and Highlights stopped swapping tones and color noise
+/// reduction began keeping brightness (TASK-69).
 struct CameraRawSpeedTests {
     /// A 97 × 61 picture (odd sizes, so no row or chunk divides evenly) with a band of partial alpha and a clear corner.
     static func picture(width: Int = 97, height: Int = 61) throws -> CGImage {
@@ -69,9 +71,9 @@ struct CameraRawSpeedTests {
     }
 
     @Test(arguments: [
-        ("light", UInt64(13877237661017904764)), ("light, highlight clipping", UInt64(1047115404880164632)),
-        ("light, shadow clipping", UInt64(9026041150702649921)), ("effects", UInt64(2862192429195149811)),
-        ("detail", UInt64(5617087740119641898)),
+        ("light", UInt64(12504704009674024378)), ("light, highlight clipping", UInt64(9158664009821451592)),
+        ("light, shadow clipping", UInt64(18387012302953904271)), ("effects", UInt64(2862192429195149811)),
+        ("detail", UInt64(8648239830666450571)),
     ])
     func kernelsGiveTheSamePixels(_ name: String, _ expected: UInt64) throws {
         var settings = CameraRawSettings()

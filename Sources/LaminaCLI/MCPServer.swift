@@ -38,14 +38,15 @@ public final class MCPServer: @unchecked Sendable {
     public func serve(input: FileHandle, output: FileHandle) {
         let writer = LineWriter(output)
         let calls = DispatchGroup()
-        let queue = DispatchQueue(label: "lamina.mcp.calls", attributes: .concurrent)
         var buffer = Data()
         func dispatch(_ line: Data) {
             guard !line.allSatisfy({ $0 == 0x20 || $0 == 0x09 || $0 == 0x0D }) else { return }
             let message = try? JSONValue.decode(line)
             if message?["method"] == "tools/call", message?["id"] != nil {
                 calls.enter()
-                queue.async { self.receive(line, send: writer.write); calls.leave() }
+                // A thread of its own per call rather than a global (or concurrent) queue, which a process whose
+                // threads all wait can leave unscheduled: the test runner on a two- or three-core Mac did.
+                Thread.detachNewThread { self.receive(line, send: writer.write); calls.leave() }
             } else {
                 receive(line, send: writer.write)
             }
@@ -209,7 +210,8 @@ public final class MCPServer: @unchecked Sendable {
         notify(0, "Sent \(spec.name) to \(AppIdentity.displayName).")
         // Ticks happen under the lock and stop once `finished` is set, so none arrives after the last notification
         // (or the response that follows it).
-        let timer = DispatchSource.makeTimerSource(queue: .global())
+        // A private serial queue always gets a thread, unlike the global queue, which a busy process can starve.
+        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue(label: "lamina.mcp.progress"))
         timer.schedule(deadline: .now() + progressInterval, repeating: progressInterval)
         let interval = progressInterval
         timer.setEventHandler {

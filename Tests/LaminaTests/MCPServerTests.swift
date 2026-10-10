@@ -185,13 +185,15 @@ struct MCPServerTests {
         })
         let dropped = Outbox()
         let done = DispatchSemaphore(value: 0)
-        DispatchQueue.global().async {
+        // Threads of their own, not the global queue: these tests block their (cooperative) thread while they wait, and on
+        // a runner with two or three cores the global queue's work then never got a thread, hanging the whole run.
+        Thread.detachNewThread {
             cancelled.handle(self.request(21, "tools/call", ["name": "list_documents", "arguments": [:]]), send: dropped.send)
             done.signal()
         }
         cancelled.handle(["jsonrpc": "2.0", "method": "notifications/cancelled", "params": ["requestId": 21]], send: dropped.send)
         cancelledYet.signal()
-        done.wait()
+        #expect(done.wait(timeout: .now() + 20) == .success, "the cancelled call returns")
         #expect(dropped.messages.isEmpty)
     }
 
@@ -201,7 +203,7 @@ struct MCPServerTests {
         let input = Pipe(), output = Pipe()
         let server = server()
         let finished = DispatchSemaphore(value: 0)
-        DispatchQueue.global().async {
+        Thread.detachNewThread {
             server.serve(input: input.fileHandleForReading, output: output.fileHandleForWriting)
             try? output.fileHandleForWriting.close()
             finished.signal()
@@ -214,7 +216,8 @@ struct MCPServerTests {
         ].map { $0.encodedString() + "\n" }.joined()
         input.fileHandleForWriting.write(Data(lines.utf8))
         try input.fileHandleForWriting.close()
-        #expect(finished.wait(timeout: .now() + 10) == .success, "the server exits when its input closes")
+        // Reading waits for the server to close its output, so a server that never finished would hang the run.
+        try #require(finished.wait(timeout: .now() + 20) == .success, "the server exits when its input closes")
         let text = String(decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
         let replies = try text.split(separator: "\n").map { try JSONValue.decode(String($0)) }
         #expect(replies.count == 4)

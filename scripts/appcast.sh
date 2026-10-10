@@ -42,7 +42,8 @@ PREFIX="${DOWNLOAD_URL_PREFIX:-${FEED_URL%%/releases/*}/releases/download/v$VERS
 mkdir -p "$OUT"
 # Keep earlier releases in the feed: start from the published one unless there's a local copy.
 if [ ! -f "$OUT/appcast.xml" ] && [ -z "${NEW_FEED:-}" ]; then
-  code="$(curl -sS -o "$OUT/appcast.xml" -w '%{http_code}' "$FEED_URL" || true)"
+  # releases/latest/download/ redirects to the newest release's asset.
+  code="$(curl -sSL -o "$OUT/appcast.xml" -w '%{http_code}' "$FEED_URL" || true)"
   case "$code" in
     200) echo "Starting from the published feed" ;;
     404) rm -f "$OUT/appcast.xml"; echo "No published feed yet: starting a new one" ;;

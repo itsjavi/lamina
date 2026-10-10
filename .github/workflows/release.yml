@@ -52,7 +52,9 @@ jobs:
         run: ./scripts/ci-select-xcode.sh
 
       - name: Test
-        run: swift test --disable-keychain
+        # As ci.yml runs them: every test, and a run that wedges as it starts is retried (scripts/ci-test.sh).
+        timeout-minutes: 30
+        run: LAMINA_UI_TESTS=1 ./scripts/ci-test.sh --disable-keychain
 
       - name: Import the Developer ID certificate
         if: env.HAS_DEVELOPER_ID == 'true'

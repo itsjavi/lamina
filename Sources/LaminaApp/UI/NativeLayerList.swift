@@ -66,9 +66,10 @@ struct NativeLayerList: NSViewRepresentable {
             // A layer made active since the last update whose row was out of sight — picked on the canvas or by a
             // command, perhaps inside a group that has just opened — is scrolled into view. Whatever is picked in the
             // list itself was in sight, so the list never moves under the pointer, and a later update never undoes a
-            // scroll the person made.
+            // scroll the person made. A list not laid out yet (just made) has nothing in sight to scroll, and starts
+            // at the top.
             var revealed: UUID?
-            if shownActiveLayerID != session.activeLayerID, let id = session.activeLayerID {
+            if shownActiveLayerID != session.activeLayerID, let id = session.activeLayerID, !table.visibleRect.isEmpty {
                 let shown = table.rows(in: table.visibleRect)
                 if rows.firstIndex(where: { $0.id == id }).map({ !NSLocationInRange($0, shown) }) ?? true { revealed = id }
             }

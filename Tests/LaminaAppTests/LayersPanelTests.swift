@@ -200,6 +200,26 @@ struct LayersPanelTests {
         #expect(table.visibleRect.minY == scrolled)
     }
 
+    @Test func aListUpdatedBeforeItIsLaidOutStartsAtTheTop() throws {
+        let (session, _, _, _) = try sessionWithCollapsedGroups()
+        session.selectLayer(session.layerRows[18].layer.id)
+        // NativeLayerList.makeNSView updates the list before SwiftUI gives it a size.
+        let coordinator = NativeLayerList.Coordinator(session: session)
+        let table = LayerTableView()
+        table.session = session
+        table.addTableColumn(NSTableColumn(identifier: NSUserInterfaceItemIdentifier("layer")))
+        table.delegate = coordinator
+        table.dataSource = coordinator
+        let scroll = NSScrollView(frame: .zero)
+        scroll.documentView = table
+        coordinator.update(table)
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 292, height: 400), styleMask: [.titled],
+                              backing: .buffered, defer: false)
+        window.contentView = scroll
+        coordinator.update(table)
+        #expect(table.visibleRect.height > 0 && table.visibleRect.contains(table.rect(ofRow: 0)))
+    }
+
     @Test func newFillOrAdjustmentLayerListsTheLayerMenusOrder() {
         #expect(LayersPanel.adjustmentMenu.flatMap { $0 } == [.grain, .levels, .curves, .exposure, .hsv, .colorBalance,
                                                              .blackWhite, .invert, .gradientMap,

@@ -4,7 +4,7 @@ title: Layers panel reveals the layer picked on the canvas
 status: Done
 assignee: []
 created_date: '2026-10-09 15:51'
-updated_date: '2026-10-10 03:51'
+updated_date: '2026-10-10 03:59'
 labels:
   - upstream
 milestone: m-1
@@ -58,6 +58,8 @@ Screenshots: the Layers panel hosted offscreen (NSHostingView in an NSWindow, li
 ![Before: Headline is selected but Title stays folded and nothing in the list shows the selection](../assets/task-71/before-select-in-collapsed-group.png)
 
 ![After: Title opens and the list scrolls to the selected Headline row](../assets/task-71/after-select-in-collapsed-group.png)
+
+Follow-up (second commit): the list's first update comes from makeNSView before SwiftUI sizes it, so a just-made list with the active layer far down scrolled with no viewport and opened at the bottom. The scroll now waits for a list with something in sight; a new list starts at the top. Test: aListUpdatedBeforeItIsLaidOutStartsAtTheTop (fails without the guard). LayersPanelTests: 7 passed.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

@@ -6,25 +6,9 @@ import LaminaCore
 /// Color Overlay recolors the layer's own pixels and keeps their alpha, on the GPU (canvas, and export when Metal is
 /// there) and on the CPU (export without Metal) alike.
 @Suite struct ColorOverlayTests {
-    private func square(_ color: CGColor, size: Int = 20) throws -> CGImage {
-        let context = try BrushRaster.context(width: size, height: size, mask: false)
-        context.setFillColor(color)
-        context.fill(CGRect(x: 0, y: 0, width: size, height: size))
-        return try #require(context.makeImage())
-    }
-
-    /// The premultiplied RGBA bytes of `image`, row by row.
-    private func bytes(of image: CGImage) throws -> [UInt8] {
-        let context = try BrushRaster.copy(image)
-        let data = try #require(context.data).assumingMemoryBound(to: UInt8.self)
-        return (0..<image.height).flatMap { y in
-            (0..<image.width * 4).map { data[y * context.bytesPerRow + $0] }
-        }
-    }
-
     /// The premultiplied RGBA bytes at the middle of `image`.
     private func middle(of image: CGImage) throws -> [Int] {
-        let all = try bytes(of: image)
+        let all = try EffectPixels.bytes(of: image)
         let offset = ((image.height / 2) * image.width + image.width / 2) * 4
         return (0..<4).map { Int(all[offset + $0]) }
     }
@@ -35,7 +19,7 @@ import LaminaCore
         // background completely, not half-transparent grey that leaves a grey band.
         var effects = LayerEffects()
         effects.colorOverlay = ColorOverlayEffect(red: 1, green: 1, blue: 1, opacity: 1)
-        let source = try square(CGColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.5))
+        let source = try EffectPixels.square(CGColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.5))
         let pixel = try middle(of: LayerEffectsRenderer.render(source, mask: nil, effects: effects, gpu: gpu).image)
         #expect(abs(pixel[3] - 128) <= 1)
         for channel in 0..<3 { #expect(abs(pixel[channel] - pixel[3]) <= 1) }
@@ -45,7 +29,7 @@ import LaminaCore
     func overlayOpacityMixesWithTheLayersOwnColor(gpu: Bool) throws {
         var effects = LayerEffects()
         effects.colorOverlay = ColorOverlayEffect(red: 0, green: 0, blue: 1, opacity: 0.5)
-        let source = try square(CGColor(srgbRed: 1, green: 0, blue: 0, alpha: 1))
+        let source = try EffectPixels.square(CGColor(srgbRed: 1, green: 0, blue: 0, alpha: 1))
         let pixel = try middle(of: LayerEffectsRenderer.render(source, mask: nil, effects: effects, gpu: gpu).image)
         #expect(abs(pixel[0] - 128) <= 2 && pixel[1] <= 2 && abs(pixel[2] - 128) <= 2 && pixel[3] == 255)
     }
@@ -57,34 +41,16 @@ import LaminaCore
         var effects = LayerEffects()
         effects.colorOverlay = ColorOverlayEffect(red: 1, green: 1, blue: 1, opacity: 1)
         effects.shadow = ShadowEffect(angle: 90, distance: 0, blur: 0, red: 1, green: 0, blue: 0, opacity: 1)
-        let source = try square(CGColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.5))
+        let source = try EffectPixels.square(CGColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.5))
         let pixel = try middle(of: LayerEffectsRenderer.render(source, mask: nil, effects: effects, gpu: gpu).image)
         #expect(abs(pixel[0] - 192) <= 2 && abs(pixel[1] - 128) <= 2 && abs(pixel[2] - 128) <= 2 && abs(pixel[3] - 192) <= 2)
-    }
-
-    /// A gradient from clear to opaque, red to blue, seen through a mask that fades the other way.
-    private func translucentGradient() throws -> (image: CGImage, mask: CGImage) {
-        let width = 64, height = 48
-        let context = try BrushRaster.context(width: width, height: height, mask: false)
-        for x in 0..<width {
-            let t = CGFloat(x) / CGFloat(width - 1)
-            context.setFillColor(CGColor(srgbRed: 1 - t, green: 0.3, blue: t, alpha: t))
-            context.fill(CGRect(x: x, y: 0, width: 1, height: height))
-        }
-        let mask = try #require(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width,
-            space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue))
-        for y in 0..<height {
-            mask.setFillColor(gray: 1 - CGFloat(y) / CGFloat(height) * 0.8, alpha: 1)
-            mask.fill(CGRect(x: 0, y: y, width: width, height: 1))
-        }
-        return (try #require(context.makeImage()), try #require(mask.makeImage()))
     }
 
     /// The canvas draws effects with Metal and export falls back to the CPU without it: both give the same pixels,
     /// each the overlay mixed into the layer's own color by its opacity, at the layer's own alpha.
     @Test(.enabled(if: MetalLayerEffects.shared != nil, "The GPU path needs Metal"))
     func gpuAndCPUOverlayMatch() throws {
-        let (source, mask) = try translucentGradient()
+        let (source, mask) = try EffectPixels.translucentGradient()
         var effects = LayerEffects()
         effects.colorOverlay = ColorOverlayEffect(red: 0.2, green: 0.8, blue: 0.4, opacity: 0.75)
         let plain = try LayerEffectsRenderer.render(source, mask: mask, effects: LayerEffects(), gpu: false)
@@ -92,7 +58,8 @@ import LaminaCore
         let cpu = try LayerEffectsRenderer.render(source, mask: mask, effects: effects, gpu: false)
         #expect(gpu.inset == cpu.inset && gpu.inset == plain.inset)
         #expect(gpu.image.width == cpu.image.width && gpu.image.height == cpu.image.height)
-        let gpuBytes = try bytes(of: gpu.image), cpuBytes = try bytes(of: cpu.image), plainBytes = try bytes(of: plain.image)
+        let gpuBytes = try EffectPixels.bytes(of: gpu.image), cpuBytes = try EffectPixels.bytes(of: cpu.image),
+            plainBytes = try EffectPixels.bytes(of: plain.image)
         let overlay = [0.2, 0.8, 0.4], opacity = 0.75
         var worstMatch = 0, worstExpected = 0
         for pixel in 0..<(gpuBytes.count / 4) {

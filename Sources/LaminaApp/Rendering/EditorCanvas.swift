@@ -64,7 +64,10 @@ final class CanvasView: NSView {
         layer.id == normalBlendLayerID ? .normal : session.displayedBlendMode(for: layer)
     }
     private let brushCursor = BrushCursorOverlay()
-    private var lastDragPoint: CGPoint?
+    /// Where the Space or Hand tool pan in progress last was. The pan holds the closed hand until it ends.
+    private var lastDragPoint: CGPoint? {
+        didSet { if lastDragPoint == nil { releaseDragCursor() } }
+    }
     /// Where a middle-button pan last was (see otherMouseDown).
     private var middlePanPoint: CGPoint?
     /// Where Shift was last pressed in the stroke in progress (or where the stroke started, if it was held then):
@@ -1832,7 +1835,12 @@ final class CanvasView: NSView {
         }
         if spaceHeld || session.tool == .hand {
             lastDragPoint = point
-            NSCursor.closedHand.set()
+            // Held closed for the whole drag, as a crop or transform drag holds its cursor: Space repeats while it's
+            // held, and each repeat rebuilt the cursor rects, which put the open hand back.
+            dragCursor = .closedHand
+            cursorLockWindow = window
+            cursorLockWindow?.disableCursorRects()
+            dragCursor?.set()
         } else if session.tool.isBrushTool, let document = session.document {
             let pixel = session.viewport.documentPoint(from: point, documentSize: document.size)
             // Option-click with Clone Stamp sets where it copies from (with the other brushes it samples a color).
@@ -2603,13 +2611,16 @@ final class CanvasView: NSView {
     }
 
     private func releaseDragCursor() {
-        guard transformDrag == nil, cropDrag == nil, !guideDragging, dragCursor != nil else { return }
+        guard transformDrag == nil, cropDrag == nil, !guideDragging, lastDragPoint == nil, dragCursor != nil else { return }
         dragCursor = nil
         cursorLockWindow?.enableCursorRects()
         cursorLockWindow?.invalidateCursorRects(for: self)
         cursorLockWindow = nil
         if let window, session.tool == .move {
             updateTransformCursor(at: convert(window.mouseLocationOutsideOfEventStream, from: nil))
+        } else if spaceHeld || session.tool == .hand {
+            // Still holding Space, or on the Hand tool: the hand opens again as the button comes up.
+            NSCursor.openHand.set()
         }
     }
 }

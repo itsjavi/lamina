@@ -88,6 +88,52 @@ struct CursorTests {
         #expect(NSCursor.current === NSCursor.arrow)
     }
 
+    /// A pan holds the closed hand from mouse down to mouse up. Space repeats while it's held, and each repeat rebuilt
+    /// the cursor rects, which put the open hand back partway through the drag; the pan now holds its cursor as a crop
+    /// or transform drag does, with the window's cursor rects off until the button comes up.
+    @Test func panningHoldsTheClosedHandUntilMouseUp() throws {
+        let session = EditorSession()
+        session.createDocument(width: 400, height: 300)
+        let view = CanvasView(session: session)
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 400, height: 300), styleMask: [.titled],
+                              backing: .buffered, defer: false)
+        window.contentView = view
+        defer { NSCursor.arrow.set() }
+        func click(_ type: NSEvent.EventType, at point: NSPoint) throws -> NSEvent {
+            try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [], timestamp: 0,
+                                            windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
+        }
+        func space(_ type: NSEvent.EventType, repeating: Bool = false) throws -> NSEvent {
+            try #require(NSEvent.keyEvent(with: type, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: window.windowNumber,
+                                          context: nil, characters: " ", charactersIgnoringModifiers: " ", isARepeat: repeating, keyCode: 49))
+        }
+        func pan(holdingSpace: Bool, releasingSpaceMidway: Bool = false) throws {
+            if holdingSpace { view.keyDown(with: try space(.keyDown)) }
+            view.mouseDown(with: try click(.leftMouseDown, at: NSPoint(x: 200, y: 150)))
+            #expect(NSCursor.current === NSCursor.closedHand)
+            #expect(!window.areCursorRectsEnabled, "rebuilding the cursor rects mid-pan would open the hand")
+            for step in 1...6 {
+                if holdingSpace, !releasingSpaceMidway || step < 4 { view.keyDown(with: try space(.keyDown, repeating: true)) }
+                if releasingSpaceMidway, step == 4 { view.keyUp(with: try space(.keyUp)) }
+                view.mouseDragged(with: try click(.leftMouseDragged, at: NSPoint(x: CGFloat(200 + step * 5), y: 150)))
+                #expect(NSCursor.current === NSCursor.closedHand, "step \(step)")
+                #expect(!window.areCursorRectsEnabled, "step \(step)")
+            }
+            view.mouseUp(with: try click(.leftMouseUp, at: NSPoint(x: 230, y: 150)))
+            #expect(window.areCursorRectsEnabled, "the tool's own cursor comes back through the cursor rects")
+        }
+
+        session.selectTool(.brush)
+        try pan(holdingSpace: true)
+        #expect(NSCursor.current === NSCursor.openHand, "still holding Space, the hand opens as the button comes up")
+        view.keyUp(with: try space(.keyUp))
+        try pan(holdingSpace: true, releasingSpaceMidway: true)
+        session.selectTool(.hand)
+        try pan(holdingSpace: false)
+        #expect(NSCursor.current === NSCursor.openHand, "the Hand tool's open hand comes back with the button")
+        #expect(session.viewport.pan != .zero, "the drags panned")
+    }
+
     @Test func theLayerListShowsTheArrowUnlessAModifierCursorApplies() throws {
         let session = EditorSession()
         session.createDocument(width: 400, height: 300)

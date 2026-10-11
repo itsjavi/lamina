@@ -58,7 +58,7 @@ struct FreeTransformBar: View {
                 // The numbers describe an ordinary transform; while distorting, the corner handles are the controls.
                 .disabled(session.transformEdit?.corners != nil)
                 .padding(.horizontal, 12)
-            }.scrollIndicators(.hidden)
+            }.scrollIndicators(.hidden).scrollBounceBehavior(.basedOnSize, axes: .horizontal)
             OptionsBarDivider()
             HStack(spacing: 4) {
                 OptionsBarIconButton(title: "Cancel Transform (Escape)", symbol: "nosign") { session.cancelTransform() }

@@ -288,10 +288,13 @@ Fit Screen fits the document with a margin, as View ▸ Fit on Screen does; Fill
 whole canvas area, centered. Controls: icon
 buttons 24 × 22, pop-ups and fields 22 high, percent fields with a slider pop-up. Labels end with a colon
 ("Opacity:", "Tolerance:"), checkboxes and buttons don't. Edits in progress end with Cancel ⊘ and Commit ✓ icon
-buttons at the far right, after a divider. Status: every bar is **shipping**: Move and Free Transform with TASK-56
+buttons at the far right, after a divider. In a window too narrow for a bar, its controls keep their full size and
+scroll sideways (trackpad or Shift-scroll, no scroller shown), while Cancel and Commit stay pinned at the right end;
+at 1500 × 860 pt no bar scrolls (the widest, Magic Wand, needs about 940 pt). Status: every bar is **shipping**: Move and Free Transform with TASK-56
 (`MoveToolBar`, `FreeTransformBar`), the rest with TASK-57. Shared pieces (`UI/OptionsBar.swift`,
-`UI/OptionsBarFields.swift`): `OptionsBarRow` (a bar's controls, 10 pt apart, 12 pt in from the edge, with
-`OptionsBarCommitButtons` at the right end while an edit is pending), `OptionsBarDivider`, `OptionsBarIconButton`
+`UI/OptionsBarFields.swift`): `ToolSettings` (the active tool's bar), `OptionsBarRow` (a bar's controls, 10 pt
+apart, 12 pt in from the edge, in a horizontal scroll view, with `OptionsBarCommitButtons` at the right end while an
+edit is pending; every bar but Free Transform, which scrolls the same way on its own; TASK-76), `OptionsBarDivider`, `OptionsBarIconButton`
 (24 × 22, on `activeTool` while pressed: a chosen mode, a toggle that is on), `OptionsBarField` ("Label:" that scrubs
 when dragged, the field, its unit), `PercentField` (the same with % and a chevron opening a slider) and
 `OptionsBarPicker` ("Label:" and a pop-up).

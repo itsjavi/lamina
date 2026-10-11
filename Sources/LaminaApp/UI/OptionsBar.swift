@@ -59,15 +59,20 @@ extension OptionsBarIconButton where Icon == Image {
 }
 
 /// A tool's settings, left to right. While an edit is in progress, its Cancel ⊘ and Commit ✓ sit at the far right,
-/// after a divider, where the Free Transform bar has them.
+/// after a divider, where the Free Transform bar has them. In a window too narrow for the bar, the settings keep their
+/// size and scroll sideways (no scroller), and Cancel and Commit stay pinned outside the scroll.
 struct OptionsBarRow<Content: View>: View {
     var commit: OptionsBarCommitButtons? = nil
     @ViewBuilder let content: Content
 
     var body: some View {
         HStack(spacing: 0) {
-            HStack(spacing: 10) { content }.padding(.horizontal, 12)
-            Spacer(minLength: 0)
+            ScrollView(.horizontal) {
+                HStack(spacing: 10) { content }.padding(.horizontal, 12)
+                    .frame(maxHeight: .infinity)
+            }
+            .scrollIndicators(.hidden)
+            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
             if let commit {
                 OptionsBarDivider()
                 commit.padding(.horizontal, 8)
@@ -90,6 +95,57 @@ struct OptionsBarCommitButtons: View {
                 .accessibilityIdentifier("optionsBarCancel")
             OptionsBarIconButton(title: commitTitle, symbol: "checkmark", action: commit)
                 .accessibilityIdentifier("optionsBarCommit")
+        }
+    }
+}
+
+/// The active tool's settings, which the options bar shows after the tool's icon.
+struct ToolSettings: View {
+    @Bindable var session: EditorSession
+
+    var body: some View {
+        Group {
+            // A Free Transform waiting for Commit or Cancel turns the Move bar into the Free Transform bar; a drag
+            // that applies itself when let go (a move, a nudge) leaves the Move bar in place.
+            if session.tool == .move, session.transformEdit?.persistent == true {
+                FreeTransformBar(session: session).id(session.activeLayerID)
+            } else if session.tool == .move {
+                MoveToolBar(session: session)
+            }
+            if session.tool.isBrushTool {
+                BrushControls(session: session)
+            }
+            if session.tool.isSelectionTool {
+                LassoControls(session: session)
+            }
+            if session.tool == .gradient {
+                GradientControls(session: session)
+            }
+            if session.tool == .paintBucket {
+                PaintBucketControls(session: session)
+            }
+            if session.tool == .type {
+                TypeControls(session: session)
+            }
+            if session.tool.shapeKind != nil {
+                ShapeControls(session: session)
+            }
+            if session.tool == .eyedropper {
+                OptionsBarRow {
+                    Toggle("Show Sampling Ring", isOn: $session.showsSampleRing).toggleStyle(.checkbox)
+                        .help("Show a ring of the color under the pointer and the one before it while sampling")
+                }
+            }
+            if session.tool == .hand || session.tool == .zoom {
+                NavigationToolHeader(session: session)
+            }
+            if session.tool == .crop {
+                CropControls(session: session)
+            }
+            // No tool (A) keeps the bar, its icon and nothing after it, so the canvas doesn't jump.
+            if session.tool == .idle {
+                Spacer().toolHeaderBar()
+            }
         }
     }
 }

@@ -25,57 +25,9 @@ struct ContentView: View {
         guard let workspace = applicationDelegate?.workspace else { return true }
         return workspace.canReceiveDrag(into: workspace.current.id)
     }
-    // Extracted from `body`: as one expression the type checker times out (Xcode 26.1).
-    /// The active tool's settings, which the options bar shows after the tool's icon.
-    @ViewBuilder private var toolHeaders: some View {
-        Group {
-            // A Free Transform waiting for Commit or Cancel turns the Move bar into the Free Transform bar; a drag
-            // that applies itself when let go (a move, a nudge) leaves the Move bar in place.
-            if session.tool == .move, session.transformEdit?.persistent == true {
-                FreeTransformBar(session: session).id(session.activeLayerID)
-            } else if session.tool == .move {
-                MoveToolBar(session: session)
-            }
-            if session.tool.isBrushTool {
-                BrushControls(session: session)
-            }
-            if session.tool.isSelectionTool {
-                LassoControls(session: session)
-            }
-            if session.tool == .gradient {
-                GradientControls(session: session)
-            }
-            if session.tool == .paintBucket {
-                PaintBucketControls(session: session)
-            }
-            if session.tool == .type {
-                TypeControls(session: session)
-            }
-            if session.tool.shapeKind != nil {
-                ShapeControls(session: session)
-            }
-            if session.tool == .eyedropper {
-                OptionsBarRow {
-                    Toggle("Show Sampling Ring", isOn: $session.showsSampleRing).toggleStyle(.checkbox)
-                        .help("Show a ring of the color under the pointer and the one before it while sampling")
-                }
-            }
-            if session.tool == .hand || session.tool == .zoom {
-                NavigationToolHeader(session: session)
-            }
-            if session.tool == .crop {
-                CropControls(session: session)
-            }
-            // No tool (A) keeps the bar, its icon and nothing after it, so the canvas doesn't jump.
-            if session.tool == .idle {
-                Spacer().toolHeaderBar()
-            }
-        }
-    }
-
     @ViewBuilder private var editorStack: some View {
         VStack(spacing: 0) {
-            OptionsBar(session: session) { toolHeaders }
+            OptionsBar(session: session) { ToolSettings(session: session) }
             Divider()
             HStack(spacing: 0) {
                 ToolbarColumn(session: session)

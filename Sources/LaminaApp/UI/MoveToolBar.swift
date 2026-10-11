@@ -10,7 +10,7 @@ struct MoveToolBar: View {
     static let verticalAlignments: [LayerAlignment] = [.top, .verticalCenter, .bottom]
 
     var body: some View {
-        HStack(spacing: 10) {
+        OptionsBarRow {
             // Command flips Auto-Select while it's held, and the box shows it flipped (see HeldModifiers).
             Toggle("Auto-Select", isOn: Binding(get: { session.transformAutoSelect != held.contains(.command) },
                                                 set: { session.transformAutoSelect = $0 != held.contains(.command) }))
@@ -48,9 +48,7 @@ struct MoveToolBar: View {
                 .accessibilityLabel("Align & Distribute")
                 .accessibilityIdentifier("alignAndDistribute")
                 .disabled(!session.canAlignLayers)
-            Spacer()
         }
-        .padding(.horizontal, 12).toolHeaderBar()
         .disabled(session.document == nil)
     }
 

@@ -225,6 +225,7 @@ struct ExportPreview: View {
                     // Nearest-neighbor from 100% up, so each pixel of the export and its artifacts shows as it is.
                     Image(decorative: image, scale: 1).resizable().interpolation(zoom >= 1 ? .none : .high)
                         .frame(width: size.width, height: size.height)
+                        .background { Checkerboard.view }
                         .frame(minWidth: geometry.size.width, minHeight: geometry.size.height)
                 }
                 .scrollIndicators(.visible)
@@ -243,6 +244,7 @@ struct ExportPreview: View {
                 .pointerStyle(dragStart == nil ? .grabIdle : .grabActive)
             } else {
                 Image(decorative: image, scale: 1).resizable().interpolation(.high).scaledToFit()
+                    .background { Checkerboard.view }
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .contentShape(Rectangle())
                     .onTapGesture(count: 2) { self.zoom = 1 }

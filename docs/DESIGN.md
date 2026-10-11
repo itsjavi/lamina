@@ -685,7 +685,9 @@ named). Keyboard Shortcuts lists every one; function keys show as F1 to F12, and
   Canvas step. The name names the tab, window and Save panel until the document is saved.
 - Export As (File ▸ Export ▸ Export As… ⌥⇧⌘W; `ExportSheet`, settings in `ExportSettings`, `IO/ImageExporter.swift`;
   **shipping**, TASK-65) is the one export dialog, a sheet: on the left a 520 × 330 pt preview on `pasteboard` with an
-  `edge` border, the encoded file read back so it shows the format's own artifacts (fitted; drag or scroll to move,
+  `edge` border, the encoded file read back so it shows the format's own artifacts, its transparent areas on the
+  canvas's checkerboard (behind the image only, never the margin; the same tile as the filter preview's,
+  `Checkerboard`) (fitted; drag or scroll to move,
   double-click switches between Fit and 100%, and View's zoom keys zoom it), under it zoom out, the percentage, zoom
   in and Fit, then the image's size and the file's ("2,400 × 1,500 px · 1 MB", "Updating…" while it encodes). On the
   right a 250 pt File Settings group: Format: (every format this Mac writes: PNG, JPEG, HEIC, AVIF, WebP, TIFF, PDF;

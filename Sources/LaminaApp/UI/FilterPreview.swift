@@ -114,25 +114,11 @@ struct FilterPreview: View {
         let pixelated: Bool
     }
 
-    /// The canvas's checkerboard behind the layer, then the pixels. Both are fixed colors (DESIGN.md, Colors).
+    /// The canvas's checkerboard behind the layer, then the pixels.
     private static func draw(_ frame: PreviewFrame, in context: inout GraphicsContext, size: CGSize) {
         let area = frame.layer.union(frame.destination).intersection(CGRect(origin: .zero, size: size))
         if !area.isNull, !area.isEmpty {
-            context.fill(Path(area), with: .color(Color(white: 0.35)))
-            let tile: CGFloat = 10
-            var squares = Path()
-            let firstColumn = Int(((area.minX - frame.layer.minX) / tile).rounded(.down))
-            let firstRow = Int(((area.minY - frame.layer.minY) / tile).rounded(.down))
-            let columns = Int((area.width / tile).rounded(.up)) + 1, rows = Int((area.height / tile).rounded(.up)) + 1
-            for row in firstRow..<(firstRow + rows) {
-                for column in firstColumn..<(firstColumn + columns) where !(row + column).isMultiple(of: 2) {
-                    squares.addRect(CGRect(x: frame.layer.minX + CGFloat(column) * tile,
-                                           y: frame.layer.minY + CGFloat(row) * tile, width: tile, height: tile))
-                }
-            }
-            var clipped = context
-            clipped.clip(to: Path(area))
-            clipped.fill(squares, with: .color(Color(white: 0.30)))
+            Checkerboard.fill(area, from: frame.layer.origin, in: &context)
         }
         context.draw(Image(decorative: frame.image, scale: 1).interpolation(frame.pixelated ? .none : .high),
                      in: frame.destination)

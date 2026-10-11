@@ -152,6 +152,9 @@ Every numeric field uses monospaced digits so values don't jitter while scrubbin
 - Sizes: 18 pt in toolbar slots and the Adjustments grid, 16 pt in options bars, menus (the toolbar's flyouts too)
   and the panel icon column, 15 pt in panels and footers.
 - Icons take the `icon` role; the active tool's icon takes `text`. No colored icons except the color swatches.
+- A disabled icon takes `tertiaryText`, the same in buttons and menus: the Layers and Properties footers' buttons
+  and menus share one style (`FooterButtonStyle`), as SwiftUI dims a plain button's own color and a borderless menu
+  draws its label in the system's colors, so the two would dim differently.
 - A slot whose group has more than one tool shows a small triangle in its bottom-right corner (4 pt, inset 3 pt,
   `secondaryText`).
 
@@ -526,7 +529,8 @@ are **shipping**.
     the dialog on Blending Options. The fx badge's triangle folds the effect rows away and back (not saved, not an
     undo step; Photoshop's default is unfolded).
   - Clicks as before: Shift and Command extend the selection, dragging reorders (onto a group puts the layers in
-    it, Option copies), double-clicking a name renames it in place, Option-clicking the bottom 8 pt of a row creates
+    it, Option copies), double-clicking a name renames it in place (the name keeps its size and place, on a `field`
+    background with no bezel, so the row doesn't jump), Option-clicking the bottom 8 pt of a row creates
     or releases a clipping mask, Command-clicking a thumbnail loads it as a selection, Option-clicking a mask
     thumbnail shows the mask alone, Shift-clicking it disables or enables it; right-clicking opens the layer's menu.
   - A layer made active from outside the list (picked on the canvas by Auto-Select or a Command-click, by a command

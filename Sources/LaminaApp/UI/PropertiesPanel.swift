@@ -198,13 +198,25 @@ struct PropertiesFooterButton: View {
             Image(systemName: symbol).font(.system(size: 15))
                 .frame(width: 26, height: 24)
                 .background(isOn ? ColorRole.activeTool.color : .clear, in: RoundedRectangle(cornerRadius: 5))
-                .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(isOn ? ColorRole.text.color : ColorRole.icon.color)
+        .buttonStyle(FooterButtonStyle(isOn: isOn))
         .help(title)
         .accessibilityLabel(title)
         .accessibilityAddTraits(isOn ? .isSelected : [])
+    }
+}
+
+/// A footer icon's color: `icon`, `text` while on, and `tertiaryText` when it can't be used. The footers' plain
+/// buttons and menus both take it, so they dim alike: a `.plain` button dims its own color by about half again, and a
+/// borderless menu draws its label in the system's colors, so the two read differently when disabled.
+struct FooterButtonStyle: ButtonStyle {
+    var isOn = false
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(!isEnabled ? ColorRole.tertiaryText.color : isOn ? ColorRole.text.color : ColorRole.icon.color)
+            .contentShape(Rectangle())
     }
 }
 

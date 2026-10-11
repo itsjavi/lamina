@@ -45,8 +45,7 @@ struct LayersPanel: View {
             } label: {
                 // "fx" in italic serif, as the rows' badge reads; the SF Symbol draws it as capitals.
                 Text(verbatim: "fx").font(.system(size: 15, weight: .semibold, design: .serif).italic())
-                    .frame(width: 26, height: 24).contentShape(Rectangle())
-                    .foregroundStyle(ColorRole.icon.color)
+                    .frame(width: 26, height: 24)
             }
                 .layersFooterMenu()
                 .help("Add a layer style").accessibilityLabel("Add a layer style")
@@ -79,20 +78,21 @@ struct LayersPanel: View {
     }
 }
 
-/// A footer icon at the size of the Properties footer's buttons (15 pt in a 26 × 24 pt target).
+/// A footer icon at the size of the Properties footer's buttons (15 pt in a 26 × 24 pt target), colored by
+/// `FooterButtonStyle`.
 struct LayersFooterIcon: View {
     let symbol: String
     var body: some View {
         Image(systemName: symbol).font(.system(size: 15))
-            .frame(width: 26, height: 24).contentShape(Rectangle())
-            .foregroundStyle(ColorRole.icon.color)
+            .frame(width: 26, height: 24)
     }
 }
 
 extension View {
-    /// A footer button that opens a menu: the icon alone, without the menu's indicator.
+    /// A footer button that opens a menu: the icon alone, without the menu's indicator, colored and dimmed as the
+    /// footer's other buttons (a borderless menu would draw its label in the system's colors).
     func layersFooterMenu() -> some View {
-        menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+        menuStyle(.button).buttonStyle(FooterButtonStyle()).menuIndicator(.hidden).fixedSize()
     }
 
     /// Makes a small footer icon easier to click. The padding is the clickable area, so the

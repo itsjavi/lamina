@@ -950,7 +950,7 @@ private final class LayerCell: NSTableCellView, NSTextFieldDelegate {
     private var thumbnailHeight: NSLayoutConstraint!
     private var maskThumbnailWidth: NSLayoutConstraint!
     private var maskThumbnailHeight: NSLayoutConstraint!
-    private let nameLabel = NSTextField(labelWithString: "")
+    private let nameLabel = LayerNameField(labelWithString: "")
     /// "fx" and a triangle that folds the effect rows away, on styled layers.
     private let effectsBadge = NSButton()
     private var nameToBadge: NSLayoutConstraint!
@@ -1247,9 +1247,9 @@ private final class LayerCell: NSTableCellView, NSTextFieldDelegate {
         renaming = true
         nameLabel.isEditable = true
         nameLabel.isSelectable = true
-        nameLabel.isBezeled = true
-        nameLabel.bezelStyle = .roundedBezel
+        // No bezel: it would make the field taller and the row jump. A `field` background marks it instead.
         nameLabel.drawsBackground = true
+        nameLabel.backgroundColor = ColorRole.field.nsColor
         nameLabel.delegate = self
         nameLabel.stringValue = layerName
         window?.makeFirstResponder(nameLabel)
@@ -1259,7 +1259,6 @@ private final class LayerCell: NSTableCellView, NSTextFieldDelegate {
         renaming = false
         nameLabel.isEditable = false
         nameLabel.isSelectable = false
-        nameLabel.isBezeled = false
         nameLabel.drawsBackground = false
         nameLabel.delegate = nil
     }
@@ -1691,6 +1690,12 @@ private final class EyeSwipeButton: NSButton {
 }
 private final class MaskDisabledMark: NSTextField {
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
+}
+/// A row's name, which also takes the typing when the layer is renamed. A label's alignment rect is inset 2 pt either
+/// side and an editable field's isn't, so the name would shift right and narrow as renaming starts; keeping the
+/// label's insets keeps it in place.
+private final class LayerNameField: NSTextField {
+    override var alignmentRectInsets: NSEdgeInsets { NSEdgeInsets(top: 0, left: 2, bottom: 0, right: 2) }
 }
 
 /// What a row's canvas-framed thumbnail shows, so it redraws only when one of these changes.

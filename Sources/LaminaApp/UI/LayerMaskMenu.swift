@@ -9,7 +9,7 @@ struct LayerMaskMenu: View {
         Button {
             session.addMask(revealing: NSApp.currentEvent?.modifierFlags.contains(.option) != true)
         } label: { LayersFooterIcon(symbol: "rectangle.inset.filled") }
-            .buttonStyle(.plain)
+            .buttonStyle(FooterButtonStyle())
             .help(session.selection == nil ? "Add layer mask (Option-click for a black mask)"
                   : "Add layer mask revealing the selection (Option-click to hide it)")
             .accessibilityLabel("Add layer mask")

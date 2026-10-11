@@ -323,4 +323,32 @@ struct LayersPanelTests {
                                                              .gaussianBlur, .motionBlur, .addNoise])
         #expect(Set(LayersPanel.adjustmentMenu.flatMap { $0 }) == Set(AdjustmentKind.allCases))
     }
+
+    /// Renaming types in the name itself: the field keeps its size and place and is marked by a `field` background,
+    /// not a bezel that would make the row jump.
+    @Test func renamingKeepsTheNameWhereItIs() async throws {
+        let session = try sessionWithSquare()
+        let (table, coordinator, window) = list(session)
+        window.isReleasedWhenClosed = false
+        defer { window.close() }
+        let cell = try #require(table.view(atColumn: 0, row: 0, makeIfNecessary: true))
+        cell.layoutSubtreeIfNeeded()
+        let name = try #require(descendants(cell).compactMap { $0 as? NSTextField }.first { $0.stringValue == "Square" })
+        let frame = name.frame, height = name.intrinsicContentSize.height
+
+        session.renamingLayerID = session.activeLayerID
+        coordinator.update(table)
+        await withCheckedContinuation { continuation in DispatchQueue.main.async { continuation.resume() } }
+        cell.layoutSubtreeIfNeeded()
+        #expect(name.isEditable, "renaming started")
+        #expect(name.frame == frame && name.intrinsicContentSize.height == height)
+        let editor = try #require(name.currentEditor() as? NSTextView)
+        #expect(editor.convert(editor.bounds, to: name) == name.bounds, "the typing sits where the name was drawn")
+        #expect(!name.isBezeled && name.drawsBackground && name.backgroundColor == ColorRole.field.nsColor)
+
+        session.renamingLayerID = nil
+        window.makeFirstResponder(table)
+        cell.layoutSubtreeIfNeeded()
+        #expect(!name.isEditable && !name.drawsBackground && name.frame == frame)
+    }
 }

@@ -71,7 +71,8 @@ struct OptionsBarRow<Content: View>: View {
                 HStack(spacing: 10) { content }.padding(.horizontal, 12)
                     .frame(maxHeight: .infinity)
             }
-            .scrollIndicators(.hidden)
+            // .never, not .hidden: .hidden still shows a legacy scroller ("Show scroll bars: Always", or a mouse).
+            .scrollIndicators(.never)
             .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
             if let commit {
                 OptionsBarDivider()
